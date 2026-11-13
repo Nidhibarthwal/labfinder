@@ -1,0 +1,142 @@
+{% load socialaccount %}
+<!-- Global Authentication Modal -->
+
+    <div id="authPromptModal" class="lf-auth-overlay" style="display:none;">
+        <div class="lf-auth-card" role="dialog" aria-modal="true" aria-labelledby="modalAuthTitle">
+            <button type="button" id="btnCloseAuthModal" class="lf-auth-close" aria-label="Close">✕</button>
+
+            <div id="modalAuthAlert" class="lf-auth-alert" style="display:none;"></div>
+
+            <!-- ========== PANEL: LOGIN ========== -->
+            <div id="authPanelLogin" class="lf-auth-panel is-active">
+                <h3 id="modalAuthTitle" class="lf-auth-title">Welcome back</h3>
+                <p id="modalAuthSubTitle" class="lf-auth-sub">Log in to manage your LabFinder360 profile and Enquiries.</p>
+
+                <form id="modalLoginForm" data-action-url="{% url 'account_api_login' %}" class="lf-auth-form">
+                    {% csrf_token %}
+                    <div class="lf-auth-field">
+                        <label>WORK EMAIL*</label>
+                        <input type="email" name="email" required placeholder="User@company.com" autocomplete="username">
+                    </div>
+                    <div class="lf-auth-field">
+                        <div class="lf-auth-label-row">
+                            <label>PASSWORD</label>
+                            <a href="/accounts/password/reset/" class="lf-auth-link">FORGOT?</a>
+                        </div>
+                        <input type="password" name="password" required placeholder="Enter your password" autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="lf-auth-btn lf-auth-btn--gold">Login</button>
+                </form>
+
+                <div class="lf-auth-divider"><span>OR</span></div>
+
+                <a href="{% provider_login_url 'openid_connect' provider_id='linkedin' process='login' next=request.get_full_path %}"
+                   class="lf-auth-btn lf-auth-btn--linkedin-outline" id="authLinkedInLogin">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#0A66C2"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                    Continue with LinkedIn
+                </a>
+
+                <p class="lf-auth-footer-text">
+                    Don't have an account? <button type="button" class="lf-auth-text-btn" id="authGoSignup">Sign up</button>
+                </p>
+            </div>
+
+            <!-- ========== PANEL: SIGNUP EMAIL ========== -->
+            <div id="authPanelSignup" class="lf-auth-panel">
+                <h3 class="lf-auth-title">Create your account</h3>
+                <p class="lf-auth-sub">We'll send a 5-digit code to confirm it's really you. This email will become your login for managing your profile.</p>
+
+                <form id="modalSignupEmailForm" data-action-url="{% url 'register' %}" class="lf-auth-form">
+                    {% csrf_token %}
+                    <div class="lf-auth-field">
+                        <label>EMAIL*</label>
+                        <div class="lf-auth-email-row">
+                            <input type="email" name="email" id="signupEmailInput" required placeholder="User@company.com" autocomplete="email">
+                            <button type="submit" class="lf-auth-btn lf-auth-btn--gold lf-auth-btn--inline" id="btnSendOtp">Send OTP</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="lf-auth-divider"><span>OR</span></div>
+
+                <a href="{% provider_login_url 'openid_connect' provider_id='linkedin' process='login' next=request.get_full_path %}"
+                   class="lf-auth-btn lf-auth-btn--linkedin-solid" id="authLinkedInSignup">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
+                    Continue with LinkedIn
+                </a>
+
+                <p class="lf-auth-footer-text">
+                    Already have an account? <button type="button" class="lf-auth-text-btn" id="authGoLogin">Log in</button>
+                </p>
+            </div>
+
+            <!-- ========== PANEL: OTP ========== -->
+            <div id="authPanelOtp" class="lf-auth-panel">
+                <h3 class="lf-auth-title">Check your email</h3>
+                <p class="lf-auth-sub">We sent a 5-digit verification code to <strong id="otpEmailDisplay">user@company.com</strong>. Enter it below to continue.</p>
+
+                <form id="modalOtpForm" data-action-url="{% url 'verify_email' %}" class="lf-auth-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="email" id="otpEmailHidden" value="">
+                    <div class="lf-auth-field">
+                        <label>ENTER OTP</label>
+                        <div class="lf-otp-row" id="otpDigitRow">
+                            <input type="text" class="lf-otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+                            <input type="text" class="lf-otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" class="lf-otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" class="lf-otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" class="lf-otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                        </div>
+                        <input type="hidden" name="otp" id="otpHiddenValue" value="">
+                    </div>
+                    <p class="lf-otp-resend">Resend in <span id="otpTimer">01:00</span>
+                        <button type="button" class="lf-auth-text-btn" id="btnResendOtp" style="display:none;">Resend OTP</button>
+                    </p>
+                    <div class="lf-auth-actions-row">
+                        <button type="button" class="lf-auth-btn lf-auth-btn--icon" id="authOtpBack" aria-label="Back">←</button>
+                        <button type="submit" class="lf-auth-btn lf-auth-btn--gold lf-auth-btn--grow">Verify</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ========== PANEL: COMPLETE PROFILE ========== -->
+            <div id="authPanelProfile" class="lf-auth-panel">
+                <h3 class="lf-auth-title">Complete your profile</h3>
+                <p class="lf-auth-sub">Tell us a bit about yourself to set up your account.</p>
+
+                <form id="modalProfileForm" data-action-url="{% url 'account_api_signup' %}" class="lf-auth-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="email" id="profileEmailHidden" value="">
+                    <input type="hidden" name="user_group" id="profileUserGroup" value="Customer">
+                    <div class="lf-auth-grid-2">
+                        <div class="lf-auth-field">
+                            <label>FIRST NAME *</label>
+                            <input type="text" name="first_name" required placeholder="e.g. Rajesh" autocomplete="given-name">
+                        </div>
+                        <div class="lf-auth-field">
+                            <label>LAST NAME *</label>
+                            <input type="text" name="last_name" required placeholder="e.g. Kumar" autocomplete="family-name">
+                        </div>
+                    </div>
+                    <div class="lf-auth-field">
+                        <label>PHONE NUMBER *</label>
+                        <div class="lf-auth-phone-row">
+                            <input type="text" class="lf-auth-cc" value="+91" readonly tabindex="-1">
+                            <input type="tel" name="phone" required placeholder="98765 43210" inputmode="tel" autocomplete="tel-national">
+                        </div>
+                    </div>
+                    <div class="lf-auth-field">
+                        <label>SET PASSWORD*</label>
+                        <input type="password" name="password" required minlength="8" placeholder="Min. 8 characters" autocomplete="new-password">
+                    </div>
+                    <div class="lf-auth-field">
+                        <label>CONFIRM PASSWORD*</label>
+                        <input type="password" name="password_confirm" required minlength="8" placeholder="Min. 8 characters" autocomplete="new-password">
+                    </div>
+                    <button type="submit" class="lf-auth-btn lf-auth-btn--gold">Create Account</button>
+                    <p class="lf-auth-legal">By clicking Create Account, you agree to our Terms of Service and Privacy Policy.</p>
+                </form>
+            </div>
+        </div>
+    </div>
+

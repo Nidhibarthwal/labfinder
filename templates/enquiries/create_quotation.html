@@ -1,0 +1,65 @@
+{% extends 'accounts/accounts_base.html' %}
+{% load static %}
+
+{% block meta_data %}
+<title>Create Quotation #{{ enquiry.pk }} - LabFinder 360</title>
+{% endblock %}
+
+{% block content %}
+<div class="quote-container" style="max-width:640px;margin:30px auto;padding:0 16px;">
+    <div class="quote-header" style="margin-bottom:20px;">
+        <h1 style="font-size:22px;margin:0 0 8px 0;">Create Official Quotation</h1>
+        <a href="{% url 'lead_detail' enquiry.pk %}" style="color:#2563EB;font-size:14px;">&larr; Back to Lead Details</a>
+    </div>
+
+    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:16px;margin-bottom:20px;">
+        <div style="margin-bottom:8px;"><strong>Customer:</strong> {{ enquiry.contact_name|default:enquiry.email }}</div>
+        <div style="margin-bottom:8px;"><strong>Test:</strong> {{ enquiry.product_name }}</div>
+        <div><strong>Budget:</strong> {% if enquiry.budget %}₹{{ enquiry.budget }}{% else %}Not specified{% endif %}</div>
+    </div>
+
+    <form method="post" action="{% url 'create_quotation' enquiry.pk %}" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:24px;">
+        {% csrf_token %}
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label for="id_total_amount"><strong>Total Amount (₹)</strong> *</label>
+            {{ quote_form.total_amount }}
+            {{ quote_form.total_amount.errors }}
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label for="id_estimated_turnaround_days"><strong>Estimated Turnaround (Days)</strong> *</label>
+            <p style="font-size:12px;color:#6B7280;margin:4px 0 6px;">How many days testing will take after the sample is received (TAT).</p>
+            {{ quote_form.estimated_turnaround_days }}
+            {{ quote_form.estimated_turnaround_days.errors }}
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label for="id_validity_days"><strong>Quote Validity (Days)</strong> *</label>
+            <p style="font-size:12px;color:#6B7280;margin:4px 0 6px;">How long this price remains valid for the customer to accept.</p>
+            {{ quote_form.validity_days }}
+            {{ quote_form.validity_days.errors }}
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label for="id_scope_notes"><strong>Scope Notes</strong></label>
+            {{ quote_form.scope_notes }}
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label for="id_terms"><strong>Terms</strong></label>
+            {{ quote_form.terms }}
+        </div>
+
+        <div class="form-group" style="margin-bottom:16px;">
+            <label for="id_notes"><strong>Additional Notes</strong></label>
+            {{ quote_form.notes }}
+        </div>
+
+        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
+            <a href="{% url 'lead_detail' enquiry.pk %}" class="btn btn-secondary" style="padding:10px 16px;">Cancel</a>
+            <button type="submit" class="btn btn-primary" style="padding:10px 16px;">Generate &amp; Send Quote</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

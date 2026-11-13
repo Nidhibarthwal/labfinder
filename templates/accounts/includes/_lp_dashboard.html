@@ -1,0 +1,39 @@
+
+<section class="lp-card lp-complete">
+  <div class="lp-ring" style="--p: {{ profile_pct }};"><span>{{ profile_pct }}%<small>COMPLETED</small></span></div>
+  <div style="flex:1;">
+    <h2>Your profile is {{ profile_pct }}% complete</h2>
+    <p>Labs above 90% complete get 3× more enquiries on average.</p>
+    <div class="lp-chips">
+      <span class="lp-chip {% if checks.basic %}done{% endif %}">{% if checks.basic %}✓{% endif %} Basic info</span>
+      <span class="lp-chip {% if checks.accreditation %}done{% endif %}">{% if checks.accreditation %}✓{% endif %} Accreditation</span>
+      <span class="lp-chip {% if checks.photos %}done{% endif %}">{% if checks.photos %}✓{% endif %} Lab photos</span>
+      <span class="lp-chip {% if checks.tests %}done{% endif %}">{% if checks.tests %}✓{% endif %} Add 3 tests</span>
+    </div>
+  </div>
+  <a class="lp-btn" href="?tab=profile&edit=1">Complete Profile</a>
+</section>
+<section class="lp-metrics">
+  <article class="lp-card lp-metric"><strong>{{ metrics.views }}</strong><span>Profile views this week</span></article>
+  <article class="lp-card lp-metric"><strong>{{ metrics.leads }}</strong><span>Total leads</span></article>
+  <article class="lp-card lp-metric"><strong>{{ metrics.pending }} Leads</strong><span>Pending for contact</span></article>
+  <article class="lp-card lp-metric"><strong>{{ metrics.appearances }} Times</strong><span>Appeared in search</span></article>
+</section>
+<section class="lp-split">
+  <div class="lp-card">
+    <h3>Next steps to strengthen your profile</h3>
+    <p class="lp-muted">Ordered by impact</p>
+    <div class="lp-step"><div><h3>Add at least 3 tests with pricing <span class="lp-badge">High impact</span></h3><p>Labs with published tests get 4× more direct enquiries.</p></div><a class="lp-link" href="?tab=scope">ADD TESTS ›</a></div>
+    <div class="lp-step"><div><h3>Upload lab facility photos <span class="lp-badge">High impact</span></h3><p>Real photos convert visitors to enquiries 2× better.</p></div><a class="lp-link" href="?tab=profile&edit=1">UPLOAD ›</a></div>
+    <div class="lp-step"><div><h3>Respond to your first lead <span class="lp-badge">High impact</span></h3><p>Fast first responses boost your response-rate badge.</p></div><a class="lp-link" href="?tab=leads">VIEW LEADS ›</a></div>
+  </div>
+  <div class="lp-card">
+    <h3>Recent activity</h3>
+    <p class="lp-muted">Latest lead updates</p>
+    {% for row in recent_leads %}
+      <div class="lp-activity"><strong>New lead — {{ row.enquiry.product_name }}</strong><br><span class="lp-sub">{{ row.enquiry.created_at|timesince }} ago</span></div>
+    {% empty %}
+      <p class="lp-muted">No recent activity yet.</p>
+    {% endfor %}
+  </div>
+</section>

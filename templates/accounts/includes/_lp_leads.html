@@ -1,0 +1,96 @@
+<div class="lp-head">
+  <div>
+    <h2 class="lp-head__title">Leads</h2>
+    <p class="lp-muted">Track and move every enquiry through your pipeline.</p>
+  </div>
+  <a class="lp-btn lp-btn--new" href="{% url 'enquiry_now' %}">+ New Lead</a>
+</div>
+
+<div class="lp-filters" role="tablist" aria-label="Lead status filters">
+  <a href="?tab=leads&status=all" class="{% if active_status == 'all' %}is-active{% endif %}">All Leads {{ counts.all }}</a>
+  <a href="?tab=leads&status=new" class="{% if active_status == 'new' %}is-active{% endif %}">New {{ counts.new }}</a>
+  <a href="?tab=leads&status=contacted" class="{% if active_status == 'contacted' %}is-active{% endif %}">Contacted {{ counts.contacted }}</a>
+  <a href="?tab=leads&status=quoted" class="{% if active_status == 'quoted' %}is-active{% endif %}">In Progress {{ counts.quoted }}</a>
+  <a href="?tab=leads&status=won" class="{% if active_status == 'won' %}is-active{% endif %}">Interested {{ counts.won }}</a>
+</div>
+
+<input class="lp-search" id="lp-lead-search" type="search" placeholder="Search by customer, company or test" aria-label="Search leads">
+
+{# Desktop table #}
+<div class="lp-card lp-table-wrap">
+  <table class="lp-table" id="lp-lead-table">
+    <thead>
+      <tr>
+        <th>Lead</th>
+        <th>Test Requested</th>
+        <th>Contact</th>
+        <th>Location</th>
+        <th>Status</th>
+        <th>Budget</th>
+        <th aria-hidden="true"></th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for row in lead_rows %}
+      {% with e=row.enquiry %}
+      <tr data-search="{{ e.contact_name }} {{ e.company_name }} {{ e.product_name }}" data-href="{% url 'lead_detail' e.id %}">
+        <td data-label="Lead">
+          <div class="lp-name">{{ e.contact_name|default:e.display_name|default:"Customer" }}</div>
+          <div class="lp-sub">{{ e.company_name|default:"—" }}</div>
+        </td>
+        <td data-label="Test">{{ e.product_name }}</td>
+        <td data-label="Contact">
+          <div>{{ e.mobile_number|default:"—" }}</div>
+          <div class="lp-sub">{% if e.user %}{{ e.user.email }}{% elif e.email %}{{ e.email }}{% else %}—{% endif %}</div>
+        </td>
+        <td data-label="Location">{% if e.lab and e.lab.lab_city %}{{ e.lab.lab_city }}{% elif branch.lab_city %}{{ branch.lab_city }}{% else %}—{% endif %}</td>
+        <td data-label="Status"><span class="lp-pill {{ row.status }}">{{ row.status_display }}</span></td>
+        <td data-label="Budget">{% if e.budget %}₹{{ e.budget }}{% else %}—{% endif %}</td>
+        <td class="lp-row-chevron" aria-hidden="true">›</td>
+      </tr>
+      {% endwith %}
+    {% empty %}
+      <tr class="lp-empty-row">
+        <td colspan="7">No leads yet.</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# Mobile card list (mirrors table data; filtered by same search JS) #}
+<div class="lp-lead-cards" id="lp-lead-cards" aria-label="Leads list">
+  {% for row in lead_rows %}
+    {% with e=row.enquiry %}
+    <article
+      class="lp-lead-card"
+      data-search="{{ e.contact_name }} {{ e.company_name }} {{ e.product_name }}"
+      data-href="{% url 'lead_detail' e.id %}"
+      role="link"
+      tabindex="0">
+      <div class="lp-lead-card__top">
+        <div>
+          <div class="lp-name">{{ e.contact_name|default:e.display_name|default:"Customer" }}</div>
+          <div class="lp-sub">{{ e.company_name|default:"—" }}</div>
+        </div>
+        <span class="lp-pill {{ row.status }}">{{ row.status_display }}</span>
+      </div>
+      <div class="lp-lead-card__product">{{ e.product_name }}</div>
+      <div class="lp-lead-card__meta">
+        <span>{{ e.mobile_number|default:"—" }}</span>
+        <span class="lp-meta-dot">·</span>
+        <span>{% if e.lab and e.lab.lab_city %}{{ e.lab.lab_city }}{% elif branch.lab_city %}{{ branch.lab_city }}{% else %}—{% endif %}</span>
+        {% if e.budget %}
+          <span class="lp-meta-dot">·</span>
+          <span>₹{{ e.budget }}</span>
+        {% endif %}
+      </div>
+      <div class="lp-lead-card__email lp-sub">
+        {% if e.user %}{{ e.user.email }}{% elif e.email %}{{ e.email }}{% endif %}
+      </div>
+    </article>
+    {% endwith %}
+  {% empty %}
+    <div class="lp-lead-empty">No leads yet.</div>
+  {% endfor %}
+</div>

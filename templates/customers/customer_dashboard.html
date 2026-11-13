@@ -1,0 +1,97 @@
+{% extends 'accounts/accounts_base.html' %}
+{% load static %}
+{% block content %}
+<div class="cust-dash">
+    <div class="cust-header">
+        <h1>My Dashboard</h1>
+        <p>Enquiries, orders, disputes and your lab reviews.</p>
+    </div>
+
+  <div class="main-tabs">
+    <a href="?tab=leads" class="main-tab {% if active_tab == 'leads' %}main-tab--active{% endif %}">Leads ({{ counts.all }})</a>
+    <a href="?tab=orders" class="main-tab {% if active_tab == 'orders' %}main-tab--active{% endif %}">Orders ({{ order_counts.all }})</a>
+    <a href="?tab=disputes" class="main-tab {% if active_tab == 'disputes' %}main-tab--active{% endif %}">Disputes ({{ dispute_counts.all }})</a>
+    <a href="?tab=reviews" class="main-tab {% if active_tab == 'reviews' %}main-tab--active{% endif %}">Reviews ({{ reviews_count }})</a>
+  </div>
+
+  {% if active_tab == 'leads' or not active_tab %}
+  <div class="status-chips">
+    <a href="?tab=leads&status=all" class="status-chip {% if active_status == 'all' %}status-chip--active{% endif %}">All ({{ counts.all }})</a>
+    <a href="?tab=leads&status=new" class="status-chip {% if active_status == 'new' %}status-chip--active{% endif %}">Inbound ({{ counts.new }})</a>
+    <a href="?tab=leads&status=contacted" class="status-chip {% if active_status == 'contacted' %}status-chip--active{% endif %}">Under Review ({{ counts.contacted }})</a>
+    <a href="?tab=leads&status=quoted" class="status-chip {% if active_status == 'quoted' %}status-chip--active{% endif %}">Quoted ({{ counts.quoted }})</a>
+    <a href="?tab=leads&status=won" class="status-chip {% if active_status == 'won' %}status-chip--active{% endif %}">Won ({{ counts.won }})</a>
+    <a href="?tab=leads&status=converted" class="status-chip {% if active_status == 'converted' %}status-chip--active{% endif %}">Converted ({{ counts.converted }})</a>
+    <a href="?tab=leads&status=lost" class="status-chip {% if active_status == 'lost' %}status-chip--active{% endif %}">Declined ({{ counts.lost }})</a>
+  </div>
+  <div class="lead-card-list">
+    {% for enquiry in enquiries %}
+    <div class="lead-item-card">
+      <div>
+        <h2 class="lead-title">{{ enquiry.product_name }}</h2>
+        <div class="lead-meta">
+          {% if enquiry.quotation_type == 'multiple_labs' %}<span>Multi-lab</span>{% elif enquiry.lab %}<span>{{ enquiry.lab.lab_name }}</span>{% endif %}
+          <span>{{ enquiry.created_at|date:"M d, Y" }}</span>
+        </div>
+      </div>
+      <div class="lead-item-card__actions">
+        <span class="pill pill-{{ enquiry.effective_status|default:'new' }}">{{ enquiry.effective_status_display|default:"Inbound" }}</span>
+        <a href="{% url 'customer_lead_detail' enquiry.pk %}" class="btn-view">View</a>
+      </div>
+    </div>
+    {% empty %}<div class="cust-empty">No enquiries.</div>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if active_tab == 'orders' %}
+  <div class="lead-card-list">
+    {% for o in orders %}
+    <div class="lead-item-card">
+      <div>
+        <h2 class="lead-title">#{{ o.job_number }} — {{ o.enquiry.product_name }}</h2>
+        <div class="lead-meta"><span>{{ o.lab.lab_name }}</span><span>{{ o.created_at|date:"M d, Y" }}</span></div>
+      </div>
+      <div class="lead-item-card__actions">
+        <span class="pill pill-{{ o.status }}">{{ o.get_status_display }}</span>
+        <a href="{% url 'order_detail' o.id %}" class="btn-view">Open Order</a>
+      </div>
+    </div>
+    {% empty %}<div class="cust-empty">No orders yet.</div>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if active_tab == 'disputes' %}
+  <div class="lead-card-list">
+    {% for d in disputes %}
+    <div class="lead-item-card">
+      <div>
+        <h2 class="lead-title">Order #{{ d.order.job_number }}</h2>
+        <div class="lead-meta"><span>{{ d.get_raised_by_type_display }}</span><span>{{ d.created_at|date:"M d, Y" }}</span></div>
+        <p class="lead-reason">{{ d.reason|truncatechars:120 }}</p>
+      </div>
+      <div class="lead-item-card__actions">
+        <span class="pill pill-disputed">{{ d.get_status_display }}</span>
+        <a href="{% url 'order_detail' d.order_id %}" class="btn-view">View</a>
+      </div>
+    </div>
+    {% empty %}<div class="cust-empty">No disputes.</div>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% if active_tab == 'reviews' %}
+  <div>
+    {% for r in user_reviews %}
+    <div class="review-card">
+      <div class="review-card__header">
+        <strong>{{ r.lab.lab_name }}</strong>
+        <span>{{ r.overall_rating }}★ · {{ r.created_at|date:"M d, Y" }}</span>
+      </div>
+      <h3 class="review-card__title">{{ r.title }}</h3>
+      <p class="review-card__summary">{{ r.summary }}</p>
+      {% if r.lab_reply %}<div class="review-card__lab-reply"><strong>Lab reply:</strong> {{ r.lab_reply }}</div>{% endif %}
+    </div>
+    {% empty %}<div class="cust-empty">You have not submitted any reviews yet.</div>{% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

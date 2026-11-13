@@ -1,0 +1,622 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Intel | Autonomous Website Intelligence Platform</title>
+    <meta name="description" content="State-of-the-art autonomous website intelligence, target page extraction, and grounded evidence verification platform.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}?v=2.5.2">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+    <!-- Background Ambient Glow Mesh -->
+    <div class="glow-mesh glow-top-center"></div>
+    <div class="glow-mesh glow-bottom-right"></div>
+    <div class="glow-mesh glow-mid-left"></div>
+
+    <!-- Main App Container -->
+    <div class="app-layout">
+        
+        <!-- Top Navigation Header -->
+        <header class="top-nav">
+            <div class="nav-brand">
+                <div class="brand-logo">
+                    <div class="logo-core">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                    </div>
+                    <div class="logo-pulse"></div>
+                </div>
+                <div class="brand-text">
+                    <div class="brand-title">
+                        AURA<span class="gradient-text">INTEL</span>
+                    </div>
+                    <div class="brand-subtitle">Autonomous Web Intelligence & Grounding Engine</div>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <!-- Live System Health Status Pill -->
+                <div class="health-pill" id="healthPill" title="System Status: Checking...">
+                    <span class="health-dot pulse"></span>
+                    <span class="health-text" id="healthStatusText">Connecting...</span>
+                    <div class="health-dropdown" id="healthDropdown">
+                        <div class="health-item">
+                            <span class="health-item-label">Database</span>
+                            <span class="health-item-val val-green" id="healthDb">Online</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-item-label">Redis Cache</span>
+                            <span class="health-item-val val-green" id="healthRedis">Connected</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-item-label">Ollama AI Core</span>
+                            <span class="health-item-val val-green" id="healthAi">Ready</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Jobs Trigger -->
+                <button type="button" class="btn-ghost" id="btnOpenHistory" title="View Recent Analyses">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span>Recent Audits</span>
+                    <span class="counter-badge" id="historyCounter">0</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+
+            <!-- Hero Command Center Deck -->
+            <section class="command-deck" id="commandDeck">
+                <div class="deck-header">
+                    <div class="deck-pill">Target Intelligence Console</div>
+                    <h1 class="deck-title">Extract Grounded Intelligence From Any Website</h1>
+                    <p class="deck-desc">
+                        Precision multi-page crawling, targeted page discovery, entity classification & verifiable evidence grounding powered by local AI.
+                    </p>
+                </div>
+
+                <!-- Analysis Form -->
+                <form id="analysisForm" class="analysis-form" autocomplete="off">
+                    <!-- URL Input Box -->
+                    <div class="url-bar-container">
+                        <div class="url-prefix">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="2" y1="12" x2="22" y2="12"></line>
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                            </svg>
+                            <span>https://</span>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="targetUrlInput" 
+                            class="url-input" 
+                            placeholder="example.com or https://company.com" 
+                            required
+                            spellcheck="false"
+                        >
+                        <button type="button" class="btn-clear-input" id="btnClearInput" title="Clear input">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                        <button type="submit" class="btn-primary" id="btnSubmit">
+                            <span class="btn-text">Execute Analysis</span>
+                            <div class="btn-spinner" id="btnSpinner"></div>
+                            <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                            <span class="btn-shortcut">Ctrl ↵</span>
+                        </button>
+                    </div>
+
+                    <!-- Objective Segmented Cards -->
+                    <div class="section-label">Select Analysis Objective</div>
+                    <div class="objective-grid" id="objectiveGrid">
+                        <div class="objective-card active" data-objective="lab_intelligence">
+                            <div class="card-radio"></div>
+                            <div class="card-icon">🔬</div>
+                            <div class="card-body">
+                                <div class="card-name">Lab & Diagnostics Intel</div>
+                                <div class="card-sub">Laboratory tests, test-menu, accreditations & branches footprint</div>
+                            </div>
+                            <div class="card-tag">Required Targets: ABOUT, CONTACT, SERVICE, PRODUCT</div>
+                        </div>
+
+                        <div class="objective-card" data-objective="product_intelligence">
+                            <div class="card-radio"></div>
+                            <div class="card-icon">🚀</div>
+                            <div class="card-body">
+                                <div class="card-name">Products & Services Intel</div>
+                                <div class="card-sub">Commercial offerings, test packages & diagnostic capabilities</div>
+                            </div>
+                            <div class="card-tag">Default Targets: PRODUCT, SERVICE</div>
+                        </div>
+
+                        <div class="objective-card" data-objective="custom">
+                            <div class="card-radio"></div>
+                            <div class="card-icon">⚙️</div>
+                            <div class="card-body">
+                                <div class="card-name">Custom Configuration</div>
+                                <div class="card-sub">Select specific required pages (About, Contact, Products, Services)</div>
+                            </div>
+                            <div class="card-tag">Target-Constrained</div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Configuration Accordion -->
+                    <div class="config-panel">
+                        <div class="config-header" id="configToggle">
+                            <div class="config-title">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                </svg>
+                                <span>Target Extraction Configuration</span>
+                                <span class="active-config-badge" id="activeConfigSummary">3 Pages · 3 Types Targeted</span>
+                            </div>
+                            <div class="toggle-arrow" id="toggleArrow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <div class="config-body" id="configBody">
+                            <!-- Page Types Chips -->
+                            <div class="form-group">
+                                <div class="group-header">
+                                    <label class="group-label">Target Page Types</label>
+                                    <div class="group-actions">
+                                        <button type="button" class="btn-link" id="btnSelectAllPages">Select All</button>
+                                        <span class="sep">•</span>
+                                        <button type="button" class="btn-link" id="btnResetPages">Reset to Objective Defaults</button>
+                                    </div>
+                                </div>
+                                <div class="chips-container" id="pageTypesContainer">
+                                    <!-- Populated dynamically via JS -->
+                                </div>
+                                <p class="field-hint">The crawler will prioritize discovering and scoring pages matching these categories.</p>
+                            </div>
+
+                            <div class="config-row">
+                                <!-- Target Paths -->
+                                <div class="form-group flex-1">
+                                    <label class="group-label" for="targetPathsInput">Specific Target Paths (Optional)</label>
+                                    <input 
+                                        type="text" 
+                                        id="targetPathsInput" 
+                                        class="text-input" 
+                                        placeholder="/careers, /contact-us, /about-us (comma-separated)"
+                                    >
+                                    <p class="field-hint">Forces priority crawl on specific path patterns.</p>
+                                </div>
+
+                                <!-- Max Pages Slider -->
+                                <div class="form-group flex-1">
+                                    <div class="group-header">
+                                        <label class="group-label" for="maxPagesSlider">Max Pages to Crawl</label>
+                                        <span class="slider-val" id="maxPagesValue">3 Pages</span>
+                                    </div>
+                                    <input 
+                                        type="range" 
+                                        id="maxPagesSlider" 
+                                        min="1" 
+                                        max="8" 
+                                        value="3" 
+                                        class="range-slider"
+                                    >
+                                    <div class="slider-marks">
+                                        <span>1 (Fast)</span>
+                                        <span>3 (Recommended)</span>
+                                        <span>5 (Deeper)</span>
+                                        <span>8 (Deep Audit)</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bypass Cache / Force Refresh Option -->
+                            <div class="form-group" style="margin-top: 12px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08);">
+                                <label class="checkbox-label" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #a1a1aa; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" id="forceRefreshCheckbox" style="accent-color: #6366f1; width: 16px; height: 16px; cursor: pointer;">
+                                    <span>⚡ Bypass Cache / Force Fresh Search (Re-run crawler & extraction for testing)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                </form>
+            </section>
+
+            <!-- Live Execution Pipeline Monitor (Visible during/after analysis) -->
+            <section class="pipeline-monitor hidden" id="pipelineMonitor">
+                <div class="monitor-glass-card">
+                    <div class="monitor-top">
+                        <div class="monitor-target-info">
+                            <div class="target-domain" id="monitorDomain">webkul.com</div>
+                            <div class="target-objective-tag" id="monitorObjective">Company Intelligence</div>
+                        </div>
+                        <div class="monitor-metrics">
+                            <div class="metric-pill">
+                                <span class="metric-lbl">Status</span>
+                                <span class="metric-val status-running" id="monitorStatusText">Running</span>
+                            </div>
+                            <div class="metric-pill">
+                                <span class="metric-lbl">Elapsed</span>
+                                <span class="metric-val" id="monitorElapsed">00:00s</span>
+                            </div>
+                            <div class="metric-pill">
+                                <span class="metric-lbl">Pages Discovered</span>
+                                <span class="metric-val" id="monitorPagesCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Holographic Radar Scanner HUD -->
+                    <div class="scanner-hud">
+                        <!-- Holographic Radar Scope -->
+                        <div class="radar-scope">
+                            <div class="radar-sweep"></div>
+                            <div class="radar-ring ring-1"></div>
+                            <div class="radar-ring ring-2"></div>
+                            <div class="radar-ring ring-3"></div>
+                            <div class="radar-crosshair-h"></div>
+                            <div class="radar-crosshair-v"></div>
+                            <div class="radar-blip blip-1"></div>
+                            <div class="radar-blip blip-2"></div>
+                            <div class="radar-blip blip-3"></div>
+                            <div class="radar-center-core"></div>
+                        </div>
+
+                        <!-- Dynamic Telemetry Feed & Intelligence Briefing -->
+                        <div class="scanner-telemetry">
+                            <div class="telemetry-header">
+                                <div class="telemetry-title-wrap">
+                                    <span class="telemetry-live-dot"></span>
+                                    <span class="telemetry-title">NEURAL CRAWLER HUD</span>
+                                    <span class="telemetry-target-name" id="hudTargetDomain">Target Domain</span>
+                                </div>
+                                <div class="telemetry-pct" id="telemetryPct">12%</div>
+                            </div>
+
+                            <!-- Animated Shimmer Progress Bar -->
+                            <div class="hud-progress-track">
+                                <div class="hud-progress-fill" id="hudProgressFill">
+                                    <div class="hud-progress-shimmer"></div>
+                                </div>
+                            </div>
+
+                            <!-- Live Interactive Factoid Ticker -->
+                            <div class="hud-intel-briefing">
+                                <div class="briefing-icon">💡</div>
+                                <div class="briefing-body">
+                                    <div class="briefing-label">SYSTEM INTEL BRIEFING</div>
+                                    <div class="briefing-text" id="hudBriefingText">AI Agent is mapping domain sitemap and classifying target candidate URLs...</div>
+                                </div>
+                            </div>
+
+                            <!-- Live Console Log Feed (Multi-line terminal stream) -->
+                            <div class="hud-terminal-feed" id="hudTerminalFeed">
+                                <div class="term-line"><span class="term-time">[00:00.1s]</span> <span class="term-code info">INITIALIZED</span> Neural crawler gateway online.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pipeline Stage Stepper -->
+                    <div class="pipeline-stepper" id="pipelineStepper">
+                        <div class="step-node" data-stage="DISCOVERING">
+                            <div class="step-icon-wrap">
+                                <div class="step-icon">1</div>
+                                <div class="step-glow"></div>
+                            </div>
+                            <div class="step-label">Discovery</div>
+                            <div class="step-sub">Sitemaps & Links</div>
+                        </div>
+                        <div class="step-connector"></div>
+
+                        <div class="step-node" data-stage="PLANNING">
+                            <div class="step-icon-wrap">
+                                <div class="step-icon">2</div>
+                                <div class="step-glow"></div>
+                            </div>
+                            <div class="step-label">Strategy</div>
+                            <div class="step-sub">Ranking & Target Filter</div>
+                        </div>
+                        <div class="step-connector"></div>
+
+                        <div class="step-node" data-stage="FETCHING">
+                            <div class="step-icon-wrap">
+                                <div class="step-icon">3</div>
+                                <div class="step-glow"></div>
+                            </div>
+                            <div class="step-label">Ingestion</div>
+                            <div class="step-sub">Crawling & Cleaning</div>
+                        </div>
+                        <div class="step-connector"></div>
+
+                        <div class="step-node" data-stage="EXTRACTING">
+                            <div class="step-icon-wrap">
+                                <div class="step-icon">4</div>
+                                <div class="step-glow"></div>
+                            </div>
+                            <div class="step-label">Extraction</div>
+                            <div class="step-sub">Entity Mining</div>
+                        </div>
+                        <div class="step-connector"></div>
+
+                        <div class="step-node" data-stage="ANALYSING">
+                            <div class="step-icon-wrap">
+                                <div class="step-icon">5</div>
+                                <div class="step-glow"></div>
+                            </div>
+                            <div class="step-label">Synthesis</div>
+                            <div class="step-sub">AI Cross-Analysis</div>
+                        </div>
+                        <div class="step-connector"></div>
+
+                        <div class="step-node" data-stage="VALIDATING">
+                            <div class="step-icon-wrap">
+                                <div class="step-icon">6</div>
+                                <div class="step-glow"></div>
+                            </div>
+                            <div class="step-label">Grounding</div>
+                            <div class="step-sub">Verbatim Proof</div>
+                        </div>
+                        <div class="step-connector"></div>
+
+                        <div class="step-node" data-stage="COMPLETED">
+                            <div class="step-icon-wrap">
+                                <div class="step-icon">✓</div>
+                                <div class="step-glow"></div>
+                            </div>
+                            <div class="step-label">Completed</div>
+                            <div class="step-sub">Dossier Ready</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Intelligence Dossier Results Container -->
+            <section class="results-deck hidden" id="resultsDeck">
+
+                <!-- Results Header Card -->
+                <div class="results-hero-card">
+                    <div class="results-hero-left">
+                        <div class="badge-row">
+                            <span class="badge-success" id="resultStatusBadge">COMPLETED</span>
+                            <span class="badge-neutral" id="resultJobId">Job: #---</span>
+                            <span class="badge-target" id="resultTargetsBadge">Targets: CAREERS, CONTACT</span>
+                        </div>
+                        <div class="result-logo-container" id="resultLogoContainer" style="display: none; margin-top: 10px; margin-bottom: 6px;">
+                            <img id="resultCompanyLogo" src="" alt="Company Logo" style="max-height: 48px; max-width: 200px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.05); padding: 4px; border: 1px solid rgba(255,255,255,0.1);">
+                        </div>
+                        <h2 class="result-title" id="resultDomainTitle">intelligence.dossier</h2>
+                        <div class="result-meta" id="resultMetaDate">Generated at: ---</div>
+                        <div class="result-social-links-bar" id="resultSocialLinksContainer" style="display: none;"></div>
+                    </div>
+                    <div class="results-hero-actions">
+                        <button type="button" class="btn-secondary" id="btnCopyMarkdown">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <span>Copy Markdown</span>
+                        </button>
+                        <button type="button" class="btn-secondary" id="btnDownloadJson">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Export JSON</span>
+                        </button>
+                        <button type="button" class="btn-primary-sm" id="btnNewAnalysis">
+                            <span>+ New Analysis</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Metrics Highlights Bar -->
+                <div class="stats-overview-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Pages Analyzed</div>
+                        <div class="stat-number" id="statPagesAnalyzed">0</div>
+                        <div class="stat-detail" id="statTargetPagesMatched">100% of target pages covered</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Grounded Facts</div>
+                        <div class="stat-number gradient-cyan" id="statVerifiedFacts">0</div>
+                        <div class="stat-detail">100% Cryptographically Verified</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Contradictions</div>
+                        <div class="stat-number gradient-green" id="statConflicts">0</div>
+                        <div class="stat-detail" id="statConflictsText">Zero conflicting claims</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Token / Budget Footprint</div>
+                        <div class="stat-number" id="statBudgetUsed">0k</div>
+                        <div class="stat-detail" id="statConfidenceScore">98.5% High Confidence</div>
+                    </div>
+                </div>
+
+                <!-- Results Navigation Tabs -->
+                <div class="results-nav-tabs">
+                    <button type="button" class="tab-btn active" data-tab="tabSummary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <span>Executive Summary</span>
+                    </button>
+
+                    <button type="button" class="tab-btn" data-tab="tabFacts">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        <span>Grounded Facts & Evidence</span>
+                        <span class="tab-count" id="tabFactsCount">0</span>
+                    </button>
+
+                    <button type="button" class="tab-btn" data-tab="tabPages">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                        <span>Crawled Pages Matrix</span>
+                        <span class="tab-count" id="tabPagesCount">0</span>
+                    </button>
+
+                    <button type="button" class="tab-btn" data-tab="tabConflicts">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <span>Contradiction Radar</span>
+                        <span class="tab-count count-zero" id="tabConflictsCount">0</span>
+                    </button>
+
+                    <button type="button" class="tab-btn" data-tab="tabRawJson">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6"></polyline>
+                            <polyline points="8 6 2 12 8 18"></polyline>
+                        </svg>
+                        <span>Raw JSON Dossier</span>
+                    </button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="tab-panes">
+
+                    <!-- Tab 1: Executive Summary -->
+                    <div class="tab-pane active" id="tabSummary">
+                        <div class="summary-card">
+                            <div class="markdown-body" id="summaryMarkdownContent">
+                                <!-- Rendered Markdown content goes here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Grounded Facts & Evidence -->
+                    <div class="tab-pane" id="tabFacts">
+                        <div class="facts-filter-bar">
+                            <div class="facts-categories" id="factsCategories">
+                                <button type="button" class="cat-chip active" data-cat="all">All Facts</button>
+                                <button type="button" class="cat-chip" data-cat="company_info">Company</button>
+                                <button type="button" class="cat-chip" data-cat="contact">Contact & HQ</button>
+                                <button type="button" class="cat-chip" data-cat="careers">Careers & Hiring</button>
+                                <button type="button" class="cat-chip" data-cat="products">Products & Tech</button>
+                                <button type="button" class="cat-chip" data-cat="people">Leadership & People</button>
+                            </div>
+                            <div class="facts-search">
+                                <input type="text" id="factsSearchInput" placeholder="Filter facts...">
+                            </div>
+                        </div>
+
+                        <div class="facts-list" id="factsList">
+                            <!-- Populated dynamically with evidence quote drawers -->
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Crawled Pages Matrix -->
+                    <div class="tab-pane" id="tabPages">
+                        <div class="pages-table-card">
+                            <table class="pages-table">
+                                <thead>
+                                    <tr>
+                                        <th>Page Classification</th>
+                                        <th>Target Match</th>
+                                        <th>Page URL</th>
+                                        <th>Status</th>
+                                        <th>Quality Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pagesTableBody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab 4: Contradiction Radar -->
+                    <div class="tab-pane" id="tabConflicts">
+                        <div id="conflictsContainer">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Tab 5: Raw JSON -->
+                    <div class="tab-pane" id="tabRawJson">
+                        <div class="json-viewer-card">
+                            <div class="json-header">
+                                <span class="json-title">Normalized Structured Output</span>
+                                <button type="button" class="btn-copy-sm" id="btnCopyJson">Copy JSON</button>
+                            </div>
+                            <pre class="json-code" id="rawJsonCode"><code>Loading...</code></pre>
+                        </div>
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Slide-over Drawer for Recent Jobs -->
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
+    <aside class="slide-drawer" id="slideDrawer">
+        <div class="drawer-header">
+            <div class="drawer-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span>Recent Analyses</span>
+            </div>
+            <button type="button" class="btn-close-drawer" id="btnCloseDrawer">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="drawer-body" id="recentJobsList">
+            <!-- Populated via GET /api/v1/website-analysis/ -->
+            <div class="empty-drawer">No recent analyses found.</div>
+        </div>
+    </aside>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Data Injection from Django Context -->
+    <script>
+        window.DJANGO_DATA = {
+            csrfToken: "{{ csrf_token }}",
+            pageTypes: {{ page_types_json|safe }},
+            analysisProfiles: {{ analysis_profiles_json|safe }},
+            defaultTargets: {{ default_targets_json|safe }}
+        };
+    </script>
+    <script src="{% static 'js/main.js' %}?v=2.5.2"></script>
+</body>
+</html>

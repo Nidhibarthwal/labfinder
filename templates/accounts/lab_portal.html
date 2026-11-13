@@ -1,0 +1,44 @@
+{% extends "accounts/accounts_base.html" %}
+{% load static %}
+{% block meta_data %}<title>Lab Dashboard | LabFinder 360</title>{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/lab-portal.css' %}">
+<div class="lp">
+  <div class="lp-welcome">
+    <h1>Welcome back, {{ request.user.first_name|default:branch.lab_name }} 👋</h1>
+    <p>Here's how {{ branch.lab_name }}{% if branch.lab_city %} — {{ branch.lab_city }}{% endif %} is performing.</p>
+  </div>
+  <nav class="lp-tabs">
+    <a href="?tab=dashboard" class="{% if active_tab == 'dashboard' %}is-active{% endif %}">Dashboard</a>
+    <a href="?tab=leads" class="{% if active_tab == 'leads' %}is-active{% endif %}">Leads</a>
+    <a href="?tab=orders" class="{% if active_tab == 'orders' %}is-active{% endif %}">Orders</a>
+    <a href="?tab=scope" class="{% if active_tab == 'scope' %}is-active{% endif %}">Test & Scope</a>
+    <a href="?tab=profile" class="{% if active_tab == 'profile' %}is-active{% endif %}">My Profile</a>
+    <a href="?tab=reviews" class="{% if active_tab == 'reviews' %}is-active{% endif %}">Reviews</a>
+    <a href="?tab=analytics" class="{% if active_tab == 'analytics' %}is-active{% endif %}">Analytics</a>
+    <a href="?tab=settings" class="{% if active_tab == 'settings' %}is-active{% endif %}">Settings</a>
+  </nav>
+  <div class="lp-main">
+    {% if active_tab == 'dashboard' %}
+      {% include 'accounts/includes/_lp_dashboard.html' %}
+    {% elif active_tab == 'leads' %}
+      {% include 'accounts/includes/_lp_leads.html' %}
+    {% elif active_tab == 'orders' %}
+      {% include 'accounts/includes/_lp_orders.html' %}
+    {% elif active_tab == 'profile' %}
+      {% include 'accounts/includes/_lp_profile.html' %}
+    {% elif active_tab == 'reviews' %}
+      {% include 'accounts/includes/_lp_reviews.html' %}
+    {% elif active_tab == 'scope' %}
+      <div class="lp-card"><h2>Test & Scope</h2><p class="lp-muted">{{ scope_count }} published tests.</p>
+        {% for s in scopes_with_facilities|slice:":12" %}
+          <div class="lp-step"><div><h3>{{ s.is_number|default:s.is_title|default:"Test" }}</h3><p>{{ s.is_title }}</p></div></div>
+        {% empty %}<p>No tests published yet.</p>{% endfor %}
+      </div>
+    {% else %}
+      <div class="lp-card"><h2>{{ active_tab|title }}</h2><p class="lp-muted">This section is coming next.</p></div>
+    {% endif %}
+  </div>
+</div>
+<script src="{% static 'js/lab-portal.js' %}"></script>
+{% endblock %}

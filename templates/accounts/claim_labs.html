@@ -1,0 +1,240 @@
+{% extends 'accounts/accounts_base.html' %}
+{% load static %}
+
+{% block meta_data %}
+<title>Review & Claim Laboratories - LabFinder 360</title>
+<meta name="description" content="Email verified successfully. Select the extracted facilities you want to manage before continuing to your digital twin review on LabFinder 360." />
+<meta property="og:title" content="Email Verified Successfully - LabFinder 360" />
+<meta property="og:description" content="Select and claim the extracted laboratory facilities you want to manage." />
+{% endblock %}
+
+{% block content %}
+<main class="auth-main auth-main--verified">
+    <!-- Background Blur Shapes -->
+    <div class="auth-bg-shape auth-bg-shape--bottom-left" aria-hidden="true">
+        <img src="{% static 'images/verify_bg_bottom_left.svg' %}" alt="" class="auth-bg-img" loading="lazy" decoding="async">
+    </div>
+    <div class="auth-bg-shape auth-bg-shape--top-right" aria-hidden="true">
+        <img src="{% static 'images/verify_bg_top_right.svg' %}" alt="" class="auth-bg-img" loading="lazy" decoding="async">
+    </div>
+        
+
+    <!-- Verification Success Card -->
+    <div class="verified-container">
+        <!-- Pill Status Badge -->
+        <div class="verified-badge-wrap">
+            <span class="verified-pill-badge" role="status">
+                <img src="{% static 'images/email_verified_check.svg' %}" alt="" class="verified-pill-badge__icon" width="16" height="16" aria-hidden="true">
+                <span>Email Verified Successfully</span>
+            </span>
+        </div>
+
+        <!-- Heading & Subtitle -->
+        <header class="verified-header">
+            <h1 id="verifiedTitle" class="verified-title">We found facilities associated with your email.</h1>
+            <p class="verified-subtitle">
+                We discovered the following lab profiles linked to <strong class="verified-email-highlight" id="verifiedEmailTarget">{{ email }}</strong>.<br>
+                Select the profiles you want to claim and manage.
+            </p>
+        </header>
+
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} w-100 py-2 mb-3 text-start small" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <!-- Callout Banner: None of these are yours? Create New Lab -->
+        <section class="verified-callout-card" aria-label="Register new lab">
+            <div class="verified-callout-card__left">
+                <div class="verified-callout-card__icon-wrap" aria-hidden="true">
+                    <img src="{% static 'images/create_lab_icon.svg' %}" alt="" class="verified-callout-card__icon" width="50" height="50">
+                </div>
+                <div class="verified-callout-card__content">
+                    <h2 class="verified-callout-card__title">None of these are yours?</h2>
+                    <p class="verified-callout-card__desc">
+                        Register a completely new lab from scratch. We will fetch details using your new website URL.
+                    </p>
+                </div>
+            </div>
+            <a href="{% url 'lab-website-url' %}" class="verified-callout-card__btn" id="createLabLink">
+                Create New Lab
+            </a>
+        </section>
+
+        <!-- Section Divider -->
+        <div class="verified-section-divider" aria-hidden="true">
+            <span class="verified-section-divider__text">OR CLAIM EXISTING</span>
+        </div>
+
+        <!-- Facility Claim Form -->
+        <form id="labClaimForm" method="POST" action="{% url 'claim-labs' %}" class="w-100">
+            {% csrf_token %}
+
+            <!-- Facilities List -->
+            <div class="facility-list" id="facilityList" role="group" aria-label="Discovered laboratory facilities">
+                {% for branch in branches %}
+                <article class="facility-card" data-branch-id="{{ branch.id }}" id="facilityCard-{{ branch.id }}">
+                    <!-- Hidden input tracking action for this branch (default: 'claim', becomes 'unlink' if removed) -->
+                    <input type="hidden" name="action_{{ branch.id }}" id="action_branch_{{ branch.id }}" value="claim">
+
+                    <div class="facility-card__left">
+                        {% if branch.lab_logo %}
+                        <div class="facility-card__img-wrap facility-card__img-wrap--previewable" title="Click to view image" tabindex="0" role="button" aria-label="Preview {{ branch.lab_name|default:'Laboratory' }} photo" data-images="/media/{{ branch.lab_logo }}">
+                            <img src="/media/{{ branch.lab_logo }}" alt="{{ branch.lab_name|default:'Laboratory Branch' }}" class="facility-card__img" width="75" height="75" loading="lazy">
+                            <div class="facility-card__img-overlay" aria-hidden="true">
+                                <img src="{% static 'images/visibility_eye.svg' %}" alt="" class="facility-card__img-overlay-icon" width="32" height="32">
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="facility-card__img-wrap" aria-hidden="true">
+                            <img src="{% static 'images/default_lab_thumbnail.svg' %}" alt="{{ branch.lab_name|default:'Laboratory Branch' }}" class="facility-card__img" width="75" height="75" loading="lazy">
+                        </div>
+                        {% endif %}
+                        <div class="facility-card__info">
+                            <h2 class="facility-card__name">{{ branch.lab_name|default:"Laboratory Branch" }}</h2>
+                            <p class="facility-card__address">
+                                {{ branch.get_lab_address|default:"" }}
+                                {% if branch.contact_email %}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 3px;" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg> Email: {{ branch.contact_email }}
+                                {% endif %}
+                            </p>
+                            <div class="facility-card__meta">
+                                <span class="facility-card__meta-item">
+                                    <svg class="facility-card__meta-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                        <path d="M3 5.25L15 5.25L15 12.75L3 12.75L3 5.25ZM4.5 2.25L13.5 2.25L13.5 3.75L4.5 3.75L4.5 2.25ZM4.5 14.25L13.5 14.25L13.5 15.75L4.5 15.75L4.5 14.25ZM4.5 6.75L4.5 11.25L13.5 11.25L13.5 6.75L4.5 6.75Z" fill="#4F576D"/>
+                                    </svg>
+                                    <span>{{ branch.lab_scope.count }} Tests Listed</span>
+                                </span>
+                                {% if branch.branch_accreditation.all %}
+                                <span class="facility-card__meta-item">
+                                    <svg class="facility-card__meta-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                        <path d="M7.25625 10.275L7.9125 8.1375L6.1875 6.75H8.325L9 4.65L9.675 6.75H11.8125L10.0688 8.1375L10.725 10.275L9 8.94375L7.25625 10.275ZM4.5 17.25V11.4563C4.025 10.9313 3.65625 10.3312 3.39375 9.65625C3.13125 8.98125 3 8.2625 3 7.5C3 5.825 3.58125 4.40625 4.74375 3.24375C5.90625 2.08125 7.325 1.5 9 1.5C10.675 1.5 12.0938 2.08125 13.2563 3.24375C14.4188 4.40625 15 5.825 15 7.5C15 8.2625 14.8688 8.98125 14.6063 9.65625C14.3438 10.3312 13.975 10.9313 13.5 11.4563V17.25L9 15.75L4.5 17.25ZM12.1875 10.6875C13.0625 9.8125 13.5 8.75 13.5 7.5C13.5 6.25 13.0625 5.1875 12.1875 4.3125C11.3125 3.4375 10.25 3 9 3C7.75 3 6.6875 3.4375 5.8125 4.3125C4.9375 5.1875 4.5 6.25 4.5 7.5C4.5 8.75 4.9375 9.8125 5.8125 10.6875C6.6875 11.5625 7.75 12 9 12C10.25 12 11.3125 11.5625 12.1875 10.6875ZM6 15.0187L9 14.25L12 15.0187V12.6938C11.5625 12.9438 11.0906 13.1406 10.5844 13.2844C10.0781 13.4281 9.55 13.5 9 13.5C8.45 13.5 7.92188 13.4281 7.41563 13.2844C6.90938 13.1406 6.4375 12.9438 6 12.6938V15.0187Z" fill="#4F576D"/>
+                                    </svg>
+                                    <span>
+                                        {% for accreditation in branch.branch_accreditation.all %}
+                                        {{ accreditation }}{% if not forloop.last %} &bull; {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="facility-card__right">
+                        <div class="facility-card__divider" aria-hidden="true"></div>
+                        <button type="button" class="facility-card__trash-btn" title="Remove {{ branch.lab_name|default:'this profile' }}" aria-label="Remove {{ branch.lab_name|default:'this profile' }}">
+                            <svg class="facility-card__trash-icon" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path d="M5.25 15.75C4.8375 15.75 4.48437 15.6031 4.19062 15.3094C3.89687 15.0156 3.75 14.6625 3.75 14.25V4.5H3V3H6.75V2.25H11.25V3H15V4.5H14.25V14.25C14.25 14.6625 14.1031 15.0156 13.8094 15.3094C13.5156 15.6031 13.1625 15.75 12.75 15.75H5.25ZM12.75 4.5H5.25V14.25H12.75V4.5ZM6.75 12.75H8.25V6H6.75V12.75ZM9.75 12.75H11.25V6H9.75V12.75Z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                        <div class="facility-card__confirm-box" role="alert" aria-live="polite">
+                            <span class="facility-card__confirm-text">Remove this profile?</span>
+                            <div class="facility-card__confirm-actions">
+                                <button type="button" class="facility-card__confirm-btn facility-card__confirm-btn--cancel">Cancel</button>
+                                <button type="button" class="facility-card__confirm-btn facility-card__confirm-btn--remove">Yes, Remove</button>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+                {% empty %}
+                <div class="facility-empty-state is-visible">
+                    <p class="mb-0">No unclaimed laboratories found for your email address. You can register a new lab using the button above.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Form Bottom Action -->
+            <div class="verified-actions-row">
+                <button type="submit" class="verified-claim-btn" id="btnClaimFacilities">
+                    Claim Facilities
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<!-- Facility Image Modal -->
+<div class="facility-image-modal" id="facilityImageModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="facilityImageModalTitle">
+    <div class="facility-image-modal__backdrop" id="facilityImageModalBackdrop"></div>
+    <div class="facility-image-modal__container">
+        <button type="button" class="facility-image-modal__close-btn" id="btnCloseImageModal" aria-label="Close image preview">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
+            </svg>
+        </button>
+        <div class="facility-image-modal__box">
+            <div class="facility-image-modal__slider-viewport" id="facilityModalSliderViewport">
+                <div class="facility-image-modal__track" id="facilityModalTrack"></div>
+                <div class="facility-image-modal__dots" id="facilityModalDots" role="tablist" aria-label="Image slides"></div>
+            </div>
+            <div class="facility-image-modal__meta">
+                <h3 class="facility-image-modal__title" id="facilityImageModalTitle"></h3>
+                <div class="facility-image-modal__nav" id="facilityModalNav">
+                    <button type="button" class="facility-image-modal__arrow facility-image-modal__arrow--prev" id="btnSliderPrev" aria-label="Previous image">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M15.41 7.41L14 6L8 12L14 18L15.41 16.59L10.83 12L15.41 7.41Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <button type="button" class="facility-image-modal__arrow facility-image-modal__arrow--next" id="btnSliderNext" aria-label="Next image">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M10 6L8.59 7.41L13.17 12L8.59 16.59L10 18L16 12L10 6Z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("labClaimForm");
+        const submitBtn = document.getElementById("btnClaimFacilities");
+
+        if (form) {
+            form.addEventListener("submit", async function (e) {
+                e.preventDefault();
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `Processing...`;
+
+                const formData = new FormData(form);
+
+                try {
+                    const response = await fetch(form.action, {
+                        method: "POST",
+                        headers: {
+                            "X-CSRFToken": formData.get("csrfmiddlewaretoken"),
+                            "X-Requested-With": "XMLHttpRequest"
+                        },
+                        body: formData
+                    });
+
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return;
+                    }
+
+                    const data = await response.json();
+                    if (data.success && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else if (data.message) {
+                        alert(data.message);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = `Claim Facilities`;
+                    } else {
+                        window.location.href = "{% url 'lab-website-url' %}";
+                    }
+                } catch (err) {
+                    console.error("Submission error:", err);
+                    form.submit();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
