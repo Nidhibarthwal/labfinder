@@ -27,31 +27,56 @@
                 </button>
 
                 {% if request.user.is_authenticated %}
-                    <div class="header__user-group">
-                        <a href="{% url 'dashboard' %}" class="header__signin">
-                            <span class="header__signin-icon" aria-hidden="true">
-                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/>
-                                    <circle cx="10" cy="7.2" r="3.2" fill="currentColor"/>
-                                    <path d="M2.8 15.2C4.5 13 7 12.2 10 12.2C13 12.2 15.5 13 17.2 15.2A8.9 8.9 0 0 1 2.8 15.2Z" fill="currentColor"/>
+                    <div class="header__user-dropdown-wrap">
+                        <button type="button" class="header__user-btn" id="headerUserMenuBtn" aria-expanded="false" aria-haspopup="true">
+                            <span class="header__user-avatar" aria-hidden="true">
+                                {{ request.user.first_name|default:request.user.username|make_list|first|upper }}
+                            </span>
+                            <span class="header__user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+                            <span class="header__user-caret" aria-hidden="true">
+                                <svg width="8" height="5" viewBox="0 0 8 5" fill="currentColor">
+                                    <path d="M0 0L4 5L8 0H0Z" />
                                 </svg>
                             </span>
-                            Dashboard
-                        </a>
-                        <span class="header__user-divider" aria-hidden="true"></span>
-                        <form method="POST" action="/accounts/logout/" class="header__logout-form">
-                            {% csrf_token %}
-                            <button type="submit" class="header__logout-btn" title="Sign Out">
-                                <span class="header__logout-icon" aria-hidden="true">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        </button>
+                        <div class="header__user-menu" id="headerUserMenu" hidden>
+                            <a href="{% url 'dashboard' %}" class="header__user-menu-item">
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M2.5 2.5H8.33333V8.33333H2.5V2.5ZM11.6667 2.5H17.5V8.33333H11.6667V2.5ZM2.5 11.6667H8.33333V17.5H2.5V11.6667ZM11.6667 11.6667H17.5V17.5H11.6667V11.6667Z"/>
+                                </svg>
+                                <span>Dashboard</span>
+                            </a>
+                            <a href="{% url 'dashboard' %}?tab=inquiries" class="header__user-menu-item">
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                                    <path d="M10 2L3 5.3V9.5C3 13.6 6.2 17.4 10 18.3C13.8 17.4 17 13.6 17 9.5V5.3L10 2Z" stroke="currentColor" stroke-width="1.6"/>
+                                </svg>
+                                <span>Inquiries & Quotes</span>
+                            </a>
+                            <a href="{% url 'dashboard' %}?tab=orders" class="header__user-menu-item">
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                                    <path d="M5 2.5H15C15.8 2.5 16.5 3.2 16.5 4V16C16.5 16.8 15.8 17.5 15 17.5H5C4.2 17.5 3.5 16.8 3.5 16V4C3.5 3.2 4.2 2.5 5 2.5Z" stroke="currentColor" stroke-width="1.6"/>
+                                </svg>
+                                <span>Orders</span>
+                            </a>
+                            <a href="{% url 'dashboard' %}?tab=profile" class="header__user-menu-item">
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                                    <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/>
+                                </svg>
+                                <span>My Profile</span>
+                            </a>
+                            <div class="header__user-menu-divider"></div>
+                            <form method="POST" action="/accounts/logout/" class="header__user-menu-logout">
+                                {% csrf_token %}
+                                <button type="submit" class="header__user-menu-item header__user-menu-item--logout">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                                         <polyline points="16 17 21 12 16 7"></polyline>
                                         <line x1="21" y1="12" x2="9" y2="12"></line>
                                     </svg>
-                                </span>
-                                Sign Out
-                            </button>
-                        </form>
+                                    <span>Sign Out</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 {% else %}
                     <button type="button" id="globalLoginTrigger" data-open-auth="login" class="header__signin js-open-auth-login" title="Sign in">
@@ -233,3 +258,28 @@
             </div>
         </div>
     </header>
+    <script>
+    (function() {
+        var userBtn = document.getElementById('headerUserMenuBtn');
+        var userMenu = document.getElementById('headerUserMenu');
+        if (userBtn && userMenu) {
+            userBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var isOpen = !userMenu.hasAttribute('hidden');
+                if (isOpen) {
+                    userMenu.setAttribute('hidden', '');
+                    userBtn.setAttribute('aria-expanded', 'false');
+                } else {
+                    userMenu.removeAttribute('hidden');
+                    userBtn.setAttribute('aria-expanded', 'true');
+                }
+            });
+            document.addEventListener('click', function(e) {
+                if (!userMenu.contains(e.target) && !userBtn.contains(e.target)) {
+                    userMenu.setAttribute('hidden', '');
+                    userBtn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+    })();
+    </script>

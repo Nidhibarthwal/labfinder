@@ -1,9 +1,12 @@
+from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import models
 from django.db.models import Prefetch, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views import View
 from django.views.generic import DetailView
 
@@ -15,6 +18,7 @@ from apps.enquiries.models import (
     LabReview,
     Quotation,
     LIMSJobOrder,
+    ReviewCategory,
 )
 
 
@@ -58,15 +62,19 @@ def _annotate_enquiries(queryset):
     return items
 
 
-def render_customer_dashboard(request):
-    """Customer dashboard: enquiries owned by the logged-in user."""
+def get_customer_dashboard_context(request):
+    """
+    Build context for Customer Portal (Dashboard, Inquiries & Quotes, Orders, Profile, Reviews, Settings).
+    Faithful to Figma Customer Dashboard screen.
+    """
+    user = request.user
     base = (
-        Enquiry.objects.filter(user=request.user)
+        Enquiry.objects.filter(user=user)
         .select_related("lab", "lab_category")
         .prefetch_related(
             Prefetch(
                 "lab_leads",
-                queryset=LabLead.objects.select_related("lab", "quotation").order_by(
+                queryset=LabLead.objects.select_related("lab", "quotation", "lims_job").order_by(
                     "-updated_at"
                 ),
                 to_attr="prefetched_lab_leads",
@@ -96,35 +104,247 @@ def render_customer_dashboard(request):
         "lost": _count("lost"),
     }
 
-    user_reviews = (
-        LabReview.objects.filter(user=request.user)
+    user_reviews = list(
+        LabReview.objects.filter(user=user)
         .select_related("lab")
         .order_by("-created_at")
     )
 
-    customer_orders = (
-        LIMSJobOrder.objects.filter(customer=request.user)
-        .select_related("lab", "enquiry", "lab_lead")
+    customer_orders_qs = (
+        LIMSJobOrder.objects.filter(customer=user)
+        .select_related("lab", "enquiry", "lab_lead", "lab_lead__quotation")
         .order_by("-created_at")
     )
+    customer_orders = list(customer_orders_qs)
+
     customer_disputes = (
-        Dispute.objects.filter(order__customer=request.user)
+        Dispute.objects.filter(order__customer=user)
         .select_related("order", "order__lab")
         .order_by("-created_at")
     )
 
+    order_filter = request.GET.get("order_status", "all")
+    if order_filter == "payment":
+        filtered_orders = [o for o in customer_orders if o.status in ("sample_received", "in_progress")]
+    elif order_filter == "send_sample":
+        filtered_orders = [o for o in customer_orders if o.status == "sample_received"]
+    elif order_filter == "in_testing":
+        filtered_orders = [o for o in customer_orders if o.status == "in_progress"]
+    elif order_filter == "report_ready":
+        filtered_orders = [o for o in customer_orders if o.status == "pending_customer_completion"]
+    elif order_filter == "completed":
+        filtered_orders = [o for o in customer_orders if o.status == "completed"]
+    else:
+        filtered_orders = customer_orders
+
+    # 1. Stat Cards Metrics (Exact Figma match)
+    pending_quotes_count = Quotation.objects.filter(
+        enquiry__user=user, is_accepted=False, rejected_at__isnull=True
+    ).count()
+    if pending_quotes_count == 0:
+        pending_quotes_count = max(0, sum(e.quoted_count for e in all_items))
+
+    active_tests_count = sum(
+        1 for o in customer_orders if o.status in ("sample_received", "in_progress", "pending_customer_completion")
+    )
+    active_tests_count_formatted = f"{active_tests_count:02d}"
+
+    completed_reports_count = sum(1 for o in customer_orders if o.status == "completed")
+
+    # Expenditure YTD
+    expenditure_sum = (
+        Quotation.objects.filter(enquiry__user=user, is_accepted=True)
+        .aggregate(s=models.Sum("total_amount"))["s"]
+        or Decimal("0")
+    )
+    if not expenditure_sum:
+        for o in customer_orders:
+            q = getattr(getattr(o, "lab_lead", None), "quotation", None)
+            if q and q.total_amount:
+                expenditure_sum += q.total_amount
+
+    if expenditure_sum >= 100000:
+        testing_expenditure_display = f"{float(expenditure_sum)/100000:.1f}L"
+    elif expenditure_sum >= 1000:
+        testing_expenditure_display = f"{float(expenditure_sum)/1000:.1f}k"
+    else:
+        testing_expenditure_display = f"{expenditure_sum:,.0f}"
+
+    # 2. Recent Activities Overview (Left column)
+    recent_activities = []
+    for enq in all_items:
+        title = enq.product_name or f"Enquiry #{enq.pk}"
+        if enq.quotation_type == "multiple_labs":
+            sub = f"+{enq.lab_lead_count - 1} more" if enq.lab_lead_count > 1 else "Multi-lab request"
+        elif enq.lab:
+            sub = enq.lab.lab_name
+        else:
+            sub = "+1 more"
+
+        status = enq.effective_status
+        if status == "new":
+            badge_label = "New"
+            badge_type = "new"
+        elif status == "contacted":
+            badge_label = "Pending Lab Response"
+            badge_type = "pending"
+        elif status == "quoted":
+            badge_label = "Quotes Received"
+            badge_type = "quotes"
+        elif status in ("won", "converted"):
+            completed = False
+            for ll in getattr(enq, "prefetched_lab_leads", []):
+                if hasattr(ll, "lims_job") and ll.lims_job and ll.lims_job.status == "completed":
+                    completed = True
+                    break
+            if completed:
+                badge_label = "Report Delivered"
+                badge_type = "delivered"
+            else:
+                badge_label = "In Progress"
+                badge_type = "in_progress"
+        elif status == "lost":
+            badge_label = "Declined"
+            badge_type = "lost"
+        else:
+            badge_label = enq.effective_status_display or "Inbound"
+            badge_type = "default"
+
+        time_str = "Recently"
+        if enq.created_at:
+            diff = timezone.now() - enq.created_at
+            secs = int(diff.total_seconds())
+            if secs < 3600:
+                time_str = f"{max(1, secs // 60)}m ago"
+            elif secs < 86400:
+                time_str = f"{secs // 3600}h ago"
+            else:
+                time_str = f"{diff.days}d ago"
+
+        recent_activities.append({
+            "title": title,
+            "subtitle": sub,
+            "badge_label": badge_label,
+            "badge_type": badge_type,
+            "time_ago": time_str,
+            "url": reverse("customer_lead_detail", kwargs={"enquiry_id": enq.pk}),
+            "created_at": enq.created_at,
+        })
+
+    recent_activities = recent_activities[:6]
+
+    # 3. Action Required (Right column, last 5 days)
+    actions_required = []
+    pending_quotes = (
+        Quotation.objects.filter(
+            enquiry__user=user,
+            is_accepted=False,
+            rejected_at__isnull=True,
+        )
+        .select_related("lab", "enquiry", "lab_lead")
+        .order_by("-created_at")[:5]
+    )
+    for q in pending_quotes:
+        actions_required.append({
+            "icon_type": "quote",
+            "title": f"Review Quote: #{q.quote_number}",
+            "description": f"{q.lab.lab_name} submitted a quote for ₹{q.total_amount:,.0f}. Approve to start testing.",
+            "link_text": "Review & Approve",
+            "url": f"{reverse('customer_lead_detail', kwargs={'enquiry_id': q.enquiry_id})}?lab={q.lab_id}",
+        })
+
+    for o in [o for o in customer_orders if o.status == "completed"][:3]:
+        test_title = o.enquiry.product_name if o.enquiry else "Testing"
+        actions_required.append({
+            "icon_type": "download",
+            "title": "Download Final Report",
+            "description": f"Order #{o.job_number} ({test_title}) is complete.",
+            "link_text": "Download PDF",
+            "url": reverse("order_detail", kwargs={"order_id": o.pk}),
+        })
+
+    for o in [o for o in customer_orders if o.status == "pending_customer_completion"][:3]:
+        actions_required.append({
+            "icon_type": "payment",
+            "title": f"Confirm Completion: #{o.job_number}",
+            "description": f"Testing for {o.enquiry.product_name} is finished. Confirm to release escrow.",
+            "link_text": "Confirm & Release",
+            "url": reverse("order_detail", kwargs={"order_id": o.pk}),
+        })
+
+    # Optional preview mode to inspect exact Figma mockup state
+    if request.GET.get("preview") == "1" or (request.GET.get("demo") == "1" and not recent_activities):
+        pending_quotes_count = 246
+        active_tests_count_formatted = "03"
+        completed_reports_count = 10
+        testing_expenditure_display = "42.5k"
+        recent_activities = [
+            {
+                "title": "Food Nutrition & Label Analy...",
+                "subtitle": "+1 more",
+                "badge_label": "New",
+                "badge_type": "new",
+                "time_ago": "2h ago",
+                "url": "#",
+            },
+            {
+                "title": "Food Nutrition & Label Analy...",
+                "subtitle": "+1 more",
+                "badge_label": "Pending Lab Response",
+                "badge_type": "pending",
+                "time_ago": "2h ago",
+                "url": "#",
+            },
+            {
+                "title": "Food Nutrition & Label Analy...",
+                "subtitle": "+1 more",
+                "badge_label": "Report Delivered",
+                "badge_type": "delivered",
+                "time_ago": "2h ago",
+                "url": "#",
+            },
+        ]
+        actions_required = [
+            {
+                "icon_type": "quote",
+                "title": "Review Quote: #Q-4092",
+                "description": "Meridian submitted a quote for ₹2,800. Approve to start testing.",
+                "link_text": "Review & Approve",
+                "url": "#",
+            },
+            {
+                "icon_type": "download",
+                "title": "Download Final Report",
+                "description": "Order #ORD-9921 (PVC Pipe Test) is complete.",
+                "link_text": "Download PDF",
+                "url": "#",
+            },
+        ]
+
+    tab = request.GET.get("tab") or "dashboard"
+    if tab in ("leads", "inquiries"):
+        tab = "inquiries"
+    if tab not in ("dashboard", "inquiries", "orders", "profile", "reviews", "settings"):
+        tab = "dashboard"
+
     context = {
         "enquiries": filtered,
+        "all_enquiries": all_items,
         "counts": counts,
         "active_status": status_filter,
         "user_reviews": user_reviews,
-        "reviews_count": user_reviews.count(),
-        "orders": customer_orders,
+        "reviews_count": len(user_reviews),
+        "orders": filtered_orders,
+        "all_orders": customer_orders,
+        "active_order_status": order_filter,
         "order_counts": {
-            "all": customer_orders.count(),
-            "in_progress": customer_orders.filter(status="in_progress").count(),
-            "completed": customer_orders.filter(status="completed").count(),
-            "disputed": customer_orders.filter(status="disputed").count(),
+            "all": len(customer_orders),
+            "in_progress": sum(1 for o in customer_orders if o.status == "in_progress"),
+            "sample_received": sum(1 for o in customer_orders if o.status == "sample_received"),
+            "pending_customer_completion": sum(1 for o in customer_orders if o.status == "pending_customer_completion"),
+            "completed": sum(1 for o in customer_orders if o.status == "completed"),
+            "disputed": sum(1 for o in customer_orders if o.status == "disputed"),
+            "action_required": sum(1 for o in customer_orders if o.status in ("pending_customer_completion", "sample_received")),
         },
         "disputes": customer_disputes,
         "dispute_counts": {
@@ -132,9 +352,24 @@ def render_customer_dashboard(request):
             "open": customer_disputes.filter(status__in=["open", "under_review"]).count(),
             "resolved": customer_disputes.filter(status="resolved").count(),
         },
-        "active_tab": request.GET.get("tab", "leads"),
+        "active_tab": tab,
+        # Metrics for stat cards
+        "pending_quotes_count": pending_quotes_count,
+        "active_tests_count": active_tests_count,
+        "active_tests_count_formatted": active_tests_count_formatted,
+        "completed_reports_count": completed_reports_count,
+        "testing_expenditure_display": testing_expenditure_display,
+        "recent_activities": recent_activities,
+        "actions_required": actions_required,
     }
+    return context
+
+
+def render_customer_dashboard(request):
+    """Customer dashboard: enquiries owned by the logged-in user."""
+    context = get_customer_dashboard_context(request)
     return render(request, "customers/customer_dashboard.html", context)
+
 
 
 class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
