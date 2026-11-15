@@ -1,0 +1,32 @@
+<div id="tab-disputes" class="dash-tab-content">
+  <div class="leads-page-header">
+    <div class="leads-page-header__left">
+      <h2 class="leads-page-header__title">Disputes</h2>
+      <p class="leads-page-header__subtitle">Open issues for LabFinder team review.</p>
+    </div>
+  </div>
+  <div class="leads-filter-chips">
+    <button type="button" class="leads-chip {% if active_dispute_status == 'all' %}leads-chip--active{% endif %}">All <span>{{ dispute_counts.all }}</span></button>
+    <button type="button" class="leads-chip">Open <span>{{ dispute_counts.open }}</span></button>
+    <button type="button" class="leads-chip">Under Review <span>{{ dispute_counts.under_review }}</span></button>
+    <button type="button" class="leads-chip">Resolved <span>{{ dispute_counts.resolved }}</span></button>
+  </div>
+  <section class="leads-table-card">
+    <table class="leads-table">
+      <thead><tr><th>Order</th><th>Raised By</th><th>Reason</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for d in disputes %}
+        <tr style="cursor:pointer;" onclick="window.location='{% url 'order_detail' d.order_id %}'">
+          <td>#{{ d.order.job_number }}</td>
+          <td>{{ d.get_raised_by_type_display }}</td>
+          <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ d.reason }}</td>
+          <td>{{ d.get_status_display }}</td>
+          <td><a href="{% url 'order_detail' d.order_id %}">View</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;padding:24px;color:#9CA3AF;">No disputes.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>

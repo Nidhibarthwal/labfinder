@@ -1,0 +1,736 @@
+{% extends 'accounts/accounts_base.html' %}
+{% load static %}
+
+{% block meta_data %}<title>{{ order.job_number }} | LabFinder Orders</title>{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="od-wrap">
+
+  {# ── BACK LINK ── #}
+  <a href="/dashboard/#orders" class="od-back">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Back to orders
+  </a>
+
+  {# ── HEADER ── #}
+  <div class="od-header">
+    <div class="od-header-left">
+      <h1>{{ order.job_number }}</h1>
+      <span class="od-pill od-pill--{{ order.status }}">{{ order.get_status_display }}</span>
+      <div class="od-sub">
+        {{ order.enquiry.contact_name|default:order.customer.get_full_name|default:"" }}
+        {% if order.enquiry.company_name %} &bull; {{ order.enquiry.company_name }}{% endif %}
+        {% with doc_count=order.documents.count %}
+          {% if doc_count %} &bull; {{ doc_count }} document{{ doc_count|pluralize }}{% endif %}
+        {% endwith %}
+        {% if order.lab_lead.quotation %}
+          &bull; &#8377;{{ order.lab_lead.quotation.total_amount|floatformat:0 }}
+        {% endif %}
+      </div>
+    </div>
+    <div class="od-header-btns">
+      {% if order.invoice %}
+      <a href="{{ order.invoice.url }}" target="_blank" class="od-btn od-btn--outline">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Download summary
+      </a>
+      {% endif %}
+      {% if order.status != 'completed' and order.status != 'cancelled' %}
+        {% if not active_dispute %}
+        <button class="od-btn od-btn--red" onclick="odTab(document.getElementById('tab-dispute'),'dispute')">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          Raise dispute
+        </button>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── PROGRESS STEPPER (6 steps) ── #}
+  {% with s=order.status %}
+  <div class="od-stepper">
+    <div class="od-steps">
+
+      {# Step 1: Quote Sent #}
+      {% if s == 'quote_sent' %}
+        <div class="od-step current">
+      {% elif s in 'confirmed,sample_received,in_progress,pending_customer_completion,completed,disputed,cancelled' %}
+        <div class="od-step done">
+      {% else %}
+        <div class="od-step future">
+      {% endif %}
+        <div class="od-step__icon">
+          {% if s in 'confirmed,sample_received,in_progress,pending_customer_completion,completed,disputed,cancelled' %}
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          {% elif s == 'quote_sent' %}1{% else %}1{% endif %}
+        </div>
+        <div class="od-step__label">Quote Sent</div>
+      </div>
+
+      {# Step 2: Confirmed #}
+      {% if s == 'confirmed' %}
+        <div class="od-step current">
+      {% elif s in 'sample_received,in_progress,pending_customer_completion,completed,disputed,cancelled' %}
+        <div class="od-step done">
+      {% else %}
+        <div class="od-step future">
+      {% endif %}
+        <div class="od-step__icon">
+          {% if s in 'sample_received,in_progress,pending_customer_completion,completed,disputed,cancelled' %}
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          {% elif s == 'confirmed' %}2{% else %}2{% endif %}
+        </div>
+        <div class="od-step__label">Confirmed</div>
+      </div>
+
+      {# Step 3: Sample Received #}
+      {% if s == 'sample_received' %}
+        <div class="od-step current">
+      {% elif s in 'in_progress,pending_customer_completion,completed,disputed,cancelled' %}
+        <div class="od-step done">
+      {% else %}
+        <div class="od-step future">
+      {% endif %}
+        <div class="od-step__icon">
+          {% if s in 'in_progress,pending_customer_completion,completed,disputed,cancelled' %}
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          {% elif s == 'sample_received' %}3{% else %}3{% endif %}
+        </div>
+        <div class="od-step__label">Sample Received</div>
+      </div>
+
+      {# Step 4: In Testing #}
+      {% if s == 'in_progress' %}
+        <div class="od-step current">
+      {% elif s in 'pending_customer_completion,completed,disputed,cancelled' %}
+        <div class="od-step done">
+      {% else %}
+        <div class="od-step future">
+      {% endif %}
+        <div class="od-step__icon">
+          {% if s in 'pending_customer_completion,completed,disputed,cancelled' %}
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          {% elif s == 'in_progress' %}4{% else %}4{% endif %}
+        </div>
+        <div class="od-step__label">In Testing</div>
+      </div>
+
+      {# Step 5: Report Ready #}
+      {% if s == 'pending_customer_completion' %}
+        <div class="od-step current">
+      {% elif s == 'completed' %}
+        <div class="od-step done">
+      {% else %}
+        <div class="od-step future">
+      {% endif %}
+        <div class="od-step__icon">
+          {% if s == 'completed' %}
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          {% elif s == 'pending_customer_completion' %}5{% else %}5{% endif %}
+        </div>
+        <div class="od-step__label">Report Ready</div>
+      </div>
+
+      {# Step 6: Completed #}
+      {% if s == 'completed' %}
+        <div class="od-step done">
+      {% else %}
+        <div class="od-step future">
+      {% endif %}
+        <div class="od-step__icon">
+          {% if s == 'completed' %}
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+          {% else %}6{% endif %}
+        </div>
+        <div class="od-step__label">Completed</div>
+      </div>
+
+    </div>
+  </div>
+  {% endwith %}
+
+  {# ── MAIN TWO-COLUMN GRID ── #}
+  <div class="od-grid">
+
+    {# ── LEFT: TABS ── #}
+    <div>
+      <div class="od-main-card">
+
+        {# Tab nav #}
+        <div class="od-tabs" role="tablist">
+          <button class="od-tab active" id="tab-overview" onclick="odTab(this,'overview')" role="tab">Overview</button>
+          <button class="od-tab" id="tab-chat" onclick="odTab(this,'chat')" role="tab">Chat</button>
+          <button class="od-tab" id="tab-qi" onclick="odTab(this,'qi')" role="tab">Quotes &amp; Invoices</button>
+          <button class="od-tab" id="tab-docs" onclick="odTab(this,'docs')" role="tab">
+            Documents
+            {% with doc_count=order.documents.count %}{% if doc_count %}<span class="od-badge">{{ doc_count }}</span>{% endif %}{% endwith %}
+          </button>
+          {% if order.status != 'completed' and order.status != 'cancelled' %}
+          <button class="od-tab" id="tab-dispute" onclick="odTab(this,'dispute')" role="tab">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Dispute
+          </button>
+          {% endif %}
+        </div>
+
+        {# ============ OVERVIEW TAB ============ #}
+        <div class="od-tab-content active" id="pane-overview">
+          <p class="od-section-title od-section-title--spaced">CUSTOMER REQUIREMENT</p>
+          <div class="od-req-box">
+            &ldquo;{{ order.enquiry.description }}&rdquo;
+          </div>
+
+          {% with quotation=order.lab_lead.quotation %}
+          {% if quotation %}
+          <p class="od-section-title">TEST ITEMS</p>
+          <table class="od-items-table">
+            <thead>
+              <tr>
+                <th>TEST</th>
+                <th>STANDARD</th>
+                <th class="right">RATE</th>
+                <th class="right">AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>{{ order.enquiry.product_name }}</strong></td>
+                <td>{{ order.enquiry.preferred_services|default:"—" }}</td>
+                <td class="right">&#8377;{{ quotation.total_amount|floatformat:0 }}</td>
+                <td class="right">&#8377;{{ quotation.total_amount|floatformat:0 }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="od-items-total od-items-total--spaced">
+            <div class="od-subtotal-row">
+              <span>Subtotal</span><span class="val">&#8377;{{ quotation.total_amount|floatformat:0 }}</span>
+            </div>
+            <div class="od-total-row">
+              <span>Total</span><span>&#8377;{{ quotation.total_amount|floatformat:0 }}</span>
+            </div>
+          </div>
+          {% if quotation.scope_notes %}
+          <p class="od-section-title od-section-title--mt">SCOPE NOTES</p>
+          <div class="od-req-box od-req-box--plain">{{ quotation.scope_notes }}</div>
+          {% endif %}
+          {% else %}
+          <p class="od-no-quote-desc">{{ order.enquiry.description }}</p>
+          {% endif %}
+          {% endwith %}
+
+          {# Activity timeline #}
+          <div class="od-activity">
+            <h3>ACTIVITY</h3>
+            <ul class="od-activity-list">
+              {% if order.completed_at %}
+              <li>
+                <div class="od-activity-dot"></div>
+                <div>
+                  <div class="od-activity-text">Order completed</div>
+                  <div class="od-activity-date">{{ order.completed_at|date:"M d" }}</div>
+                </div>
+              </li>
+              {% endif %}
+              {% if order.status == 'pending_customer_completion' or order.status == 'completed' %}
+              <li>
+                <div class="od-activity-dot"></div>
+                <div>
+                  <div class="od-activity-text">Report marked ready</div>
+                  <div class="od-activity-date">{{ order.updated_at|date:"M d" }}</div>
+                </div>
+              </li>
+              {% endif %}
+              {% if order.status != 'sample_received' and order.status != 'confirmed' and order.status != 'quote_sent' %}
+              <li>
+                <div class="od-activity-dot"></div>
+                <div>
+                  <div class="od-activity-text">Testing started</div>
+                  <div class="od-activity-date">{{ order.updated_at|date:"M d" }}</div>
+                </div>
+              </li>
+              {% endif %}
+              {% if order.sample_received_at %}
+              <li>
+                <div class="od-activity-dot"></div>
+                <div>
+                  <div class="od-activity-text">Samples received at lab</div>
+                  <div class="od-activity-date">{{ order.sample_received_at|date:"M d" }}</div>
+                </div>
+              </li>
+              {% endif %}
+              {% with q=order.lab_lead.quotation %}
+              {% if q and q.accepted_at %}
+              <li>
+                <div class="od-activity-dot"></div>
+                <div>
+                  <div class="od-activity-text">Customer accepted — order confirmed</div>
+                  <div class="od-activity-date">{{ q.accepted_at|date:"M d" }}</div>
+                </div>
+              </li>
+              {% endif %}
+              {% if q %}
+              <li>
+                <div class="od-activity-dot"></div>
+                <div>
+                  <div class="od-activity-text">Quote sent to customer</div>
+                  <div class="od-activity-date">{{ q.created_at|date:"M d" }}</div>
+                </div>
+              </li>
+              {% endif %}
+              {% endwith %}
+              <li>
+                <div class="od-activity-dot"></div>
+                <div>
+                  <div class="od-activity-text">Order created</div>
+                  <div class="od-activity-date">{{ order.created_at|date:"M d" }}</div>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {# ============ CHAT TAB ============ #}
+        <div class="od-tab-content" id="pane-chat">
+          <div class="od-chat-msgs" id="odChatMsgs">
+            {% for m in order_messages %}
+              {% if m.is_internal %}
+              <div class="od-msg od-msg--lab od-msg--internal">
+                <div class="od-msg__bubble">🔒 [Internal] {{ m.message }}</div>
+                <div class="od-msg__meta">You &bull; {{ m.created_at|date:"M d, H:i" }}</div>
+                {% if m.attachment %}<a class="od-attach-link" href="{{ m.attachment.url }}" target="_blank">📎 Attachment</a>{% endif %}
+              </div>
+              {% elif m.sender_type == 'lab' %}
+              <div class="od-msg od-msg--lab">
+                <div class="od-msg__bubble">{{ m.message }}</div>
+                <div class="od-msg__meta">You &bull; {{ m.created_at|date:"M d, H:i" }}</div>
+                {% if m.attachment %}<a class="od-attach-link" href="{{ m.attachment.url }}" target="_blank">📎 Attachment</a>{% endif %}
+              </div>
+              {% else %}
+              <div class="od-msg od-msg--customer">
+                <div class="od-msg__bubble">{{ m.message }}</div>
+                <div class="od-msg__meta">{{ m.sender.get_full_name|default:m.sender.email|default:"Customer" }} &bull; {{ m.created_at|date:"M d, H:i" }}</div>
+                {% if m.attachment %}<a class="od-attach-link" href="{{ m.attachment.url }}" target="_blank">📎 Attachment</a>{% endif %}
+              </div>
+              {% endif %}
+            {% empty %}
+              <div class="od-chat-empty">No messages yet. Start the conversation below.</div>
+            {% endfor %}
+          </div>
+
+          {# Quick-reply chips (lab only) #}
+          {% if is_lab_side %}
+          <div class="od-quick-chips">
+            <span class="od-chip" onclick="odQuickReply('Samples received ✓')">Samples received ✓</span>
+            <span class="od-chip" onclick="odQuickReply('Quote coming shortly')">Quote coming shortly</span>
+            <span class="od-chip" onclick="odQuickReply('Testing in progress. We will update you shortly.')">Testing in progress</span>
+            <span class="od-chip" onclick="odQuickReply('Report is ready. Please check documents tab.')">Report ready</span>
+            <span class="od-chip" onclick="odQuickReply('Additional sample required.')">Additional sample needed</span>
+          </div>
+          {% endif %}
+
+          {# Message form #}
+          <div class="od-chat-form">
+            <form method="post" enctype="multipart/form-data" id="odMsgForm">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="add_message">
+              <div class="od-chat-input-row">
+                <textarea
+                  id="odMsgInput"
+                  name="message"
+                  class="od-chat-textarea"
+                  placeholder="Message {% if order.enquiry.contact_name %}{{ order.enquiry.contact_name }}{% else %}customer{% endif %}..."
+                  rows="1"
+                  oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+                  required></textarea>
+                <label for="odAttach" class="od-attach-btn" title="Attach file">
+                  <svg width="20" height="20" fill="none" stroke="#6B7280" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                </label>
+                <input type="file" id="odAttach" name="attachment" class="form-control" style="display:none;">
+                <button type="submit" class="od-btn od-btn--amber od-btn--send">Send</button>
+              </div>
+              {% if is_lab_side %}
+              <div class="od-internal-wrap">
+                <label class="od-internal-label">
+                  <input type="checkbox" name="is_internal" class="form-check-input od-form-check-sm">
+                  Mark as internal note (not visible to customer)
+                </label>
+              </div>
+              {% endif %}
+              <div id="odAttachDisplay" class="od-attach-display"></div>
+            </form>
+          </div>
+        </div>
+
+        {# ============ QUOTES & INVOICES TAB ============ #}
+        <div class="od-tab-content" id="pane-qi">
+
+          {# Quotation #}
+          {% with q=order.lab_lead.quotation %}
+          {% if q %}
+          <div class="od-section-header">
+            <p class="od-section-title">QUOTES</p>
+          </div>
+          <div class="od-qi-list">
+            <div class="od-qi-item">
+              <div class="od-qi-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="od-qi-info">
+                <div class="od-qi-num">{{ q.quote_number }}</div>
+                <div class="od-qi-date">Sent {{ q.created_at|date:"M d" }}</div>
+              </div>
+              <div class="od-qi-right">
+                <div class="od-qi-amount">&#8377;{{ q.total_amount|floatformat:0 }}</div>
+                {% if q.is_accepted %}
+                  <span class="od-qi-status od-qi-status--accepted">Accepted</span>
+                {% elif q.rejected_at %}
+                  <span class="od-qi-status od-qi-status--unpaid">Declined</span>
+                {% else %}
+                  <span class="od-qi-status od-qi-status--pending">Pending</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% endwith %}
+
+          {# Invoices #}
+          <div class="od-section-header">
+            <p class="od-section-title">INVOICES</p>
+          </div>
+          {% if order.invoice %}
+          <div class="od-qi-list">
+            <div class="od-qi-item">
+              <div class="od-qi-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div class="od-qi-info">
+                <div class="od-qi-num">Invoice</div>
+                {% if order.invoice_uploaded_at %}
+                <div class="od-qi-date">Uploaded {{ order.invoice_uploaded_at|date:"M d" }}</div>
+                {% endif %}
+              </div>
+              <div class="od-qi-right od-qi-right--flex">
+                <span class="od-qi-status od-qi-status--paid">Available</span>
+                <a href="{{ order.invoice.url }}" target="_blank" class="od-btn od-btn--ghost od-btn--sm">View</a>
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <p class="od-qi-no-invoice">No invoice uploaded yet.</p>
+          {% endif %}
+
+          {# Upload Invoice (lab only) #}
+          {% if is_lab_side %}
+          <div class="od-invoice-upload">
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="upload_invoice">
+              <label class="od-form-label">Upload Invoice</label>
+              {{ invoice_form.invoice }}
+              <button type="submit" class="od-btn od-btn--green od-btn--mt">Upload Invoice</button>
+            </form>
+          </div>
+          {% endif %}
+
+          <div class="od-escrow-note">
+            <span>🔒</span>
+            <span>Payments are held in escrow and released to you once the customer approves the report.</span>
+          </div>
+        </div>
+
+        {# ============ DOCUMENTS TAB ============ #}
+        <div class="od-tab-content" id="pane-docs">
+          <div class="od-docs-header">
+            <p class="od-section-title od-section-title--flush">FILES SHARED ON THIS ORDER</p>
+            <button id="odUploadBtn" class="od-btn od-btn--outline od-btn--sm-create" onclick="odShowDocUpload()">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              + Create
+            </button>
+          </div>
+
+          {% for d in order.documents.all %}
+          <div class="od-doc-item">
+            <div class="od-doc-icon">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="od-doc-info">
+              <div class="od-doc-name">{{ d.title|default:d.file.name }}</div>
+              <div class="od-doc-meta">
+                {% if d.uploaded_by %}From {{ d.uploaded_by.get_full_name|default:d.uploaded_by.email }}{% endif %}
+                &bull; {{ d.created_at|date:"M d" }}
+              </div>
+            </div>
+            <a href="{{ d.file.url }}" target="_blank" download class="od-doc-dl" title="Download">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            </a>
+          </div>
+          {% empty %}
+          <div class="od-docs-empty">No documents shared yet.</div>
+          {% endfor %}
+
+          {# Upload form (hidden by default) #}
+          <div id="odDocUpload" class="od-upload-form" style="display:none;">
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="upload_document">
+              <label class="od-form-label">Document Title</label>
+              {{ doc_form.title }}
+              <label class="od-form-label">File</label>
+              {{ doc_form.file }}
+              <div class="od-upload-actions">
+                <button type="submit" class="od-btn od-btn--green">Upload</button>
+                <button type="button" class="od-btn od-btn--outline" onclick="odHideDocUpload()">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {# ============ DISPUTE TAB ============ #}
+        {% if order.status != 'completed' and order.status != 'cancelled' %}
+        <div class="od-tab-content" id="pane-dispute">
+          {% if active_dispute %}
+          <div class="od-dispute-active">
+            <h4>&#9888; Active Dispute</h4>
+            <p>Status: <strong>{{ active_dispute.get_status_display }}</strong>. The LabFinder team is reviewing this dispute. You will be notified of any updates.</p>
+            {% if active_dispute.reason %}
+            <p class="od-dispute-reason"><strong>Reason filed:</strong> {{ active_dispute.reason }}</p>
+            {% endif %}
+          </div>
+          {% else %}
+          <div class="od-dispute-banner">
+            <strong>Something wrong with this order?</strong>
+            <p>Raise a dispute and LabFinder360 will hold the escrowed payment while our team reviews and mediates. If the lab hasn&rsquo;t delivered what was agreed — wrong tests, missed deadlines, or quality issues — you can raise a formal dispute.</p>
+          </div>
+          <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="raise_dispute">
+            <div class="od-dispute-form-row">
+              <div>
+                <label class="od-form-label">Reason</label>
+                <select name="dispute_reason_choice" class="od-form-select">
+                  <option value="">Select reason&hellip;</option>
+                  <option value="wrong_tests">Wrong tests performed</option>
+                  <option value="quality_issues">Quality / accuracy issues with report</option>
+                  <option value="missed_deadline">Missed agreed deadline</option>
+                  <option value="payment_dispute">Payment dispute</option>
+                  <option value="sample_handling">Sample handling issues</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="od-form-label">Amount at stake (&#8377;)</label>
+                <input type="number" name="amount_at_stake" class="od-form-input" placeholder="e.g. 5000" min="0" step="1">
+              </div>
+            </div>
+            <label class="od-form-label">What happened?</label>
+            {{ dispute_form.reason }}
+            <button type="submit" class="od-dispute-btn"
+              onclick="return confirm('Are you sure you want to raise a formal dispute? This will flag the order for LabFinder review.')">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+              Raise Dispute
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% endif %}
+
+      </div>{# /od-main-card #}
+
+      {# Completion actions (below tabs, prominent) #}
+      {% if order.status == 'pending_customer_completion' and is_customer %}
+      <div class="od-completion-box">
+        <p>The lab has uploaded the report and requested completion confirmation.</p>
+        <div class="od-completion-btns">
+          <form method="post" style="margin:0;">{% csrf_token %}<input type="hidden" name="action" value="confirm_completion_customer">
+            <button class="od-btn od-btn--green">&#10003; Confirm Complete</button>
+          </form>
+          <form method="post" style="margin:0;">{% csrf_token %}<input type="hidden" name="action" value="decline_completion_customer">
+            <button class="od-btn od-btn--outline">Not Complete Yet</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if order.status == 'in_progress' and is_lab_side %}
+      <div class="od-mark-complete-wrap">
+        <form method="post" style="margin:0;">{% csrf_token %}<input type="hidden" name="action" value="mark_complete_lab">
+          <button class="od-btn od-btn--green">Request Completion Confirmation</button>
+        </form>
+        <p class="od-mark-complete-note">Customer must confirm before the order is marked complete.</p>
+      </div>
+      {% endif %}
+
+      {% if order.status == 'in_progress' and is_customer %}
+      <div class="od-mark-complete-wrap">
+        <form method="post" style="margin:0;">{% csrf_token %}<input type="hidden" name="action" value="mark_complete_customer">
+          <button class="od-btn od-btn--green">Mark as Completed</button>
+        </form>
+      </div>
+      {% endif %}
+
+    </div>{# /left column #}
+
+    {# ── RIGHT SIDEBAR ── #}
+    <div class="od-sidebar">
+
+      {# NEXT ACTION card #}
+      <div class="od-side-card">
+        <div class="od-next-action">
+          <p class="label">NEXT ACTION</p>
+          {% if order.status == 'quote_sent' %}
+            <p class="title">Quote awaiting customer</p>
+            <p class="sub">Sent — waiting for acceptance</p>
+          {% elif order.status == 'confirmed' %}
+            {% if is_lab_side %}
+            <p class="title">Await sample arrival</p>
+            <p class="sub">Order confirmed by customer</p>
+            {% else %}
+            <p class="title">Order confirmed</p>
+            <p class="sub">Please ship samples to the lab</p>
+            {% endif %}
+          {% elif order.status == 'sample_received' %}
+            {% if is_lab_side %}
+            <p class="title">Begin testing</p>
+            <p class="sub">Samples received — start analysis</p>
+            {% else %}
+            <p class="title">Samples at lab</p>
+            <p class="sub">Testing will begin shortly</p>
+            {% endif %}
+          {% elif order.status == 'in_progress' %}
+            {% if is_lab_side %}
+            <p class="title">Upload report &amp; mark ready</p>
+            <p class="sub">Testing in progress</p>
+            <form method="post" style="margin:0;">{% csrf_token %}<input type="hidden" name="action" value="mark_complete_lab">
+              <button class="od-btn od-btn--amber od-next-action-btn">Upload report &amp; mark ready</button>
+            </form>
+            {% else %}
+            <p class="title">Testing in progress</p>
+            <p class="sub">Your lab is currently testing. You&rsquo;ll be notified when the report is ready.</p>
+            {% endif %}
+          {% elif order.status == 'pending_customer_completion' %}
+            {% if is_customer %}
+            <p class="title">Review &amp; confirm completion</p>
+            <p class="sub">The lab has submitted the report</p>
+            <form method="post" style="margin:0;">{% csrf_token %}<input type="hidden" name="action" value="confirm_completion_customer">
+              <button class="od-btn od-btn--amber od-next-action-btn">Confirm Completion</button>
+            </form>
+            {% else %}
+            <p class="title">Awaiting customer confirmation</p>
+            <p class="sub">Report submitted — waiting for customer</p>
+            {% endif %}
+          {% elif order.status == 'completed' %}
+            <p class="title">Order complete</p>
+            <p class="sub">Completed {{ order.completed_at|date:"M d, Y" }}</p>
+          {% elif order.status == 'disputed' %}
+            <p class="title">Dispute under review</p>
+            <p class="sub">LabFinder team is mediating</p>
+          {% else %}
+            <p class="title">{{ order.get_status_display }}</p>
+            <p class="sub">Order reference: {{ order.job_number }}</p>
+          {% endif %}
+        </div>
+      </div>
+
+      {# CUSTOMER card #}
+      <div class="od-side-card">
+        <div class="od-cust-card">
+          <p class="od-cust-label">CUSTOMER</p>
+          <div class="od-cust-top">
+            <div class="od-cust-avatar">
+              {% with name=order.enquiry.contact_name|default:order.customer.get_full_name|default:"?" %}
+                {{ name|slice:":2"|upper }}
+              {% endwith %}
+            </div>
+            <div>
+              <div class="od-cust-name">{{ order.enquiry.contact_name|default:order.customer.get_full_name|default:"Customer" }}</div>
+              <div class="od-cust-role">{{ order.customer.email|default:"" }}</div>
+            </div>
+          </div>
+          <div class="od-cust-info">
+            {% if order.enquiry.email or order.customer.email %}
+            <div class="od-cust-row">
+              <span class="key">Email</span>
+              <span class="val">{{ order.enquiry.email|default:order.customer.email }}</span>
+            </div>
+            {% endif %}
+            {% if order.enquiry.mobile_number %}
+            <div class="od-cust-row">
+              <span class="key">Phone</span>
+              <span class="val">{{ order.enquiry.mobile_number }}</span>
+            </div>
+            {% endif %}
+            {% if order.enquiry.company_name %}
+            <div class="od-cust-row">
+              <span class="key">Company</span>
+              <span class="val">{{ order.enquiry.company_name }}</span>
+            </div>
+            {% endif %}
+            <div class="od-cust-row">
+              <span class="key">Customer since</span>
+              <span class="val">{{ order.created_at|date:"M Y" }}</span>
+            </div>
+          </div>
+          <div class="od-cust-actions">
+            {% if order.enquiry.mobile_number %}
+            <a href="tel:{{ order.enquiry.mobile_number }}" class="od-cust-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.63 19.79 19.79 0 013 1.19 2 2 0 014.11 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              Call
+            </a>
+            {% else %}
+            <span class="od-cust-btn od-cust-btn--disabled">Call</span>
+            {% endif %}
+            {% if order.enquiry.email or order.customer.email %}
+            <a href="mailto:{{ order.enquiry.email|default:order.customer.email }}" class="od-cust-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Email
+            </a>
+            {% else %}
+            <span class="od-cust-btn od-cust-btn--disabled">Email</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      {# PAYMENT card #}
+      {% with q=order.lab_lead.quotation %}
+      {% if q %}
+      <div class="od-side-card">
+        <div class="od-pay-card">
+          <p class="od-pay-label">PAYMENT</p>
+          <div class="od-pay-row">
+            <span class="key">Order total</span>
+            <span class="val">&#8377;{{ q.total_amount|floatformat:0 }}</span>
+          </div>
+          <div class="od-pay-row">
+            <span class="key">Received (escrow)</span>
+            <span class="val val--green">&#8377;0</span>
+          </div>
+          <div class="od-pay-bar"><div class="od-pay-bar-fill" style="width:0%;"></div></div>
+          <hr class="od-pay-divider">
+          <div class="od-pay-row">
+            <span class="key">Balance due</span>
+            <span class="val val--red">&#8377;{{ q.total_amount|floatformat:0 }}</span>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% endwith %}
+
+    </div>{# /sidebar #}
+  </div>{# /od-grid #}
+
+  {# Django messages #}
+  {% for msg in messages %}
+  <div class="od-flash od-flash--{% if msg.tags == 'success' %}success{% elif msg.tags == 'error' %}error{% else %}info{% endif %}" id="odFlash">
+    {{ msg }}
+    <button class="od-flash-close" onclick="this.parentElement.remove()">&times;</button>
+  </div>
+  {% endfor %}
+
+</div>{# /od-wrap #}
+{% endblock %}

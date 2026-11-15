@@ -1,0 +1,369 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/search-results.css' %}">
+{% endblock %}
+
+{% block content %}
+<main data-search-results-page="product">
+
+  <!-- ==========================================================================
+       TOP SEARCH BAR (Figma Faithful)
+       ========================================================================== -->
+  <section class="search-top-bar">
+    <div class="search-top-bar__inner">
+      <!-- 3 Search Tabs -->
+      <div class="search-top-tabs" role="tablist" aria-label="Search mode">
+        <a href="/?q={{ raw_query|urlencode }}" class="search-top-tab" role="tab" aria-selected="false">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M5.74277 4.00731C5.84405 4.0009 6.00308 3.97859 6.07053 4.06597C6.27021 4.32465 6.32936 4.68725 6.44507 4.98358C6.55135 5.25751 6.6534 5.56133 6.77054 5.82818C7.40168 7.26606 8.39555 8.35807 9.80756 9.01601C10.1194 9.16133 10.4725 9.29188 10.796 9.42211C11.1588 9.56816 11.4626 9.60045 11.7738 9.86706C11.7709 9.95081 11.7761 10.1201 11.7025 10.1693C11.1803 10.5176 10.4932 10.638 9.93306 10.9163C9.48149 11.1407 8.98441 11.4304 8.57732 11.7328C7.55987 12.4887 6.91058 13.6877 6.4783 14.8688C6.30792 15.337 6.30147 15.5697 6.01785 15.9905C5.95794 15.9977 5.7829 16.0158 5.74777 15.9691C5.51276 15.6388 5.4033 15.2201 5.26953 14.8388C5.01993 14.1274 4.72253 13.5476 4.30868 12.9227C3.54262 11.7659 2.33606 11.0826 1.08205 10.6026C0.695836 10.4548 0.352288 10.3694 0.00213056 10.1355C-0.00880907 9.83684 0.0129084 9.79002 0.297303 9.65688C0.515862 9.55455 0.76397 9.48807 0.990451 9.39942C1.50961 9.1962 2.02251 9.0116 2.49207 8.69878C2.80973 8.4952 3.10999 8.34157 3.39593 8.07525C4.00743 7.51417 4.51114 6.8419 4.88129 6.0928C5.00258 5.84451 5.12071 5.50682 5.23039 5.25498C5.32044 5.0482 5.59724 4.10088 5.74277 4.00731Z" fill="currentColor"/>
+            <path d="M12.1922 0C12.5836 0.040581 12.515 0.324487 12.6424 0.638609C12.8526 1.15714 13.107 1.69238 13.4416 2.14237C13.8884 2.74331 14.6871 3.13291 15.3544 3.4248C15.6324 3.54692 15.9895 3.50412 15.9995 3.86813C15.9428 3.98435 15.6778 4.01182 15.5621 4.06584C14.9627 4.34566 14.4539 4.51516 13.9294 4.94475C13.3327 5.4335 13.0285 6.01573 12.718 6.71219C12.6381 6.89148 12.5204 7.43459 12.4197 7.52711C12.2839 7.55678 12.199 7.60677 12.146 7.45117C11.9909 7.01357 11.7859 6.55201 11.589 6.13538C11.1487 5.20393 10.3272 4.57241 9.39266 4.21946C9.10924 4.1124 8.90121 3.99846 8.59668 3.91305C8.60855 3.8148 8.63733 3.71166 8.66139 3.61511C10.8831 2.81639 11.389 2.20915 12.1922 0Z" fill="currentColor"/>
+          </svg>
+          <span>Ai Easy Search</span>
+        </a>
+
+        <a href="{% url 'search-product' %}?q={{ raw_query|urlencode }}" class="search-top-tab is-active" role="tab" aria-selected="true">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M1 16V0H2.55556V1.45455H13.4444V0H15V16H13.4444V14.5455H2.55556V16H1ZM2.55556 7.27273H4.11111V4.36364H8.77778V7.27273H13.4444V2.90909H2.55556V7.27273ZM2.55556 13.0909H7.22222V10.1818H11.8889V13.0909H13.4444V8.72727H2.55556V13.0909ZM5.66667 7.27273H7.22222V5.81818H5.66667V7.27273ZM8.77778 13.0909H10.3333V11.6364H8.77778V13.0909Z" fill="currentColor"/>
+          </svg>
+          <span>Search by Product</span>
+        </a>
+
+        <a href="{% url 'search-lab' %}?q={{ raw_query|urlencode }}" class="search-top-tab" role="tab" aria-selected="false">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M2 15V13.4211H6.28571V11.8421C5.1 11.8421 4.08929 11.4572 3.25357 10.6875C2.41786 9.91776 2 8.98684 2 7.89474C2 7.09211 2.23929 6.36184 2.71786 5.70395C3.19643 5.04605 3.84286 4.56579 4.65714 4.26316C4.77143 3.81579 5.025 3.45395 5.41786 3.17763C5.81071 2.90132 6.25714 2.76316 6.75714 2.76316L6.28571 1.53947L7.1 1.26316L6.8 0.552632L8.42857 0L8.68571 0.75L9.5 0.473684L11.8571 6.39474L11.0429 6.67105L11.3429 7.42105L9.71429 7.97368L9.45714 7.22368L8.64286 7.5L8.12857 6.19737C7.91429 6.38158 7.66786 6.51974 7.38929 6.61184C7.11071 6.70395 6.82857 6.73684 6.54286 6.71053C6.22857 6.68421 5.93571 6.5954 5.66429 6.44408C5.39286 6.29276 5.15714 6.10526 4.95714 5.88158C4.57143 6.09211 4.26786 6.375 4.04643 6.73026C3.825 7.08553 3.71429 7.47368 3.71429 7.89474C3.71429 8.55263 3.96429 9.11184 4.46429 9.57237C4.96429 10.0329 5.57143 10.2632 6.28571 10.2632H13.1429V11.8421H8.85714V13.4211H14V15H2ZM9.41429 5.96053L10.1857 5.68421L8.72857 1.97368L7.91429 2.25L9.41429 5.96053ZM7.325 5.29934C7.48929 5.14803 7.57143 4.96053 7.57143 4.73684C7.57143 4.51316 7.48929 4.32566 7.325 4.17434C7.16071 4.02303 6.95714 3.94737 6.71429 3.94737C6.47143 3.94737 6.26786 4.02303 6.10357 4.17434C5.93929 4.32566 5.85714 4.51316 5.85714 4.73684C5.85714 4.96053 5.93929 5.14803 6.10357 5.29934C6.26786 5.45066 6.47143 5.52632 6.71429 5.52632C6.95714 5.52632 7.16071 5.45066 7.325 5.29934Z" fill="currentColor"/>
+          </svg>
+          <span>Search by Lab</span>
+        </a>
+      </div>
+
+      <!-- Search Input Box -->
+      <div class="search-box-card">
+        <label for="topSearchInput" class="search-box-card__label">YOUR PRODUCT OR MATERIAL</label>
+        <div class="search-box-card__row">
+          <input type="text" class="search-box-card__input" id="topSearchInput"
+                 value="{{ query }}"
+                 placeholder="e.g. HDPE Woven Sacks, PVC pipes, drinking water..."
+                 autocomplete="off" role="combobox" aria-autocomplete="list">
+          <button type="button" class="search-box-card__btn" id="topSearchBtn" aria-label="Search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+        </div>
+        <div class="search-autocomplete-dropdown" id="topSearchDropdown" hidden role="listbox"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       MAIN TWO-COLUMN LAYOUT: Sidebar (NARROW BY) + Results
+       ========================================================================== -->
+  <section class="search-main-layout">
+    <div class="container search-layout-grid">
+
+      <!-- LEFT SIDEBAR: NARROW BY -->
+      <aside class="search-sidebar" aria-label="Filters">
+        <h3 class="search-sidebar__title">NARROW BY</h3>
+
+        <!-- Filter 1: Country -->
+        <div class="sidebar-filter-group">
+          <h4 class="sidebar-filter-group__header">Country</h4>
+          <div class="sidebar-filter-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="countryFilterInput" placeholder="Type to filter..." autocomplete="off">
+          </div>
+          <div class="sidebar-checkbox-list">
+            <label class="sidebar-checkbox-item" data-country-item data-country-name="India">
+              <input type="checkbox" data-filter-type="country" value="india">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">India</span>
+              </div>
+              <span class="sidebar-checkbox-count">{{ country_counts.india|default:"0" }}</span>
+            </label>
+
+            <label class="sidebar-checkbox-item" data-country-item data-country-name="United States">
+              <input type="checkbox" data-filter-type="country" value="united states">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">United States</span>
+              </div>
+              <span class="sidebar-checkbox-count">{{ country_counts.usa|default:"0" }}</span>
+            </label>
+
+            <label class="sidebar-checkbox-item" data-country-item data-country-name="Germany">
+              <input type="checkbox" data-filter-type="country" value="germany">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">Germany</span>
+              </div>
+              <span class="sidebar-checkbox-count">{{ country_counts.germany|default:"0" }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Filter 2: Accreditation -->
+        <div class="sidebar-filter-group">
+          <h4 class="sidebar-filter-group__header">Accreditation</h4>
+          <div class="sidebar-checkbox-list">
+            <label class="sidebar-checkbox-item">
+              <input type="checkbox" data-filter-type="accreditation" value="nabl">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">NABL Accredited</span>
+              </div>
+            </label>
+
+            <label class="sidebar-checkbox-item">
+              <input type="checkbox" data-filter-type="accreditation" value="iso/iec 17025">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">ISO/IEC 17025</span>
+              </div>
+            </label>
+
+            <label class="sidebar-checkbox-item">
+              <input type="checkbox" data-filter-type="accreditation" value="bis">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">BIS Recognized</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Filter 3: Category -->
+        <div class="sidebar-filter-group">
+          <h4 class="sidebar-filter-group__header">Category</h4>
+          <div class="sidebar-checkbox-list">
+            <label class="sidebar-checkbox-item">
+              <input type="checkbox" data-filter-type="category" value="water">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">Water &amp; Environmental</span>
+              </div>
+              <span class="sidebar-checkbox-count">{{ category_counts.water|default:"0" }}</span>
+            </label>
+
+            <label class="sidebar-checkbox-item">
+              <input type="checkbox" data-filter-type="category" value="product">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">Product Testing</span>
+              </div>
+              <span class="sidebar-checkbox-count">{{ category_counts.product|default:"0" }}</span>
+            </label>
+
+            <label class="sidebar-checkbox-item">
+              <input type="checkbox" data-filter-type="category" value="pharma">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">Pharma &amp; Clinical</span>
+              </div>
+              <span class="sidebar-checkbox-count">{{ category_counts.pharma|default:"0" }}</span>
+            </label>
+
+            <label class="sidebar-checkbox-item">
+              <input type="checkbox" data-filter-type="category" value="food">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">Food Testing</span>
+              </div>
+              <span class="sidebar-checkbox-count">{{ category_counts.food|default:"0" }}</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Filter 4: Lab Type -->
+        <div class="sidebar-filter-group">
+          <h4 class="sidebar-filter-group__header">Lab Type</h4>
+          <div class="sidebar-checkbox-list">
+            <label class="sidebar-checkbox-item">
+              <input type="checkbox" data-filter-type="lab_type" value="connected">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">Connected Lab (VistaERP)</span>
+              </div>
+              <span class="sidebar-checkbox-count">{{ lab_type_counts.connected|default:"0" }}</span>
+            </label>
+
+            <label class="sidebar-checkbox-item">
+              <input type="checkbox" data-filter-type="lab_type" value="partner">
+              <div class="sidebar-checkbox-left">
+                <span class="sidebar-checkbox-custom">
+                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                </span>
+                <span class="sidebar-checkbox-label">Verified Partner Lab</span>
+              </div>
+              <span class="sidebar-checkbox-count">{{ lab_type_counts.partner|default:"0" }}</span>
+            </label>
+          </div>
+        </div>
+
+        <button type="button" class="sidebar-reset-btn" id="resetFiltersBtn">Reset all filters</button>
+      </aside>
+
+      <!-- RIGHT RESULTS COLUMN: Product Lab Cards -->
+      <section class="search-results-content">
+        <!-- Results Header -->
+        <div class="search-results-header">
+          <h1 class="search-results-title">
+            {% if query %}
+              Found <span id="resultsCountNumber">{{ count }}</span> labs testing &ldquo;<span class="query-highlight">{{ query }}</span>&rdquo;
+            {% else %}
+              Found <span id="resultsCountNumber">{{ count }}</span> certified laboratories
+            {% endif %}
+          </h1>
+          <p class="search-results-subtitle">Filter by specific testing parameters on the left to narrow down your results.</p>
+        </div>
+
+        <!-- Cards List -->
+        <div class="product-cards-list" id="productCardsContainer">
+          {% for lab in results %}
+          <article class="product-lab-card"
+                   data-lab-card
+                   data-country="{{ lab.country|default:'India' }}"
+                   data-accreditations="{% for a in lab.accreditations %}{{ a }} {% endfor %}"
+                   data-categories="product testing plastics polymer"
+                   data-lab-type="{{ lab.lab_type|default:'partner' }}">
+
+            <!-- Lab Header -->
+            <div class="product-lab-card__header">
+              <div class="product-lab-card__logo-wrap">
+                {% if lab.logo %}
+                <img src="{{ lab.logo }}" alt="{{ lab.name }}" class="product-lab-card__logo-img" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <span class="product-lab-card__logo-fallback" style="display:none;">{{ lab.name|slice:":2"|upper }}</span>
+                {% else %}
+                <span class="product-lab-card__logo-fallback">{{ lab.name|slice:":2"|upper }}</span>
+                {% endif %}
+              </div>
+
+              <div class="product-lab-card__info">
+                <div class="product-lab-card__top-line">
+                  <h2 class="product-lab-card__title">{{ lab.name }}</h2>
+
+                  {% if lab.is_vista %}
+                  <div class="badge-vista">
+                    <span>Powered by <strong>VISTAERP</strong></span>
+                    <img src="{% static 'images/vistaerp_logo.svg' %}" alt="VISTAERP" width="12" height="12">
+                  </div>
+                  {% endif %}
+
+                  <div class="product-lab-card__badges-right">
+                    {% if lab.rating %}
+                    <div class="product-lab-card__rating">
+                      <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                      <span>{{ lab.rating }}</span>
+                      <span class="product-lab-card__reviews">({{ lab.reviews_count }})</span>
+                    </div>
+                    {% endif %}
+
+                    {% for a in lab.accreditations %}
+                    <span class="accred-tag">{{ a }}</span>
+                    {% endfor %}
+                  </div>
+                </div>
+
+                <p class="product-lab-card__location">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span>{{ lab.location }}</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- Relevant Accredited Tests -->
+            {% if lab.tests %}
+            <div class="product-lab-card__tests">
+              <h3 class="product-lab-card__tests-label">RELEVANT ACCREDITED TESTS</h3>
+              <div class="product-lab-card__tests-list">
+                {% for test in lab.tests %}
+                <div class="product-lab-test-item">
+                  <div class="product-lab-test-item__check" aria-hidden="true">
+                    <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
+                  </div>
+                  <div class="product-lab-test-item__content">
+                    <h4 class="product-lab-test-item__name">{{ test.title }}</h4>
+                    <p class="product-lab-test-item__standard">{{ test.standard }}</p>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Actions Row -->
+            <div class="product-lab-card__actions">
+              <a href="/enquiry_now?lab_id={{ lab.id }}&title={{ query|urlencode }}" class="btn-request-quote">Request Quote</a>
+              <a href="{% if lab.url %}{{ lab.url }}{% else %}/lab-detail/{{ lab.id }}/{% endif %}" class="btn-view-profile">View Full Profile</a>
+            </div>
+
+          </article>
+          {% endfor %}
+        </div>
+
+        <!-- Empty State (shown if all cards filtered out or no results) -->
+        <div class="search-empty-state" id="searchEmptyState" {% if results %}hidden{% endif %}>
+          <svg class="search-empty-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+          </svg>
+          <h3 class="search-empty-state__title">No laboratories found</h3>
+          <p class="search-empty-state__desc">
+            {% if query %}
+              No laboratories match your search for &ldquo;{{ query }}&rdquo;. Try searching for another product or standard.
+            {% else %}
+              No laboratories match your current filter selections. Try clearing some filters.
+            {% endif %}
+          </p>
+          <button type="button" class="btn-request-quote" onclick="document.getElementById('resetFiltersBtn').click()">Reset Filters</button>
+        </div>
+
+      </section>
+
+    </div>
+  </section>
+
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.HOME_SEARCH = {
+    productUrl: "{% url 'home-product-search' %}",
+    labUrl: "{% url 'home-lab-search' %}"
+  };
+</script>
+<script src="{% static 'js/search-results.js' %}"></script>
+{% endblock %}

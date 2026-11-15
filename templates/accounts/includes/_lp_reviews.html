@@ -1,0 +1,29 @@
+
+<div class="lp-head"><div><h2 style="margin:0;">Reviews</h2><p class="lp-muted">What customers say after testing with you.</p></div></div>
+<div class="lp-split">
+  <div class="lp-card" style="text-align:center;">
+    <div style="font-size:48px;font-weight:800;color:#0f172a;">{{ overall_avg|default:"0.0" }}</div>
+    <p class="lp-muted">Based on {{ total_count }} review{{ total_count|pluralize }}</p>
+    {% for cat in category_averages %}
+      <div class="lp-step"><span>{{ cat.name }}</span><strong>{{ cat.avg_score }}</strong></div>
+    {% endfor %}
+  </div>
+  <div>
+    {% for review in reviews %}
+      <article class="lp-card" style="margin-bottom:12px;">
+        <div class="lp-name">{{ review.title|default:"Review" }}</div>
+        <div class="lp-sub">{% if review.is_anonymous %}Anonymous{% else %}{{ review.user.get_full_name|default:review.user.email }}{% endif %} · {{ review.overall_rating }}★ · {{ review.created_at|date:"M d, Y" }}</div>
+        <p>{{ review.summary }}</p>
+        {% if review.lab_reply %}<p class="lp-muted"><strong>Your reply:</strong> {{ review.lab_reply }}</p>{% endif %}
+        <form method="post" action="{% url 'reply_lab_review' %}">
+          {% csrf_token %}
+          <input type="hidden" name="review_id" value="{{ review.pk }}">
+          <textarea class="lp-textarea" name="reply_message" rows="2" placeholder="Reply to this review">{{ review.lab_reply }}</textarea>
+          <button class="lp-btn" style="margin-top:8px;" type="submit">Publish reply</button>
+        </form>
+      </article>
+    {% empty %}
+      <div class="lp-card"><p class="lp-muted">No approved reviews yet.</p></div>
+    {% endfor %}
+  </div>
+</div>

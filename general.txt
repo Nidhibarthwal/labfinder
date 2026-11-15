@@ -1,0 +1,6 @@
+Home page Search by product section - 
+Here search by product will be search from scope (BranchItem) and services(ProductService).
+provide auto search
+
+Home page Search by lab section - 
+here user will search by lab name. provide auto search.

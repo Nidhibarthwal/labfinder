@@ -1,0 +1,33 @@
+discipline_name,discipline_code,department_name,department_code,department_type
+Biological,BIO,Clinical Pathology,CP,lab
+Biological,BIO,Biochemistry,BC,lab
+Biological,BIO,Hematology,HEM,lab
+Biological,BIO,Microbiology,MIC,lab
+Biological,BIO,Molecular Pathology,MP,lab
+Biological,BIO,Serology & Immunology,SER,lab
+Biological,BIO,Histopathology & Cytology,HC,lab
+Chemical,CHEM,Water & Wastewater Testing,WWT,lab
+Chemical,CHEM,Food & Agricultural Products,FAP,lab
+Chemical,CHEM,Metals, Alloys & Ores,MAO,lab
+Chemical,CHEM,Petroleum, Lubricants & Fuels,PLF,lab
+Chemical,CHEM,Cosmetics & Drugs / Pharmaceuticals,CDP,lab
+Chemical,CHEM,Paints, Varnishes & Chemicals,PVC,lab
+Mechanical,MECH,Metallurgy & Destructive Testing,MDT,lab
+Mechanical,MECH,Building & Construction Materials,BCM,lab
+Mechanical,MECH,Rubber, Plastics & Polymers,RPP,lab
+Mechanical,MECH,Textiles, Yarns & Fabrics,TYF,lab
+Mechanical,MECH,Packaging & Paper Testing,PPT,lab
+Electrical,ELEC,Electrical Appliances & Safety Testing,EAS,lab
+Electrical,ELEC,Cables, Wires & Conductors,CWC,lab
+Electrical,ELEC,Transformers & Switchgears,TS,lab
+Electrical,ELEC,Electronic Components & EMC Testing,ECE,lab
+Non-Destructive (NDT),NDT,Ultrasonic Testing (UT),UT,lab
+Non-Destructive (NDT),NDT,Radiographic Testing (RT),RT,lab
+Non-Destructive (NDT),NDT,Magnetic Particle Testing (MPT),MPT,lab
+Non-Destructive (NDT),NDT,Liquid Penetrant Testing (LPT),LPT,lab
+Radiological,RAD,Diagnostic Radiology QA Testing,DRQ,lab
+Radiological,RAD,Radiation Safety & Dosimetry,RSD,lab
+Environmental,ENV,Ambient Air Quality Monitoring,AAQ,lab
+Environmental,ENV,Stack Emission Testing,SET,lab
+Environmental,ENV,Noise Level & Illumination Testing,NLI,lab
+Environmental,ENV,Soil & Sludge Analysis,SSA,lab

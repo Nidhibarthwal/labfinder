@@ -1,0 +1,149 @@
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% block meta_data %}
+        <title>LabFinder 360 | Find Testing Labs & Services</title>
+        <meta name="description" content="Find trusted laboratories and testing services with LabFinder 360. Explore labs, testing facilities, and services all in one convenient platform." />
+        <meta name="keywords" content="LabFinder 360, testing labs, laboratories, lab testing services, laboratory services, diagnostic labs" />
+        <meta name="robots" content="index, follow" />
+
+        <meta property="og:title" content="LabFinder 360 | Find Testing Labs & Services" />
+        <meta property="og:description" content="Find trusted laboratories and testing services with LabFinder 360. Explore labs, testing facilities, and services all in one convenient platform." />
+    {% endblock %}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="{% static 'images/logo.svg' %}" />
+
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'css/customer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/lead.css' %}">
+    <link rel="stylesheet" href="{% static 'css/lab-portal.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="auth-page">
+    <!-- Header -->
+    {% block header %}
+    <!-- <header class="header header--auth">
+        <div class="container header__inner">
+            <a href="/" class="header__logo" aria-label="LabFinder 360 Home">
+                <img src="{% static 'images/logo.svg' %}" alt="LabFinder 360" class="header__logo-img" width="180"
+                    height="52">
+            </a>
+        </div>
+    </header> -->
+    {% include 'header.html' %}   
+    {% endblock %}
+
+    <!-- Main Auth Content -->
+
+    {% block content %}
+        
+    {% endblock %}
+
+    <!-- Footer Section -->
+    {% block footer %}
+    <footer class="footer footer--auth">
+        <div class="container">
+            <!-- Trust Value Props Bar -->
+            <div class="footer__value-props">
+                <div class="footer__prop-item">
+                    <img src="{% static 'images/local_police.svg' %}" alt="" class="footer__prop-icon" width="42"
+                        height="42" loading="lazy" decoding="async">
+                    <div class="footer__prop-text">
+                        <h4 class="footer__prop-title">Accreditation verified</h4>
+                        <p class="footer__prop-desc">Checked directly with issuing bodies</p>
+                    </div>
+                </div>
+
+                <div class="footer__prop-item">
+                    <img src="{% static 'images/key_vertical.svg' %}" alt="" class="footer__prop-icon" width="42"
+                        height="42" loading="lazy" decoding="async">
+                    <div class="footer__prop-text">
+                        <h4 class="footer__prop-title">Escrow-protected payments</h4>
+                        <p class="footer__prop-desc">Released only on approval</p>
+                    </div>
+                </div>
+
+                <div class="footer__prop-item">
+                    <img src="{% static 'images/fingerprint.svg' %}" alt="" class="footer__prop-icon" width="42"
+                        height="42" loading="lazy" decoding="async">
+                    <div class="footer__prop-text">
+                        <h4 class="footer__prop-title">Your data stays private</h4>
+                        <p class="footer__prop-desc">Labs never see competing quotes</p>
+                    </div>
+                </div>
+
+                <div class="footer__prop-item">
+                    <img src="{% static 'images/add_location.svg' %}" alt="" class="footer__prop-icon" width="42"
+                        height="42" loading="lazy" decoding="async">
+                    <div class="footer__prop-text">
+                        <h4 class="footer__prop-title">Optional sample pickup</h4>
+                        <p class="footer__prop-desc">Courier collection on request</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Legal Bar (Simplified Layout) -->
+            <div class="footer__legal-bar">
+                <div class="footer__legal-brand">
+                    <a href="/" class="footer__logo" aria-label="LabFinder 360 Home">
+                        <img src="{% static 'images/logo.svg' %}" alt="LabFinder 360" class="footer__logo-img"
+                            width="180" height="52" loading="lazy" decoding="async">
+                    </a>
+                </div>
+
+                <div class="footer__legal-links">
+                    <a href="#">Legal Notice</a>
+                    <span class="footer__bullet">•</span>
+                    <a href="#">Product Listing Policy</a>
+                    <span class="footer__bullet">•</span>
+                    <a href="#">Intellectual Property Protection</a>
+                    <span class="footer__bullet">•</span>
+                    <a href="#">Privacy Policy</a>
+                    <span class="footer__bullet">•</span>
+                    <a href="#">Terms of Use</a>
+                    <span class="footer__bullet">•</span>
+                    <a href="#">Integrity Compliance</a>
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="footer__divider"></div>
+
+            <!-- Bottom Copyright & Social -->
+            <div class="footer__bottom">
+                <p class="footer__copyright">© 2026 LabFinder360. All rights reserved.</p>
+                <div class="footer__socials">
+                    <a href="https://linkedin.com/company/labfinder360" target="_blank"
+                        rel="noopener noreferrer">LinkedIn</a>
+                    <a href="https://twitter.com/labfinder360" target="_blank" rel="noopener noreferrer">Twitter</a>
+                    <a href="https://instagram.com/labfinder360" target="_blank" rel="noopener noreferrer">Instagram</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    {% endblock %}
+
+
+    {% block script %}
+    <!-- Scripts -->
+    <script src="{% static 'js/auth.js' %}"></script>
+
+    {% endblock %}
+
+    {% block extra_js %}
+
+    {% endblock %}
+{% include "includes/_auth_modal.html" %}
+    {{ request.user.is_authenticated|json_script:"user-authenticated-data" }}
+    <script src="{% static 'js/auth-modal.js' %}"></script>
+    </body>
+
+</html>

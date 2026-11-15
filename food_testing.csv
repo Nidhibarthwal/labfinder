@@ -1,0 +1,36 @@
+name	description	method	unit	test_type
+Moisture	Determination of moisture content in food	Applicable IS/AOAC method	%	Food Testing
+Ash	Determination of total mineral residue in food	Applicable IS/AOAC method	%	Food Testing
+Protein	Determination of protein content in food	Applicable IS/AOAC method	%	Food Testing
+Total Fat	Determination of total fat content in food	Applicable IS/AOAC method	%	Food Testing
+Crude Fibre	Determination of crude fibre content	Applicable IS/AOAC method	%	Food Testing
+Carbohydrates	Determination of carbohydrate content	Applicable IS/AOAC method	%	Food Testing
+Energy Value	Calculation or determination of food energy	Applicable nutrition calculation method	kcal/100 g	Food Testing
+Total Sugar	Determination of total sugars in food	Applicable IS/AOAC method	g/100 g	Food Testing
+Reducing Sugar	Determination of reducing sugars	Applicable IS/AOAC method	%	Food Testing
+Dietary Fibre	Determination of dietary fibre content	Applicable IS/AOAC method	g/100 g	Food Testing
+Sodium	Determination of sodium content	Applicable IS/AOAC method	mg/100 g	Food Testing
+Calcium	Determination of calcium content	Applicable IS/AOAC method	mg/100 g	Food Testing
+Iron	Determination of iron content	Applicable IS/AOAC method	mg/100 g	Food Testing
+pH	Measurement of acidity or alkalinity of food	Applicable IS/AOAC method	pH units	Food Testing
+Titratable Acidity	Determination of total titratable acidity	Applicable IS/AOAC method	%	Food Testing
+Total Plate Count	Enumeration of viable aerobic microorganisms	Applicable ISO microbiological method	CFU/g	Food Testing
+Yeast and Mould	Enumeration of yeast and mould in food	Applicable ISO microbiological method	CFU/g	Food Testing
+Total Coliforms	Detection or enumeration of coliform bacteria	Applicable ISO microbiological method	CFU/g	Food Testing
+E. coli	Detection or enumeration of Escherichia coli	Applicable ISO microbiological method	Present/Absent or CFU/g	Food Testing
+Salmonella	Detection of Salmonella in food	Applicable ISO microbiological method	Present/Absent per specified sample	Food Testing
+Staphylococcus aureus	Detection or enumeration of Staphylococcus aureus	Applicable ISO microbiological method	CFU/g	Food Testing
+Listeria monocytogenes	Detection of Listeria monocytogenes	Applicable ISO microbiological method	Present/Absent per specified sample	Food Testing
+Aflatoxin B1	Determination of aflatoxin B1 contamination	Applicable IS/AOAC method	µg/kg	Food Testing
+Total Aflatoxins	Determination of total aflatoxin contamination	Applicable IS/AOAC method	µg/kg	Food Testing
+Lead	Determination of lead contamination in food	Applicable IS/AOAC method	mg/kg	Food Testing
+Arsenic	Determination of arsenic in food	Applicable IS/AOAC method	mg/kg	Food Testing
+Cadmium	Determination of cadmium in food	Applicable IS/AOAC method	mg/kg	Food Testing
+Mercury	Determination of mercury in food	Applicable IS/AOAC method	mg/kg	Food Testing
+Pesticide Residues	Determination of pesticide residues in food	Applicable validated IS/AOAC method	mg/kg	Food Testing
+Benzoic Acid	Determination of benzoic acid preservative	Applicable IS/AOAC method	mg/kg	Food Testing
+Sorbic Acid	Determination of sorbic acid preservative	Applicable IS/AOAC method	mg/kg	Food Testing
+Peroxide Value	Assessment of primary oxidation in fats and oils	Applicable IS/AOAC method	meq O2/kg	Food Testing
+Acid Value	Measurement of free fatty acids in fats and oils	Applicable IS/AOAC method	mg KOH/g	Food Testing
+Gluten	Determination of gluten content in applicable foods	Applicable validated method	mg/kg	Food Testing
+Allergen Detection	Detection of specified food allergens	Applicable validated method	Qualitative or mg/kg	Food Testing

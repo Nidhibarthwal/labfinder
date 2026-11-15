@@ -1,0 +1,73 @@
+{% extends 'accounts/accounts_base.html' %}
+{% load static %}
+{% block meta_data %}
+    <title>Enquiry Submitted | LabFinder 360</title>
+{% endblock %}
+
+{% block content %}
+
+
+    <div class="success-card">
+        <div class="icon-circle">✓</div>
+        <h1>Enquiry Submitted!</h1>
+        <p class="subtitle">Thank you for submitting your testing requirements. The laboratory team will review and connect with you shortly.</p>
+
+        <div class="summary-box">
+            {% if enquiry.lab %}
+            <div class="summary-row">
+                <span class="summary-label">Laboratory</span>
+                <span class="summary-value">{{ enquiry.lab.lab_name }}</span>
+            </div>
+            {% else %}
+            <div class="summary-row">
+                <span class="summary-label">Quotation Scope</span>
+                <span class="summary-value">All Accredited Labs</span>
+            </div>
+            {% endif %}
+
+            <div class="summary-row">
+                <span class="summary-label">Product / Material</span>
+                <span class="summary-value">{{ enquiry.product_name }}</span>
+            </div>
+
+            {% if enquiry.user %}
+            <div class="summary-row">
+                <span class="summary-label">Submitted by</span>
+                <span class="summary-value">{{ enquiry.contact_name|default:enquiry.user.get_username }} (LinkedIn)</span>
+            </div>
+            {% endif %}
+
+            {% if enquiry.email %}
+            <div class="summary-row">
+                <span class="summary-label">Contact Email</span>
+                <span class="summary-value">{{ enquiry.email }}</span>
+            </div>
+            {% endif %}
+
+            {% if enquiry.mobile_number %}
+            <div class="summary-row">
+                <span class="summary-label">Contact Phone</span>
+                <span class="summary-value">{{ enquiry.mobile_number }}</span>
+            </div>
+            {% endif %}
+
+            <div class="summary-row">
+                <span class="summary-label">Quotation Type</span>
+                <span class="summary-value">
+                    {% if enquiry.quotation_type == 'selected_lab' %}
+                    Selected Lab Only
+                    {% else %}
+                    Multiple Relevant Labs
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <a href="{% if enquiry.lab %}/lab-detail/{{ enquiry.lab.pk }}/{% else %}/{% endif %}" class="btn-home">
+            &larr; Return to {% if enquiry.lab %}Laboratory Page{% else %}Home{% endif %}
+        </a>
+    </div>
+{% block extra_js %}
+    <link rel="stylesheet" href="{% static 'css/lead.css' %}">
+{% endblock %}
+{% endblock %}

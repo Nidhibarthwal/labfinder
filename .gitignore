@@ -1,0 +1,8 @@
+venv
+*pyc
+migrations
+config/settings_local.py
+db.sqlite3
+content/
+media/
+.env

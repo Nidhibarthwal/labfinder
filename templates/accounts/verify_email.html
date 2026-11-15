@@ -1,0 +1,280 @@
+{% extends 'accounts/accounts_base.html' %}
+{% load static %}
+
+{% block meta_data %}    
+    <title>Verify Email - LabFinder 360</title>
+    <!-- SEO & Metadata -->
+    <meta name="description" content="Verify your email to manage your laboratory profile on LabFinder 360." />
+    <meta property="og:title" content="Verify Email - LabFinder 360" />
+    <meta property="og:description" content="Verify your email with a 5-digit OTP to access your lab portal." />
+{% endblock %} 
+
+{% block content %}
+    <main class="auth-main">
+        <!-- Background Blur Shapes -->
+        <div class="auth-bg-shape auth-bg-shape--bottom-left" aria-hidden="true">
+            <img src="{% static 'images/verify_bg_bottom_left.svg' %}" alt="" class="auth-bg-img" loading="lazy" decoding="async">
+        </div>
+        <div class="auth-bg-shape auth-bg-shape--top-right" aria-hidden="true">
+            <img src="{% static 'images/verify_bg_top_right.svg' %}" alt="" class="auth-bg-img" loading="lazy" decoding="async">
+        </div>
+
+        <!-- Form Card -->
+        <section class="auth-card" aria-labelledby="verifyTitle">
+            <h1 id="verifyTitle" class="auth-title h2-bold">Verify Email</h1>
+            <p class="auth-subtitle p2-regular">
+                5 Digit OTP has been sent on <span class="auth-target-email">{{ email|default:"your email" }}</span>
+            </p>
+
+            {% if messages %}
+              {% for message in messages %}
+                {% if message.tags == 'error' or message.tags == 'danger' %}
+                <div class="alert alert-danger py-2 mb-3 text-start small" role="alert">
+                  <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ message }}
+                </div>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
+
+            <form class="auth-form" id="verifyOtpForm" method="POST" novalidate>
+                {% csrf_token %}
+
+                <label class="auth-label p4-regular">ENTER OTP*</label>
+
+                <!-- 5-digit OTP Inputs -->
+                <div class="auth-otp-row" role="group" aria-label="5-digit verification code">
+                    <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" class="auth-otp-input p1-regular" title="Digit 1" aria-label="Digit 1" autocomplete="one-time-code" autofocus required>
+                    <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" class="auth-otp-input p1-regular" title="Digit 2" aria-label="Digit 2" required>
+                    <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" class="auth-otp-input p1-regular" title="Digit 3" aria-label="Digit 3" required>
+                    <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" class="auth-otp-input p1-regular" title="Digit 4" aria-label="Digit 4" required>
+                    <input type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" class="auth-otp-input p1-regular" title="Digit 5" aria-label="Digit 5" required>
+                </div>
+
+                <div class="auth-error-message p4-regular" id="otpError" role="alert" aria-live="polite"></div>
+
+                <!-- Resend Timer & Action Link -->
+                <div class="auth-resend-wrap p2-regular" id="resendWrap">
+                    <span id="resendLabel">Resend in </span>
+                    <span class="auth-resend-timer p2-med" id="resendTimer">05:00</span>
+                    <button type="button" id="resendBtn" class="btn btn-link p-0 text-decoration-none p2-med d-none">Resend OTP</button>
+                </div>
+
+                <!-- Action Buttons Row -->
+                <div class="auth-action-row">
+                    <button type="submit" id="verifyOtpBtn" class="auth-btn-otp p2-med">
+                        Verify OTP
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Centered Illustration -->
+        <div class="auth-illustration-wrap auth-illustration-wrap--verify">
+            <img src="{% static 'images/verify-email-illustration.png' %}" alt="OTP verification illustration" class="auth-illustration" width="726" height="258" loading="lazy" decoding="async">
+        </div>
+    </main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const form = document.getElementById("verifyOtpForm");
+    const otpInputs = document.querySelectorAll(".auth-otp-input");
+    const otpError = document.getElementById("otpError");
+    const otpRow = document.querySelector(".auth-otp-row");
+    const verifyBtn = document.getElementById("verifyOtpBtn");
+    const resendTimer = document.getElementById("resendTimer");
+    const resendLabel = document.getElementById("resendLabel");
+    const resendBtn = document.getElementById("resendBtn");
+
+    const COOLDOWN_SECONDS = 300;
+    let timerInterval = null;
+
+    // --- Helper functions for error display ---
+    function showError(message) {
+        if (!otpError) return;
+        otpError.textContent = message;
+        otpError.classList.add("is-visible");
+        if (otpRow) {
+            otpRow.classList.add("auth-otp-row--error");
+        }
+    }
+
+    function clearError() {
+        if (!otpError) return;
+        otpError.textContent = "";
+        otpError.classList.remove("is-visible");
+        if (otpRow) {
+            otpRow.classList.remove("auth-otp-row--error");
+        }
+    }
+
+    // --- 1. Resend Timer with Persisted State (localStorage) ---
+    function formatTime(seconds) {
+        const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
+    function startTimer() {
+        let expiryTime = localStorage.getItem("otpTimerExpiry");
+
+        if (!expiryTime) {
+            expiryTime = Date.now() + COOLDOWN_SECONDS * 1000;
+            localStorage.setItem("otpTimerExpiry", expiryTime);
+        }
+
+        function updateDisplay() {
+            const remaining = Math.ceil((expiryTime - Date.now()) / 1000);
+
+            if (remaining <= 0) {
+                clearInterval(timerInterval);
+                localStorage.removeItem("otpTimerExpiry");
+                
+                // Show Resend Button
+                resendLabel.style.display = "none";
+                resendTimer.style.display = "none";
+                resendBtn.classList.remove("d-none");
+            } else {
+                resendLabel.style.display = "inline";
+                resendTimer.style.display = "inline";
+                resendBtn.classList.add("d-none");
+                resendTimer.textContent = formatTime(remaining);
+            }
+        }
+
+        updateDisplay();
+        timerInterval = setInterval(updateDisplay, 1000);
+    }
+
+    startTimer();
+
+    // --- 2. Resend OTP Button Handler ---
+    resendBtn.addEventListener("click", async function () {
+        clearError();
+        resendBtn.disabled = true;
+        resendBtn.textContent = "Sending...";
+
+        try {
+            const response = await fetch("{% url 'verify_email' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+                },
+                body: new URLSearchParams({ action: "resend" })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // Clear input boxes and focus first
+                otpInputs.forEach(input => input.value = "");
+                if (otpInputs[0]) otpInputs[0].focus();
+
+                // Reset and restart timer
+                clearInterval(timerInterval);
+                localStorage.removeItem("otpTimerExpiry");
+                startTimer();
+
+                resendBtn.textContent = "Resend OTP";
+                resendBtn.disabled = false;
+            } else {
+                showError(data.message || "Unable to resend OTP. Please try again.");
+                resendBtn.disabled = false;
+                resendBtn.textContent = "Resend OTP";
+            }
+        } catch (error) {
+            console.error("Resend OTP error:", error);
+            showError("Unable to resend OTP. Please try again.");
+            resendBtn.disabled = false;
+            resendBtn.textContent = "Resend OTP";
+        }
+    });
+
+        // --- 3. OTP Input Navigation & Paste ---
+    otpInputs.forEach((input, index) => {
+        input.addEventListener("input", function () {
+            clearError();
+            this.value = this.value.replace(/\D/g, "");
+            if (this.value && index < otpInputs.length - 1) {
+                otpInputs[index + 1].focus();
+            }
+        });
+
+        input.addEventListener("keydown", function (event) {
+            if (event.key === "Backspace" && !this.value && index > 0) {
+                otpInputs[index - 1].focus();
+            }
+        });
+
+        input.addEventListener("paste", function (event) {
+            event.preventDefault();
+            clearError();
+            const pastedData = (event.clipboardData || window.clipboardData).getData("text");
+            const otp = pastedData.replace(/\D/g, "").slice(0, otpInputs.length);
+
+            otp.split("").forEach((digit, i) => {
+                if (otpInputs[i]) otpInputs[i].value = digit;
+            });
+
+            if (otp.length === otpInputs.length) {
+                otpInputs[otpInputs.length - 1].focus();
+            }
+        });
+    });
+
+    // --- 4. Form Submit Handler ---
+    form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        clearError();
+
+        let otp = Array.from(otpInputs).map(i => i.value.trim()).join("");
+
+        if (otp.length !== 5 || !/^\d{5}$/.test(otp)) {
+            showError("Please enter a valid 5-digit OTP.");
+            return;
+        }
+
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = "Verifying...";
+
+        try {
+            const response = await fetch("{% url 'verify_email' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+                },
+                body: new URLSearchParams({ otp: otp })
+            });
+
+            if (response.redirected) {
+                localStorage.removeItem("otpTimerExpiry");
+                window.location.href = response.url;
+                return;
+            }
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                showError(data.message || "Invalid OTP. Please try again.");
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = "Verify OTP";
+                return;
+            }
+
+            localStorage.removeItem("otpTimerExpiry");
+            window.location.href = data.redirect_url;
+
+        } catch (error) {
+            console.error("OTP verification error:", error);
+            showError("Something went wrong. Please try again.");
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = "Verify OTP";
+        }
+    });
+});
+</script>
+{% endblock %}

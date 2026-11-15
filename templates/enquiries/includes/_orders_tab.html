@@ -1,0 +1,33 @@
+<div id="tab-orders" class="dash-tab-content">
+  <div class="leads-page-header">
+    <div class="leads-page-header__left">
+      <h2 class="leads-page-header__title">Orders</h2>
+      <p class="leads-page-header__subtitle">Active testing orders after quotation win.</p>
+    </div>
+  </div>
+  <div class="leads-filter-chips">
+    <button type="button" class="leads-chip {% if active_order_status == 'all' %}leads-chip--active{% endif %}" data-order-status="all">All <span>{{ order_counts.all }}</span></button>
+    <button type="button" class="leads-chip {% if active_order_status == 'in_progress' %}leads-chip--active{% endif %}" data-order-status="in_progress">In Progress <span>{{ order_counts.in_progress }}</span></button>
+    <button type="button" class="leads-chip {% if active_order_status == 'pending_customer_completion' %}leads-chip--active{% endif %}" data-order-status="pending_customer_completion">Awaiting Confirm <span>{{ order_counts.pending_customer_completion }}</span></button>
+    <button type="button" class="leads-chip {% if active_order_status == 'completed' %}leads-chip--active{% endif %}" data-order-status="completed">Completed <span>{{ order_counts.completed }}</span></button>
+    <button type="button" class="leads-chip {% if active_order_status == 'disputed' %}leads-chip--active{% endif %}" data-order-status="disputed">Disputed <span>{{ order_counts.disputed }}</span></button>
+  </div>
+  <section class="leads-table-card">
+    <table class="leads-table">
+      <thead><tr><th>Order</th><th>Test</th><th>Customer</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for o in orders %}
+        <tr style="cursor:pointer;" onclick="window.location='{% url 'order_detail' o.id %}'">
+          <td><strong>#{{ o.job_number }}</strong><br><span style="font-size:12px;color:#6B7280;">{{ o.created_at|date:"M d, Y" }}</span></td>
+          <td>{{ o.enquiry.product_name }}</td>
+          <td>{{ o.enquiry.contact_name|default:o.customer }}</td>
+          <td><span class="status-pill">{{ o.get_status_display }}</span></td>
+          <td><a href="{% url 'order_detail' o.id %}" class="lead-action-arrow" onclick="event.stopPropagation();">→</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" style="text-align:center;padding:24px;color:#9CA3AF;">No orders yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</div>
