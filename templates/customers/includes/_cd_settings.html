@@ -1,0 +1,35 @@
+{% load static %}
+
+<div class="cd-section-header">
+  <div>
+    <h2 class="cd-section-title">Settings</h2>
+    <p class="cd-section-subtitle">Account security and notification preferences.</p>
+  </div>
+</div>
+
+<div class="cd-profile-layout">
+  <div class="cd-panel cd-profile-card">
+    <h3 class="cd-panel__title" style="margin-bottom: 16px;">Security</h3>
+    <p class="cd-cell-muted" style="margin-bottom: 20px;">Manage password and login credentials.</p>
+    
+    <a href="/accounts/password/change/" class="cd-btn-secondary">
+      Change Password
+    </a>
+
+    <div class="cd-divider" style="margin: 28px 0;"></div>
+
+    <h3 class="cd-panel__title" style="margin-bottom: 16px;">Notifications</h3>
+    <div class="cd-form-group">
+      <label class="cd-checkbox-label">
+        <input type="checkbox" checked disabled>
+        <span>Email updates when a lab submits a new quotation</span>
+      </label>
+    </div>
+    <div class="cd-form-group">
+      <label class="cd-checkbox-label">
+        <input type="checkbox" checked disabled>
+        <span>Email updates when an order status changes or reports are ready</span>
+      </label>
+    </div>
+  </div>
+</div>

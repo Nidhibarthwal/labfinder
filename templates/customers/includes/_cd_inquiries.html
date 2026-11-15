@@ -1,0 +1,99 @@
+{% load static %}
+
+<div class="cd-section-header">
+  <div>
+    <h2 class="cd-section-title">Inquiries & Quotes</h2>
+    <p class="cd-section-subtitle">Every request you've sent, with the quotes labs have returned.</p>
+  </div>
+  <a href="{% url 'search-lab' %}" class="cd-btn-primary">
+    <span aria-hidden="true">+</span> New enquiry
+  </a>
+</div>
+
+<div class="cd-table-card">
+  <div class="cd-table-responsive">
+    <table class="cd-table">
+      <thead>
+        <tr>
+          <th>Enquiry</th>
+          <th>Tests</th>
+          <th>Samples</th>
+          <th>Budget</th>
+          <th>Needed by</th>
+          <th>Quotes</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for enq in enquiries %}
+          <tr>
+            <td>
+              <div class="cd-cell-main">
+                <span class="cd-cell-bold">ENQ-{{ enq.pk }}</span>
+                <span class="cd-cell-muted">{{ enq.created_at|date:"d M" }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="cd-cell-main">
+                <span class="cd-cell-bold">{{ enq.product_name }}</span>
+                {% if enq.quotation_type == 'multiple_labs' and enq.lab_lead_count > 1 %}
+                  <span class="cd-cell-muted">+{{ enq.lab_lead_count|add:"-1" }} more</span>
+                {% elif enq.lab %}
+                  <span class="cd-cell-muted">{{ enq.lab.lab_name }}</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              <span class="cd-cell-text">{{ enq.sample_count|default:"1" }}</span>
+            </td>
+            <td>
+              <span class="cd-cell-bold">{% if enq.budget %}₹{{ enq.budget }}{% else %}Flexible{% endif %}</span>
+            </td>
+            <td>
+              <span class="cd-cell-text">{{ enq.get_urgency_display|default:"Flexible" }}</span>
+            </td>
+            <td>
+              <span class="cd-cell-text"><strong>{{ enq.quoted_count }}</strong> of {{ enq.lab_lead_count|default:"1" }} labs</span>
+            </td>
+            <td>
+              {% if enq.effective_status == 'quoted' %}
+                <span class="cd-pill cd-pill--quotes">Quotes received</span>
+              {% elif enq.effective_status == 'won' or enq.effective_status == 'converted' %}
+                <span class="cd-pill cd-pill--won">Quote accepted</span>
+              {% elif enq.effective_status == 'contacted' %}
+                <span class="cd-pill cd-pill--pending">Under review</span>
+              {% elif enq.effective_status == 'lost' %}
+                <span class="cd-pill cd-pill--lost">Declined</span>
+              {% else %}
+                <span class="cd-pill cd-pill--pending">Awaiting quotes</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if enq.quoted_count > 0 %}
+                <a href="{% url 'customer_lead_detail' enq.pk %}" class="cd-table-action cd-table-action--blue">
+                  Compare quotes &rsaquo;
+                </a>
+              {% elif enq.effective_status == 'won' or enq.effective_status == 'converted' %}
+                <a href="{% url 'customer_lead_detail' enq.pk %}" class="cd-table-action cd-table-action--blue">
+                  View order &rsaquo;
+                </a>
+              {% else %}
+                <a href="{% url 'customer_lead_detail' enq.pk %}" class="cd-table-action">
+                  View &rsaquo;
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" class="cd-table-empty">
+              <p>No enquiries found.</p>
+              <a href="{% url 'search-lab' %}" class="cd-empty-link">Create a new test enquiry &rarr;</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

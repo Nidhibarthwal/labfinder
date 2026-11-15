@@ -1,0 +1,157 @@
+{% load static %}
+
+<!-- Stat Cards (4 Cards Grid - Exact Figma Dashboard Match) -->
+<section class="cd-stats-grid" aria-label="Customer Metrics Overview">
+  <!-- Card 1: Pending Quotes -->
+  <article class="cd-stat-card">
+    <div class="cd-stat-card__top">
+      <div class="cd-stat-icon cd-stat-icon--green" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M5 3H12L15.5 6.5V16C15.5 16.6 15.1 17 14.5 17H5C4.4 17 4 16.6 4 16V4C4 3.4 4.4 3 5 3Z" stroke="#059669" stroke-width="1.6"/>
+          <path d="M12 3V6.5H15.5" stroke="#059669" stroke-width="1.6"/>
+          <line x1="7" y1="10" x2="13" y2="10" stroke="#059669" stroke-width="1.6" stroke-linecap="round"/>
+          <line x1="7" y1="13" x2="11" y2="13" stroke="#059669" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="cd-stat-value">{{ pending_quotes_count|default:"0" }}</div>
+    <div class="cd-stat-label">Pending Quotes</div>
+  </article>
+
+  <!-- Card 2: Active Tests -->
+  <article class="cd-stat-card">
+    <div class="cd-stat-card__top">
+      <div class="cd-stat-icon cd-stat-icon--amber" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M7 2H13M10 2V6M5.5 17H14.5M10 6L4.5 15C3.8 16.1 4.6 17 5.8 17H14.2C15.4 17 16.2 16.1 15.5 15L10 6Z" stroke="#d97706" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="8" cy="13.5" r="1" fill="#d97706"/>
+          <circle cx="11.5" cy="14" r="0.8" fill="#d97706"/>
+          <circle cx="10" cy="11.5" r="0.8" fill="#d97706"/>
+        </svg>
+      </div>
+    </div>
+    <div class="cd-stat-value">{{ active_tests_count_formatted|default:"00" }}</div>
+    <div class="cd-stat-label">Active Tests</div>
+  </article>
+
+  <!-- Card 3: Completed Reports -->
+  <article class="cd-stat-card">
+    <div class="cd-stat-card__top">
+      <div class="cd-stat-icon cd-stat-icon--blue" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M6 3H14V5H6V3Z" stroke="#0284c7" stroke-width="1.6"/>
+          <path d="M4 4.5C4 3.7 4.7 3 5.5 3H6V5H14V3H14.5C15.3 3 16 3.7 16 4.5V16C16 16.8 15.3 17.5 14.5 17.5H5.5C4.7 17.5 4 16.8 4 16V4.5Z" stroke="#0284c7" stroke-width="1.6"/>
+          <path d="M7 10L9 12L13 8" stroke="#0284c7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+    <div class="cd-stat-value">{{ completed_reports_count|default:"0" }}</div>
+    <div class="cd-stat-label">Completed Reports</div>
+  </article>
+
+  <!-- Card 4: Testing expenditure (YTD) -->
+  <article class="cd-stat-card">
+    <div class="cd-stat-card__top">
+      <div class="cd-stat-icon cd-stat-icon--pink" aria-hidden="true">
+        <span class="cd-rupee-symbol">₹</span>
+      </div>
+    </div>
+    <div class="cd-stat-value">₹{{ testing_expenditure_display|default:"0" }}</div>
+    <div class="cd-stat-label">Testing expenditure (YTD)</div>
+  </article>
+</section>
+
+<!-- Split Content Area: Recent Activity Overview (Left) + Action Required (Right) -->
+<section class="cd-split-grid" aria-label="Customer Activity & Actions">
+  <!-- Left Panel: Recent Activity Overview -->
+  <div class="cd-panel">
+    <div class="cd-panel__header">
+      <div>
+        <h2 class="cd-panel__title">Recent Activity Overview</h2>
+        <p class="cd-panel__subtitle">Ordered by impact</p>
+      </div>
+    </div>
+    <div class="cd-activity-list">
+      {% for act in recent_activities %}
+        <a href="{{ act.url }}" class="cd-activity-row">
+          <div class="cd-activity-main">
+            <h3 class="cd-activity-title">{{ act.title }}</h3>
+            <span class="cd-activity-sub">{{ act.subtitle }}</span>
+          </div>
+          <div class="cd-activity-badge-wrap">
+            <span class="cd-pill cd-pill--{{ act.badge_type }}">{{ act.badge_label }}</span>
+          </div>
+          <div class="cd-activity-meta">
+            <span class="cd-activity-time">{{ act.time_ago }}</span>
+            <span class="cd-activity-chevron" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+          </div>
+        </a>
+      {% empty %}
+        <div class="cd-empty-state">
+          <p class="cd-empty-text">No recent activity yet.</p>
+          <a href="{% url 'search-lab' %}" class="cd-empty-link">Find a Lab to submit your first enquiry &rarr;</a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Right Panel: Action Required -->
+  <div class="cd-panel">
+    <div class="cd-panel__header">
+      <div>
+        <h2 class="cd-panel__title">Action Required</h2>
+        <p class="cd-panel__subtitle">Last 5 days</p>
+      </div>
+    </div>
+    <div class="cd-actions-list">
+      {% for act in actions_required %}
+        <div class="cd-action-row">
+          <div class="cd-action-icon cd-action-icon--{{ act.icon_type }}" aria-hidden="true">
+            {% if act.icon_type == 'quote' %}
+              <!-- Yellow document icon -->
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M5 3H12L15.5 6.5V16C15.5 16.6 15.1 17 14.5 17H5C4.4 17 4 16.6 4 16V4C4 3.4 4.4 3 5 3Z" stroke="#d97706" stroke-width="1.6"/>
+                <path d="M12 3V6.5H15.5" stroke="#d97706" stroke-width="1.6"/>
+                <line x1="7" y1="10" x2="13" y2="10" stroke="#d97706" stroke-width="1.6" stroke-linecap="round"/>
+                <line x1="7" y1="13" x2="11" y2="13" stroke="#d97706" stroke-width="1.6" stroke-linecap="round"/>
+              </svg>
+            {% elif act.icon_type == 'download' %}
+              <!-- Green download arrow icon -->
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M10 3V12M10 12L6.5 8.5M10 12L13.5 8.5" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M4 15.5H16" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            {% else %}
+              <!-- Blue payment/card icon -->
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <rect x="3" y="4.5" width="14" height="11" rx="1.5" stroke="#0284c7" stroke-width="1.6"/>
+                <line x1="3" y1="8" x2="17" y2="8" stroke="#0284c7" stroke-width="1.6"/>
+                <rect x="5.5" y="11" width="3" height="2" rx="0.5" fill="#0284c7"/>
+              </svg>
+            {% endif %}
+          </div>
+          <div class="cd-action-content">
+            <h3 class="cd-action-title">{{ act.title }}</h3>
+            <p class="cd-action-desc">{{ act.description }}</p>
+            <a href="{{ act.url }}" class="cd-action-btn">{{ act.link_text }}</a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="cd-empty-state">
+          <div class="cd-empty-check" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="#10b981" stroke-width="2"/>
+              <path d="M8 12.5L10.5 15L16 9" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <p class="cd-empty-text">No pending actions required.</p>
+          <span class="cd-empty-sub">You're all caught up!</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>

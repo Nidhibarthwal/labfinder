@@ -1,0 +1,48 @@
+{% load static %}
+
+<div class="cd-section-header">
+  <div>
+    <h2 class="cd-section-title">My Profile</h2>
+    <p class="cd-section-subtitle">Manage your personal information, contact email, and preferences.</p>
+  </div>
+</div>
+
+<div class="cd-profile-layout">
+  <div class="cd-panel cd-profile-card">
+    <div class="cd-profile-avatar-wrap">
+      <div class="cd-profile-avatar-large">
+        {{ request.user.first_name|default:request.user.username|make_list|first|upper }}
+      </div>
+      <div>
+        <h3 class="cd-profile-name">{{ request.user.get_full_name|default:request.user.username }}</h3>
+        <p class="cd-profile-email">{{ request.user.email }}</p>
+        <span class="cd-pill cd-pill--quotes">Customer Account</span>
+      </div>
+    </div>
+
+    <form method="POST" action="{% url 'dashboard' %}" class="cd-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_customer_profile">
+
+      <div class="cd-form-row cd-form-row--2col">
+        <div class="cd-form-group">
+          <label class="cd-label" for="profile_first_name">First Name</label>
+          <input type="text" id="profile_first_name" name="first_name" class="cd-input" value="{{ request.user.first_name }}" placeholder="First name">
+        </div>
+        <div class="cd-form-group">
+          <label class="cd-label" for="profile_last_name">Last Name</label>
+          <input type="text" id="profile_last_name" name="last_name" class="cd-input" value="{{ request.user.last_name }}" placeholder="Last name">
+        </div>
+      </div>
+
+      <div class="cd-form-group">
+        <label class="cd-label" for="profile_email">Email Address</label>
+        <input type="email" id="profile_email" name="email" class="cd-input" value="{{ request.user.email }}" placeholder="your@email.com">
+      </div>
+
+      <div class="cd-form-actions">
+        <button type="submit" class="cd-btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>

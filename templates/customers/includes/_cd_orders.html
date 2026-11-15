@@ -1,0 +1,161 @@
+{% load static %}
+
+<div class="cd-section-header">
+  <div>
+    <h2 class="cd-section-title">Orders</h2>
+    <p class="cd-section-subtitle">Track every test from payment to final report in one place.</p>
+  </div>
+</div>
+
+<!-- Orders Metric Cards (3 Cards) -->
+<section class="cd-orders-metrics" aria-label="Orders Status Summary">
+  <div class="cd-stat-card cd-stat-card--horizontal">
+    <div class="cd-stat-icon cd-stat-icon--green" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <path d="M5 3H12L15.5 6.5V16C15.5 16.6 15.1 17 14.5 17H5C4.4 17 4 16.6 4 16V4C4 3.4 4.4 3 5 3Z" stroke="#059669" stroke-width="1.6"/>
+        <path d="M12 3V6.5H15.5" stroke="#059669" stroke-width="1.6"/>
+      </svg>
+    </div>
+    <div>
+      <div class="cd-stat-value cd-stat-value--sm">{{ order_counts.in_progress }}</div>
+      <div class="cd-stat-label">Active orders</div>
+    </div>
+  </div>
+
+  <div class="cd-stat-card cd-stat-card--horizontal">
+    <div class="cd-stat-icon cd-stat-icon--amber" aria-hidden="true">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+        <circle cx="10" cy="10" r="8" stroke="#d97706" stroke-width="1.6"/>
+        <line x1="10" y1="6" x2="10" y2="10.5" stroke="#d97706" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="10" cy="14" r="1" fill="#d97706"/>
+      </svg>
+    </div>
+    <div>
+      <div class="cd-stat-value cd-stat-value--sm">{{ order_counts.action_required|default:"0" }}</div>
+      <div class="cd-stat-label">Need your action</div>
+    </div>
+  </div>
+
+  <div class="cd-stat-card cd-stat-card--horizontal">
+    <div class="cd-stat-icon cd-stat-icon--pink" aria-hidden="true">
+      <span class="cd-rupee-symbol">₹</span>
+    </div>
+    <div>
+      <div class="cd-stat-value cd-stat-value--sm">₹{{ testing_expenditure_display }}</div>
+      <div class="cd-stat-label">Testing expenditure (YTD)</div>
+    </div>
+  </div>
+</section>
+
+<!-- Filter Chips -->
+<div class="cd-chips-row" role="tablist">
+  <a href="?tab=orders&order_status=all" class="cd-chip {% if active_order_status == 'all' or not active_order_status %}cd-chip--active{% endif %}">
+    All orders {{ order_counts.all }}
+  </a>
+  <a href="?tab=orders&order_status=payment" class="cd-chip {% if active_order_status == 'payment' %}cd-chip--active{% endif %}">
+    Payment
+  </a>
+  <a href="?tab=orders&order_status=send_sample" class="cd-chip {% if active_order_status == 'send_sample' %}cd-chip--active{% endif %}">
+    Send sample
+  </a>
+  <a href="?tab=orders&order_status=in_testing" class="cd-chip {% if active_order_status == 'in_testing' %}cd-chip--active{% endif %}">
+    In testing
+  </a>
+  <a href="?tab=orders&order_status=report_ready" class="cd-chip {% if active_order_status == 'report_ready' %}cd-chip--active{% endif %}">
+    Report ready
+  </a>
+  <a href="?tab=orders&order_status=completed" class="cd-chip {% if active_order_status == 'completed' %}cd-chip--active{% endif %}">
+    Completed
+  </a>
+</div>
+
+<!-- Orders Table -->
+<div class="cd-table-card">
+  <div class="cd-table-responsive">
+    <table class="cd-table">
+      <thead>
+        <tr>
+          <th>ORDER</th>
+          <th>TEST</th>
+          <th>LAB</th>
+          <th>AMOUNT</th>
+          <th>PAYMENT</th>
+          <th>STATUS</th>
+          <th>EXPECTED</th>
+          <th>NEXT STEP</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+          <tr>
+            <td>
+              <span class="cd-cell-bold">ORD-{{ o.job_number }}</span>
+            </td>
+            <td>
+              <div class="cd-cell-main">
+                <span class="cd-cell-bold">{{ o.enquiry.product_name|default:"Standard Testing" }}</span>
+                <span class="cd-cell-muted">{{ o.sample_accession_id|default:"Sample" }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="cd-cell-main">
+                <span class="cd-cell-bold">{{ o.lab.lab_name|default:"Partner Laboratory" }}</span>
+                {% if o.lab.lab_city %}
+                  <span class="cd-cell-muted">{{ o.lab.lab_city }}</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              {% if o.lab_lead.quotation.total_amount %}
+                <span class="cd-cell-bold">₹{{ o.lab_lead.quotation.total_amount }}</span>
+              {% else %}
+                <span class="cd-cell-muted">&mdash;</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if o.status == 'completed' %}
+                <span class="cd-payment-badge cd-payment-badge--paid">Paid in full</span>
+              {% elif o.status == 'in_progress' %}
+                <span class="cd-payment-badge cd-payment-badge--partial">Paid advance</span>
+              {% else %}
+                <span class="cd-payment-badge cd-payment-badge--unpaid">Not paid</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="cd-pill cd-pill--{{ o.status }}">{{ o.get_status_display }}</span>
+            </td>
+            <td>
+              <span class="cd-cell-muted">{% if o.completed_at %}{{ o.completed_at|date:"d M" }}{% else %}&mdash;{% endif %}</span>
+            </td>
+            <td>
+              {% if o.status == 'completed' %}
+                <a href="{% url 'order_detail' o.id %}" class="cd-table-action cd-table-action--blue">
+                  Write a review &rsaquo;
+                </a>
+              {% elif o.status == 'pending_customer_completion' %}
+                <a href="{% url 'order_detail' o.id %}" class="cd-table-action cd-table-action--blue">
+                  Approve report &rsaquo;
+                </a>
+              {% elif o.status == 'in_progress' %}
+                <a href="{% url 'order_detail' o.id %}" class="cd-table-action cd-table-action--blue">
+                  Open chat &rsaquo;
+                </a>
+              {% else %}
+                <a href="{% url 'order_detail' o.id %}" class="cd-table-action cd-table-action--blue">
+                  View order &rsaquo;
+                </a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" class="cd-table-empty">
+              <p>No orders in this status.</p>
+              <a href="{% url 'search-lab' %}" class="cd-empty-link">Find a Lab to start a test order &rarr;</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>

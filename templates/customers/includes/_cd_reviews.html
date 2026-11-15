@@ -1,0 +1,46 @@
+{% load static %}
+
+<div class="cd-section-header">
+  <div>
+    <h2 class="cd-section-title">Reviews</h2>
+    <p class="cd-section-subtitle">Reviews and ratings you've submitted for laboratories.</p>
+  </div>
+</div>
+
+<div class="cd-reviews-list">
+  {% for r in user_reviews %}
+    <div class="cd-review-card">
+      <div class="cd-review-card__header">
+        <div class="cd-review-card__lab">
+          <h3 class="cd-review-card__lab-name">{{ r.lab.lab_name }}</h3>
+          <div class="cd-review-card__rating">
+            <span class="cd-stars">★ {{ r.overall_rating }}</span>
+            <span class="cd-review-card__date">· {{ r.created_at|date:"M d, Y" }}</span>
+          </div>
+        </div>
+      </div>
+      {% if r.title %}
+        <h4 class="cd-review-card__title">{{ r.title }}</h4>
+      {% endif %}
+      <p class="cd-review-card__summary">{{ r.summary }}</p>
+      {% if r.lab_reply %}
+        <div class="cd-review-card__reply">
+          <strong>Lab response:</strong>
+          <p>{{ r.lab_reply }}</p>
+        </div>
+      {% endif %}
+    </div>
+  {% empty %}
+    <div class="cd-panel">
+      <div class="cd-empty-state">
+        <div class="cd-empty-check" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 20 20" fill="none">
+            <path d="M10 2L12.5 7.5L18.5 8.2L14 12.3L15.3 18.2L10 15.2L4.7 18.2L6 12.3L1.5 8.2L7.5 7.5L10 2Z" stroke="#cbd5e1" stroke-width="1.6"/>
+          </svg>
+        </div>
+        <p class="cd-empty-text">You have not submitted any reviews yet.</p>
+        <span class="cd-empty-sub">Once your orders are completed, you can rate and review your lab experience.</span>
+      </div>
+    </div>
+  {% endfor %}
+</div>
