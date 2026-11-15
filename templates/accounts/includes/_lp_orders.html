@@ -1,24 +1,3 @@
-<<<<<<< HEAD
-
-<div class="lp-head"><div><h2 style="margin:0;">Orders</h2><p class="lp-muted">Jobs created after a won quotation.</p></div></div>
-<div class="lp-card" style="padding:0;overflow:auto;">
-<table class="lp-table">
-  <thead><tr><th>Order</th><th>Test</th><th>Customer</th><th>Status</th><th></th></tr></thead>
-  <tbody>
-  {% for o in orders %}
-    <tr data-href="{% url 'order_detail' o.id %}">
-      <td class="lp-name">{{ o.job_number }}</td>
-      <td>{{ o.enquiry.product_name }}</td>
-      <td>{{ o.enquiry.contact_name|default:o.customer }}</td>
-      <td><span class="lp-pill in_progress">{{ o.get_status_display }}</span></td>
-      <td>›</td>
-    </tr>
-  {% empty %}
-    <tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;">No orders yet.</td></tr>
-  {% endfor %}
-  </tbody>
-</table>
-=======
 <div class="lp-head">
   <div>
     <h2 class="lp-head__title">Orders</h2>

@@ -18,7 +18,6 @@ from apps.enquiries.models import (
     LabReview,
     Quotation,
     LIMSJobOrder,
-    ReviewCategory,
 )
 
 
@@ -65,7 +64,6 @@ def _annotate_enquiries(queryset):
 def get_customer_dashboard_context(request):
     """
     Build context for Customer Portal (Dashboard, Inquiries & Quotes, Orders, Profile, Reviews, Settings).
-    Faithful to Figma Customer Dashboard screen.
     """
     user = request.user
     base = (
@@ -369,7 +367,6 @@ def render_customer_dashboard(request):
     """Customer dashboard: enquiries owned by the logged-in user."""
     context = get_customer_dashboard_context(request)
     return render(request, "customers/customer_dashboard.html", context)
-
 
 
 class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
