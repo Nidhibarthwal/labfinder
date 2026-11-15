@@ -219,13 +219,14 @@ def get_customer_dashboard_context(request):
             else:
                 time_str = f"{diff.days}d ago"
 
+        detail_subtab = "quotes" if enq.effective_status == "quoted" else "overview"
         recent_activities.append({
             "title": title,
             "subtitle": sub,
             "badge_label": badge_label,
             "badge_type": badge_type,
             "time_ago": time_str,
-            "url": reverse("customer_lead_detail", kwargs={"enquiry_id": enq.pk}),
+            "url": f"{reverse('customer_lead_detail', kwargs={'enquiry_id': enq.pk})}?subtab={detail_subtab}",
             "created_at": enq.created_at,
         })
 
@@ -248,7 +249,7 @@ def get_customer_dashboard_context(request):
             "title": f"Review Quote: #{q.quote_number}",
             "description": f"{q.lab.lab_name} submitted a quote for ₹{q.total_amount:,.0f}. Approve to start testing.",
             "link_text": "Review & Approve",
-            "url": f"{reverse('customer_lead_detail', kwargs={'enquiry_id': q.enquiry_id})}?lab={q.lab_id}",
+            "url": f"{reverse('customer_lead_detail', kwargs={'enquiry_id': q.enquiry_id})}?subtab=quotes&lab={q.lab_id}",
         })
 
     for o in [o for o in customer_orders if o.status == "completed"][:3]:
@@ -258,7 +259,7 @@ def get_customer_dashboard_context(request):
             "title": "Download Final Report",
             "description": f"Order #{o.job_number} ({test_title}) is complete.",
             "link_text": "Download PDF",
-            "url": reverse("order_detail", kwargs={"order_id": o.pk}),
+            "url": f"{reverse('order_detail', kwargs={'order_id': o.pk})}?subtab=documents",
         })
 
     for o in [o for o in customer_orders if o.status == "pending_customer_completion"][:3]:
@@ -267,7 +268,7 @@ def get_customer_dashboard_context(request):
             "title": f"Confirm Completion: #{o.job_number}",
             "description": f"Testing for {o.enquiry.product_name} is finished. Confirm to release escrow.",
             "link_text": "Confirm & Release",
-            "url": reverse("order_detail", kwargs={"order_id": o.pk}),
+            "url": f"{reverse('order_detail', kwargs={'order_id': o.pk})}?subtab=payments",
         })
 
     # Optional preview mode to inspect exact Figma mockup state
@@ -432,11 +433,82 @@ class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
             context["quotation"] = None
             context["discussions"] = []
 
+        # Master navigation active tab
+        context["active_tab"] = "inquiries"
+
+        # Determine subtab inside card: overview, quotes, activity
+        subtab = self.request.GET.get("subtab")
+        if not subtab:
+            if self.request.GET.get("compare") == "1":
+                subtab = "quotes"
+            else:
+                subtab = "overview"
+        context["subtab"] = subtab
+
+        # Quotes list & count
+        quoted_leads = [ll for ll in lab_leads if getattr(ll, "quotation", None)]
+        context["quoted_leads"] = quoted_leads
+        context["quotes_count"] = len(quoted_leads)
+
+        # Timeline activities
+        timeline = []
+        for ll in quoted_leads:
+            q = ll.quotation
+            timeline.append({
+                "title": f"Quote received from {ll.lab.lab_name}",
+                "time": q.created_at,
+                "type": "quote",
+            })
+        if enquiry.created_at:
+            timeline.append({
+                "title": f"Enquiry sent to {len(lab_leads) or 1} labs",
+                "time": enquiry.created_at,
+                "type": "enquiry",
+            })
+        timeline.sort(key=lambda x: x["time"] if x["time"] else timezone.now(), reverse=True)
+        context["timeline"] = timeline
+
+        # Parse test items for "Tests requested"
+        tests = []
+        if enquiry.product_name:
+            tests.append({
+                "name": enquiry.product_name,
+                "samples": enquiry.quantity_or_sample_info or "2 samples",
+            })
+        if enquiry.preferred_services:
+            for s in enquiry.preferred_services.split(","):
+                s = s.strip()
+                if s and s != enquiry.product_name:
+                    tests.append({
+                        "name": s,
+                        "samples": enquiry.quantity_or_sample_info or "2 samples",
+                    })
+        if not tests:
+            tests.append({
+                "name": "Standard Lab Testing Analysis",
+                "samples": "2 samples",
+            })
+        context["tests_requested"] = tests
+
         return context
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         enquiry = self.object
+        action = request.POST.get("action")
+
+        if action == "edit_enquiry":
+            enquiry.product_name = request.POST.get("product_name", enquiry.product_name).strip() or enquiry.product_name
+            enquiry.description = request.POST.get("description", enquiry.description).strip() or enquiry.description
+            enquiry.quantity_or_sample_info = request.POST.get("quantity_or_sample_info", enquiry.quantity_or_sample_info).strip()
+            enquiry.budget = request.POST.get("budget", enquiry.budget).strip()
+            enquiry.urgency = request.POST.get("urgency", enquiry.urgency)
+            if request.FILES.get("media"):
+                enquiry.media = request.FILES.get("media")
+            enquiry.save()
+            messages.success(request, "Enquiry updated successfully.")
+            return redirect(f"{reverse('customer_lead_detail', kwargs={'enquiry_id': enquiry.pk})}?subtab=overview")
+
         message_text = request.POST.get("message", "").strip()
         lab_id = request.POST.get("lab") or request.GET.get("lab")
 

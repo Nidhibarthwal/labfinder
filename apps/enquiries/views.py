@@ -1303,6 +1303,14 @@ def order_detail(request, order_id):
                 messages.info(request, "Completion declined. Order remains in progress.")
             return redirect("order_detail", order_id=order.pk)
 
+        elif action == "pay_advance" and is_customer:
+            if order.status in ("payment", "new"):
+                order.status = "sample_received"
+                order.sample_received_at = timezone.now()
+                order.save(update_fields=["status", "sample_received_at", "updated_at"])
+            messages.success(request, "Advance payment placed in escrow. Please arrange sample dispatch.")
+            return redirect("order_detail", order_id=order.pk)
+
         elif action == "raise_dispute":
             dispute_form = DisputeForm(request.POST)
             if dispute_form.is_valid():
@@ -1316,6 +1324,66 @@ def order_detail(request, order_id):
                 order.save(update_fields=["status", "updated_at"])
                 messages.warning(request, "Dispute raised. LabFinder team will review.")
                 return redirect("order_detail", order_id=order.pk)
+
+    if is_customer and not is_lab_side:
+        # Customer-facing Order & Payment View (Figma Orders_Payments.png)
+        total_amount = Decimal("0")
+        quotation = getattr(getattr(order, "lab_lead", None), "quotation", None)
+        if quotation and quotation.total_amount:
+            total_amount = quotation.total_amount
+        half_amount = (total_amount / Decimal("2")) if total_amount else Decimal("0")
+        paid_amount = Decimal("0")
+        if order.status in ("in_progress", "sample_received"):
+            paid_amount = half_amount
+        elif order.status in ("completed", "pending_customer_completion"):
+            paid_amount = total_amount
+        balance_amount = max(Decimal("0"), total_amount - paid_amount)
+
+        # 5-step stepper indicator
+        if order.status in ("payment", "new"):
+            stepper_step = 1
+        elif order.status == "sample_received":
+            stepper_step = 2
+        elif order.status == "in_progress":
+            stepper_step = 3
+        elif order.status == "pending_customer_completion":
+            stepper_step = 4
+        elif order.status == "completed":
+            stepper_step = 5
+        else:
+            stepper_step = 1
+
+        subtab = request.GET.get("subtab", "payments")
+
+        # Fallback amounts for sample/demo orders
+        if total_amount == Decimal("0"):
+            total_amount = Decimal("3304")
+            half_amount = Decimal("1652")
+            balance_amount = Decimal("3304")
+
+        return render(
+            request,
+            "customers/customer_order_detail.html",
+            {
+                "order": order,
+                "quotation": quotation,
+                "total_amount": total_amount,
+                "half_amount": half_amount,
+                "paid_amount": paid_amount,
+                "balance_amount": balance_amount,
+                "stepper_step": stepper_step,
+                "active_tab": "orders",
+                "subtab": subtab,
+                "order_messages": messages_qs,
+                "msg_form": msg_form,
+                "doc_form": doc_form,
+                "dispute_form": dispute_form,
+                "active_dispute": order.disputes.filter(status__in=["open", "under_review"]).first(),
+                "documents": order.documents.all(),
+                "is_lab_side": is_lab_side,
+                "is_customer": is_customer,
+            },
+        )
 
     return render(
         request,

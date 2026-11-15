@@ -71,15 +71,15 @@
             </td>
             <td>
               {% if enq.quoted_count > 0 %}
-                <a href="{% url 'customer_lead_detail' enq.pk %}" class="cd-table-action cd-table-action--blue">
+                <a href="{% url 'customer_lead_detail' enq.pk %}?subtab=quotes" class="cd-table-action cd-table-action--blue">
                   Compare quotes &rsaquo;
                 </a>
               {% elif enq.effective_status == 'won' or enq.effective_status == 'converted' %}
-                <a href="{% url 'customer_lead_detail' enq.pk %}" class="cd-table-action cd-table-action--blue">
+                <a href="{% url 'customer_lead_detail' enq.pk %}?subtab=overview" class="cd-table-action cd-table-action--blue">
                   View order &rsaquo;
                 </a>
               {% else %}
-                <a href="{% url 'customer_lead_detail' enq.pk %}" class="cd-table-action">
+                <a href="{% url 'customer_lead_detail' enq.pk %}?subtab=overview" class="cd-table-action">
                   View &rsaquo;
                 </a>
               {% endif %}

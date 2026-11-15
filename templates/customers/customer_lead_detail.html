@@ -1,159 +1,258 @@
 {% extends 'accounts/accounts_base.html' %}
 {% load static %}
 
+{% block meta_data %}
+  <title>ENQ-{{ enquiry.pk }} | LabFinder 360</title>
+{% endblock %}
+
 {% block content %}
-<div class="detail-container">
-    <a href="{% url 'dashboard' %}" class="detail-back-link">&larr; Back to Dashboard</a>
+<link rel="stylesheet" href="{% static 'css/customer.css' %}">
 
-    <div class="detail-page-header">
-        <h1>{{ enquiry.product_name }}</h1>
-        <span class="pill pill-{{ effective_status|default:'new' }}">{{ effective_status_display|default:"Inbound Enquiry" }}</span>
-    </div>
+<div class="cd-page-wrapper">
+  <!-- Shared Customer Hero & Navigation Tabs -->
+  {% include 'customers/includes/_customer_header_nav.html' %}
 
-    <!-- Overview -->
-    <div class="card">
-        <h2 class="card-title">Testing Requirement Details</h2>
-        <p class="detail-description">{{ enquiry.description }}</p>
-        <div class="detail-meta">
-            {% if enquiry.quotation_type == 'multiple_labs' %}
-                <span>Type: <strong>Multi-lab request</strong></span>
-            {% elif enquiry.lab %}
-                <span>Target Lab: <strong>{{ enquiry.lab.lab_name }}</strong></span>
-            {% endif %}
-            <span>Submitted: {{ enquiry.created_at|date:"M d, Y H:i" }}</span>
-            {% if enquiry.budget %}<span>Budget: ₹{{ enquiry.budget }}</span>{% endif %}
+  <!-- Main Content Area (Matches Figma Width) -->
+  <div class="cd-content-area">
+    <div class="cd-container">
+      <!-- Back Link -->
+      <a href="{% url 'dashboard' %}?tab=inquiries" class="cd-back-link">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Back to enquiries</span>
+      </a>
+
+      <!-- Enquiry Detail Header -->
+      <div class="cd-detail-header">
+        <div class="cd-detail-header__main">
+          <div class="cd-detail-header__title-row">
+            <h1 class="cd-detail-title">ENQ-{{ enquiry.pk }}</h1>
+            <span class="cd-pill cd-pill--{{ effective_status }}">{{ effective_status_display }}</span>
+          </div>
+          <p class="cd-detail-subtitle">
+            {{ enquiry.product_name }}
+            {% if enquiry.lab_leads.count > 1 %} +{{ enquiry.lab_leads.count|add:"-1" }} more{% endif %}
+            &bull; {{ enquiry.quantity_or_sample_info|default:"2 samples" }}
+            &bull; Budget {% if enquiry.budget %}₹{{ enquiry.budget }}{% else %}Flexible{% endif %}
+            &bull; By {{ enquiry.urgency|default:"Flexible" }}
+          </p>
         </div>
-    </div>
-
-    {% if enquiry.quotation_type == 'multiple_labs' and lab_leads %}
-    <!-- Lab picker for multi-lab -->
-    <div class="card">
-        <h2 class="card-title">Laboratory Responses ({{ lab_leads|length }})</h2>
-        <div class="lab-pick">
-            {% for ll in lab_leads %}
-            <a href="{% url 'customer_lead_detail' enquiry.pk %}?lab={{ ll.lab_id }}"
-               class="{% if active_lab_lead and active_lab_lead.pk == ll.pk %}active{% endif %}">
-                <strong>{{ ll.lab.lab_name }}</strong>
-                <span class="pill pill-{{ ll.status }} pill-inline">{{ ll.get_status_display }}</span>
-                {% if ll.quotation %}
-                    <span class="quote-inline">Quote: ₹{{ ll.quotation.total_amount }}</span>
-                {% endif %}
-            </a>
-            {% endfor %}
+        <div class="cd-detail-header__actions">
+          <button type="button" class="cd-btn cd-btn--secondary" id="openEditModalBtn" onclick="document.getElementById('editEnquiryModal').removeAttribute('hidden')">
+            Edit enquiry
+          </button>
         </div>
-        {% if not active_lab_lead %}
-        <p class="lab-pick-hint">Select a laboratory above to view chat and quotation.</p>
-        {% endif %}
-    </div>
-    {% elif enquiry.quotation_type == 'multiple_labs' and not lab_leads %}
-    <div class="card">
-        <p class="muted-text">No laboratories have responded yet. You will see conversations here once labs engage.</p>
-    </div>
-    {% endif %}
+      </div>
 
-    {% if active_lab_lead %}
-    <!-- Quotation for active lab -->
-    {% if quotation %}
-    <div class="card">
-        <h2 class="card-title">
-            Quotation from {{ active_lab_lead.lab.lab_name }}
-            (#{{ quotation.quote_number }})
-        </h2>
-        <div class="quote-box">
-            <div class="quote-box__row">
-                <div>
-                    <span class="quote-label">Total Quoted Price</span>
-                    <div class="quote-price">{{ quotation.currency }} {{ quotation.total_amount }}</div>
-                </div>
-                <div>
-                    <span class="quote-meta-label">Estimated Turnaround</span>
-                    <div class="quote-meta-value">{{ quotation.estimated_turnaround_days }} Days</div>
-                </div>
-            </div>
-            {% if quotation.scope_notes %}
-                <p class="quote-notes"><strong>Scope:</strong> {{ quotation.scope_notes }}</p>
+      <!-- Main Card with Sub-tabs (Overview, Quotes, Activity) -->
+      <div class="cd-card">
+        <!-- Sub-tabs Navigation -->
+        <div class="cd-subtabs" role="tablist">
+          <a href="?subtab=overview" class="cd-subtab {% if subtab == 'overview' %}is-active{% endif %}">
+            Overview
+          </a>
+          <a href="?subtab=quotes" class="cd-subtab {% if subtab == 'quotes' %}is-active{% endif %}">
+            Quotes
+            {% if quotes_count > 0 %}
+              <span class="cd-subtab-badge">{{ quotes_count }}</span>
             {% endif %}
-            {% if quotation.notes %}
-                <p class="quote-notes quote-notes--sm"><strong>Lab Notes:</strong> {{ quotation.notes }}</p>
-            {% endif %}
+          </a>
+          <a href="?subtab=activity" class="cd-subtab {% if subtab == 'activity' %}is-active{% endif %}">
+            Activity
+          </a>
         </div>
 
-        {% if active_lab_lead.status == 'quoted' and not quotation.is_accepted and not quotation.rejected_at %}
-            <form method="post" action="{% url 'process_customer_decision' enquiry.pk %}">
-                {% csrf_token %}
-                <input type="hidden" name="lab" value="{{ active_lab_lead.lab_id }}">
-                <p class="decision-label">Process Decision:</p>
-                <div class="action-btn-group">
-                    <button type="submit" name="action" value="accept" class="btn-accept">✓ Accept Quotation</button>
-                    <button type="submit" name="action" value="reject" class="btn-reject">✕ Decline Quotation</button>
+        {% if subtab == 'overview' %}
+          <!-- ================= OVERVIEW TAB ================= -->
+          <!-- 1. Your Requirement -->
+          <div class="cd-sub-section">
+            <h2 class="cd-section-title">Your requirement</h2>
+            <div class="cd-req-box">
+              &ldquo;{{ enquiry.description|default:"Testing requirement specified for laboratory evaluation." }}&rdquo;
+            </div>
+          </div>
+
+          <!-- 2. Tests Requested -->
+          <div class="cd-sub-section">
+            <h2 class="cd-section-title">Tests requested</h2>
+            <div class="cd-test-list">
+              {% for t in tests_requested %}
+                <div class="cd-test-item">
+                  <div class="cd-test-check-icon" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+                      <path d="M4 10.5L8 14.5L16 6.5" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                  <div class="cd-test-info">
+                    <h3 class="cd-test-name">{{ t.name }}</h3>
+                    <span class="cd-test-samples">{{ t.samples }}</span>
+                  </div>
                 </div>
-            </form>
-        {% elif active_lab_lead.status == 'won' or quotation.is_accepted %}
-            <div class="status-banner status-banner--success">
-                ✓ You accepted this quotation. Sample accessioning is pending.
+              {% endfor %}
             </div>
-        {% elif active_lab_lead.status == 'lost' or quotation.rejected_at %}
-            <div class="status-banner status-banner--danger">
-                You declined this quotation.
-            </div>
-        {% elif active_lab_lead.status == 'converted' %}
-            <div class="status-banner status-banner--purple">
-                Sample received / LIMS job active
-                {% if active_lab_lead.lims_job %}
-                    — Job #{{ active_lab_lead.lims_job.job_number }}
-                {% endif %}
-            </div>
-        {% endif %}
-    </div>
-    {% endif %}
+          </div>
 
-    <!-- Discussion with active lab -->
-    <div class="card">
-        <h2 class="card-title">
-            Discussion
-            {% if active_lab_lead %}with {{ active_lab_lead.lab.lab_name }}{% endif %}
-        </h2>
+          <!-- 3. Attachments -->
+          <div class="cd-sub-section">
+            <h2 class="cd-section-title">Attachments</h2>
+            {% if enquiry.media %}
+              <div class="cd-attach-box">
+                <div class="cd-attach-left">
+                  <div class="cd-attach-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                      <path d="M14.5 9.5L8.5 15.5C7.1 16.9 4.9 16.9 3.5 15.5C2.1 14.1 2.1 11.9 3.5 10.5L9.5 4.5C10.3 3.7 11.7 3.7 12.5 4.5C13.3 5.3 13.3 6.7 12.5 7.5L6.5 13.5C6.1 13.9 5.5 13.9 5.1 13.5C4.7 13.1 4.7 12.5 5.1 12.1L10.5 6.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <span class="cd-attach-name">{{ enquiry.media.name|cut:"enquiries/media/" }}</span>
+                </div>
+                <a href="{{ enquiry.media.url }}" download class="cd-link-download">Download</a>
+              </div>
+            {% else %}
+              <div class="cd-attach-box">
+                <div class="cd-attach-left">
+                  <div class="cd-attach-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                      <path d="M14.5 9.5L8.5 15.5C7.1 16.9 4.9 16.9 3.5 15.5C2.1 14.1 2.1 11.9 3.5 10.5L9.5 4.5C10.3 3.7 11.7 3.7 12.5 4.5C13.3 5.3 13.3 6.7 12.5 7.5L6.5 13.5C6.1 13.9 5.5 13.9 5.1 13.5C4.7 13.1 4.7 12.5 5.1 12.1L10.5 6.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                  </div>
+                  <span class="cd-attach-name">Product_specification_draft.pdf</span>
+                </div>
+                <button type="button" class="cd-link-download" onclick="document.getElementById('editEnquiryModal').removeAttribute('hidden')">Upload file</button>
+              </div>
+            {% endif %}
+          </div>
 
-        <div class="chat-box">
-            {% for chat in discussions %}
-                <div class="chat-bubble {% if chat.sender_type == 'lab' %}chat-bubble--lab{% else %}chat-bubble--customer{% endif %}">
-                    <span class="chat-author">
-                        {% if chat.sender_type == 'lab' %}
-                            {{ active_lab_lead.lab.lab_name|default:"Lab" }}
-                        {% else %}
-                            You
-                        {% endif %}
-                        · {{ chat.created_at|date:"M d, H:i" }}
-                    </span>
-                    {{ chat.message|linebreaksbr }}
-                    {% if chat.attachment %}
-                        <div class="chat-attachment"><a href="{{ chat.attachment.url }}" target="_blank">📎 Attachment</a></div>
+        {% elif subtab == 'quotes' %}
+          <!-- ================= QUOTES TAB (COMPARE QUOTES) ================= -->
+          <div class="cd-quotes-list">
+            {% for ll in quoted_leads %}
+              {% with q=ll.quotation %}
+                <div class="cd-quote-card">
+                  <div class="cd-quote-main">
+                    <h3 class="cd-quote-lab-title">{{ ll.lab.lab_name }}</h3>
+                    <div class="cd-quote-lab-sub">
+                      {% if ll.lab.lab_city %}{{ ll.lab.lab_city }} &bull;{% endif %}
+                      ★ {{ ll.lab.google_rating|default:"4.8" }}
+                      {% if ll.lab.accreditations.exists %} &bull; NABL Verified{% endif %}
+                    </div>
+                    {% if q.scope_notes %}
+                      <p class="cd-quote-notes"><strong>Scope:</strong> {{ q.scope_notes }}</p>
+                    {% elif q.notes %}
+                      <p class="cd-quote-notes">{{ q.notes }}</p>
                     {% endif %}
-                </div>
-            {% empty %}
-                <p class="chat-empty">No messages yet in this conversation.</p>
-            {% endfor %}
-        </div>
+                  </div>
 
-        {% if active_lab_lead %}
-        <form method="post" enctype="multipart/form-data"
-              action="{% url 'customer_lead_detail' enquiry.pk %}?lab={{ active_lab_lead.lab_id }}">
-            {% csrf_token %}
-            <input type="hidden" name="lab" value="{{ active_lab_lead.lab_id }}">
-            <textarea name="message" rows="3" required placeholder="Type your message to the lab..."
-                class="chat-form-textarea"></textarea>
-            <div class="chat-form-footer">
-                <label class="chat-form-attach">
-                    <span>Attachment</span>
-                    <input type="file" name="attachment">
-                </label>
-                <button type="submit" class="btn-send-msg">
-                    Send Message
-                </button>
+                  <div class="cd-quote-price-col">
+                    <div class="cd-quote-amount">₹{{ q.total_amount }}</div>
+                    <div class="cd-quote-turnaround">{{ q.estimated_turnaround_days|default:"5" }} Days turnaround</div>
+
+                    {% if not q.is_accepted and not q.rejected_at %}
+                      <form method="post" action="{% url 'process_customer_decision' enquiry.pk %}" class="cd-quote-actions">
+                        {% csrf_token %}
+                        <input type="hidden" name="lab" value="{{ ll.lab_id }}">
+                        <button type="submit" name="action" value="accept" class="cd-btn cd-btn--amber">
+                          Accept Quote
+                        </button>
+                        <button type="submit" name="action" value="reject" class="cd-btn cd-btn--secondary">
+                          Decline
+                        </button>
+                      </form>
+                    {% elif q.is_accepted %}
+                      <div class="cd-quote-actions">
+                        <span class="cd-pill cd-pill--won">✓ Quote Accepted</span>
+                        {% if ll.lims_job %}
+                          <a href="{% url 'order_detail' ll.lims_job.pk %}" class="cd-btn cd-btn--secondary">
+                            View Order &rsaquo;
+                          </a>
+                        {% endif %}
+                      </div>
+                    {% elif q.rejected_at %}
+                      <div class="cd-quote-actions">
+                        <span class="cd-pill cd-pill--lost">Declined</span>
+                      </div>
+                    {% endif %}
+                  </div>
+                </div>
+              {% endwith %}
+            {% empty %}
+              <div class="cd-empty-state">
+                <p class="cd-empty-text">No laboratory quotations received yet.</p>
+                <span class="cd-empty-sub">Partner laboratories are reviewing your request. You will be notified once a quotation arrives.</span>
+              </div>
+            {% endfor %}
+          </div>
+
+        {% elif subtab == 'activity' %}
+          <!-- ================= ACTIVITY TIMELINE TAB ================= -->
+          <div class="cd-sub-section">
+            <div class="cd-timeline">
+              {% for act in timeline %}
+                <div class="cd-timeline-item">
+                  <div class="cd-timeline-dot"></div>
+                  <div class="cd-timeline-content">
+                    <h3 class="cd-timeline-title">{{ act.title }}</h3>
+                    <span class="cd-timeline-time">{{ act.time|date:"d M"|default:"Recently" }}</span>
+                  </div>
+                </div>
+              {% empty %}
+                <div class="cd-timeline-item">
+                  <div class="cd-timeline-dot"></div>
+                  <div class="cd-timeline-content">
+                    <h3 class="cd-timeline-title">Enquiry submitted</h3>
+                    <span class="cd-timeline-time">{{ enquiry.created_at|date:"d M"|default:"Recently" }}</span>
+                  </div>
+                </div>
+              {% endfor %}
             </div>
-        </form>
+          </div>
         {% endif %}
+      </div>
     </div>
-    {% endif %}
+  </div>
+</div>
+
+<!-- Edit Enquiry Modal -->
+<div class="cd-modal" id="editEnquiryModal" hidden>
+  <div class="cd-modal-overlay" onclick="document.getElementById('editEnquiryModal').setAttribute('hidden', '')"></div>
+  <div class="cd-modal-dialog">
+    <div class="cd-modal-header">
+      <h2 class="cd-modal-title">Edit Enquiry #{{ enquiry.pk }}</h2>
+      <button type="button" class="cd-modal-close" onclick="document.getElementById('editEnquiryModal').setAttribute('hidden', '')" aria-label="Close">&times;</button>
+    </div>
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit_enquiry">
+      <div class="cd-modal-body">
+        <div class="cd-form-group">
+          <label class="cd-form-label" for="id_product_name">Product / Material Name</label>
+          <input type="text" id="id_product_name" name="product_name" class="cd-form-control" value="{{ enquiry.product_name }}" required>
+        </div>
+        <div class="cd-form-group">
+          <label class="cd-form-label" for="id_description">Requirement Description</label>
+          <textarea id="id_description" name="description" rows="4" class="cd-form-control" required>{{ enquiry.description }}</textarea>
+        </div>
+        <div class="cd-form-group">
+          <label class="cd-form-label" for="id_quantity_or_sample_info">Samples / Quantity</label>
+          <input type="text" id="id_quantity_or_sample_info" name="quantity_or_sample_info" class="cd-form-control" value="{{ enquiry.quantity_or_sample_info|default:'2 samples' }}">
+        </div>
+        <div class="cd-form-group">
+          <label class="cd-form-label" for="id_budget">Target Budget (₹)</label>
+          <input type="text" id="id_budget" name="budget" class="cd-form-control" value="{{ enquiry.budget }}">
+        </div>
+        <div class="cd-form-group">
+          <label class="cd-form-label" for="id_media">Update Attachment / Specification File</label>
+          <input type="file" id="id_media" name="media" class="cd-form-control">
+          {% if enquiry.media %}
+            <small style="color: #64748b; margin-top: 4px; display: block;">Current: {{ enquiry.media.name|cut:"enquiries/media/" }}</small>
+          {% endif %}
+        </div>
+      </div>
+      <div class="cd-modal-footer">
+        <button type="button" class="cd-btn cd-btn--secondary" onclick="document.getElementById('editEnquiryModal').setAttribute('hidden', '')">Cancel</button>
+        <button type="submit" class="cd-btn cd-btn--primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

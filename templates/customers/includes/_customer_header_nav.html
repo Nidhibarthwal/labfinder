@@ -1,0 +1,57 @@
+{% load static %}
+<div class="cd-hero-section">
+  <div class="cd-hero-inner">
+    <!-- Welcome Greeting -->
+    <div class="cd-welcome">
+      <h1 class="cd-welcome__title">Welcome back, {{ request.user.first_name|default:request.user.username }} 👋</h1>
+      <p class="cd-welcome__subtitle">Track your testing orders, review quotes, and manage your profile.</p>
+    </div>
+
+    <!-- Horizontal Navigation Tabs (Exact Figma Horizontal Bar) -->
+    <nav class="cd-tabs" aria-label="Customer Navigation Tabs">
+      <a href="{% url 'dashboard' %}?tab=dashboard" class="cd-tab {% if active_tab == 'dashboard' %}is-active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path d="M2.5 2.5H8.33333V8.33333H2.5V2.5ZM11.6667 2.5H17.5V8.33333H11.6667V2.5ZM2.5 11.6667H8.33333V17.5H2.5V11.6667ZM11.6667 11.6667H17.5V17.5H11.6667V11.6667Z"/>
+        </svg>
+        <span>Dashboard</span>
+      </a>
+      <a href="{% url 'dashboard' %}?tab=inquiries" class="cd-tab {% if active_tab == 'inquiries' or active_tab == 'leads' %}is-active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M10 2L3 5.3V9.5C3 13.6 6.2 17.4 10 18.3C13.8 17.4 17 13.6 17 9.5V5.3L10 2Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="10" cy="9.2" r="2.5" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+        <span>Inquiries & Quotes</span>
+      </a>
+      <a href="{% url 'dashboard' %}?tab=orders" class="cd-tab {% if active_tab == 'orders' %}is-active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M5 2.5H15C15.8 2.5 16.5 3.2 16.5 4V16C16.5 16.8 15.8 17.5 15 17.5H5C4.2 17.5 3.5 16.8 3.5 16V4C3.5 3.2 4.2 2.5 5 2.5Z" stroke="currentColor" stroke-width="1.6"/>
+          <line x1="6.5" y1="6.5" x2="13.5" y2="6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <line x1="6.5" y1="10" x2="13.5" y2="10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <line x1="6.5" y1="13.5" x2="10.5" y2="13.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span>Orders</span>
+      </a>
+      <a href="{% url 'dashboard' %}?tab=profile" class="cd-tab {% if active_tab == 'profile' %}is-active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/>
+          <circle cx="10" cy="7.5" r="2.8" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M4.5 15.2C5.8 13.2 7.8 12.2 10 12.2C12.2 12.2 14.2 13.2 15.5 15.2" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+        <span>My Profile</span>
+      </a>
+      <a href="{% url 'dashboard' %}?tab=reviews" class="cd-tab {% if active_tab == 'reviews' %}is-active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M4.5 3H15.5C16.1 3 16.5 3.4 16.5 4V17L10 13.5L3.5 17V4C3.5 3.4 3.9 3 4.5 3Z" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M10 6.5L10.9 8.3L12.9 8.6L11.5 10L11.8 12L10 11L8.2 12L8.5 10L7.1 8.6L9.1 8.3L10 6.5Z" fill="currentColor"/>
+        </svg>
+        <span>Reviews</span>
+      </a>
+      <a href="{% url 'dashboard' %}?tab=settings" class="cd-tab {% if active_tab == 'settings' %}is-active{% endif %}">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <path d="M14.5 3.5C13.2 3.5 12.1 4.3 11.6 5.4L8.2 8.8C7.8 8.6 7.4 8.5 7 8.5C5.1 8.5 3.5 10.1 3.5 12C3.5 12.5 3.6 12.9 3.8 13.3L6.5 10.6L8.4 12.5L5.7 15.2C6.1 15.4 6.5 15.5 7 15.5C8.9 15.5 10.5 13.9 10.5 12C10.5 11.6 10.4 11.2 10.2 10.8L13.6 7.4C14.7 6.9 15.5 5.8 15.5 4.5C15.5 4.1 15.4 3.8 15.3 3.5C15 3.5 14.8 3.5 14.5 3.5Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Settings</span>
+      </a>
+    </nav>
+  </div>
+</div>

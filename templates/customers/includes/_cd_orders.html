@@ -129,20 +129,24 @@
             </td>
             <td>
               {% if o.status == 'completed' %}
-                <a href="{% url 'order_detail' o.id %}" class="cd-table-action cd-table-action--blue">
+                <a href="{% url 'order_detail' o.id %}?subtab=documents" class="cd-table-action cd-table-action--blue">
                   Write a review &rsaquo;
                 </a>
               {% elif o.status == 'pending_customer_completion' %}
-                <a href="{% url 'order_detail' o.id %}" class="cd-table-action cd-table-action--blue">
+                <a href="{% url 'order_detail' o.id %}?subtab=documents" class="cd-table-action cd-table-action--blue">
                   Approve report &rsaquo;
                 </a>
               {% elif o.status == 'in_progress' %}
-                <a href="{% url 'order_detail' o.id %}" class="cd-table-action cd-table-action--blue">
+                <a href="{% url 'order_detail' o.id %}?subtab=chat" class="cd-table-action cd-table-action--blue">
                   Open chat &rsaquo;
                 </a>
               {% else %}
-                <a href="{% url 'order_detail' o.id %}" class="cd-table-action cd-table-action--blue">
-                  View order &rsaquo;
+                <a href="{% url 'order_detail' o.id %}?subtab=payments" class="cd-table-action cd-table-action--blue">
+                  {% if o.lab_lead.quotation.total_amount %}
+                    Pay ₹{{ o.lab_lead.quotation.total_amount|floatformat:0 }} &rsaquo;
+                  {% else %}
+                    View order &rsaquo;
+                  {% endif %}
                 </a>
               {% endif %}
             </td>
