@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% load static %}
 {% load socialaccount %}
 <!DOCTYPE html>
@@ -140,4 +141,380 @@
     {% block extra_js %}{% endblock %}
 </body>
 
+=======
+{% load static %}
+{% load socialaccount %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LabFinder 360 | Find Testing Labs & Services</title>
+    <meta name="description" content="Find trusted laboratories and testing services with LabFinder 360. Explore labs, testing facilities, and services all in one convenient platform." />
+    <meta name="keywords" content="LabFinder 360, testing labs, laboratories, lab testing services, laboratory services, diagnostic labs" />
+    <meta name="robots" content="index, follow" />
+
+    <meta property="og:title" content="LabFinder 360 | Find Testing Labs & Services" />
+    <meta property="og:description" content="Find trusted laboratories and testing services with LabFinder 360. Explore labs, testing facilities, and services all in one convenient platform." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="{% static 'images/logo.svg' %}" />
+
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+    <!-- <link rel="stylesheet" href="{% static 'css/customer.css' %}">
+    <link rel="stylesheet" href="{% static 'css/lead.css' %}"> -->
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Header -->
+    {% block header %}
+    <header class="header header--figma">
+        <div class="header__top container">
+            <a href="/" class="header__logo">
+                <img src="{% static 'images/logo.svg' %}" alt="LabFinder 360" class="header__logo-img" width="153" height="46" loading="lazy" decoding="async">
+            </a>
+
+            <!-- HEADER TOP ACTIONS -->
+            <div class="header__top-actions">
+                <!-- Location Selector Button -->
+                <button type="button" class="header__location" id="headerLocationBtn" title="Change location">
+                    <span class="header__location-text">
+                        <small class="header__location-small">Location</small>
+                        <span class="header__location-main">
+                            <span class="header__location-flag" aria-hidden="true">
+                                <img src="{% static 'images/flag_india.svg' %}" alt="India" class="header__location-flag-img" width="18" height="13" loading="lazy" decoding="async">
+                            </span>
+                            <strong id="headerLocationLabel" class="header__location-city">Detecting location...</strong>
+                            <span class="header__location-caret" aria-hidden="true">
+                                <svg width="8" height="5" viewBox="0 0 8 5" fill="currentColor">
+                                    <path d="M0 0L4 5L8 0H0Z" />
+                                </svg>
+                            </span>
+                        </span>
+                    </span>
+                </button>
+
+                {% if request.user.is_authenticated %}
+                    <div class="header__user-group">
+                        <a href="{% url 'dashboard' %}" class="header__signin">
+                            <span class="header__signin-icon" aria-hidden="true">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                                    <circle cx="10" cy="7.2" r="3.2" fill="currentColor"/>
+                                    <path d="M2.8 15.2C4.5 13 7 12.2 10 12.2C13 12.2 15.5 13 17.2 15.2A8.9 8.9 0 0 1 2.8 15.2Z" fill="currentColor"/>
+                                </svg>
+                            </span>
+                            Dashboard
+                        </a>
+                        <span class="header__user-divider" aria-hidden="true"></span>
+                        <form method="POST" action="/accounts/logout/" class="header__logout-form">
+                            {% csrf_token %}
+                            <button type="submit" class="header__logout-btn" title="Sign Out">
+                                <span class="header__logout-icon" aria-hidden="true">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                        <polyline points="16 17 21 12 16 7"></polyline>
+                                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                                    </svg>
+                                </span>
+                                Sign Out
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <button type="button" id="globalLoginTrigger" data-open-auth="login" class="header__signin js-open-auth-login" title="Sign in">
+                        <span class="header__signin-icon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                                <circle cx="10" cy="7.2" r="3.2" fill="currentColor"/>
+                                <path d="M2.8 15.2C4.5 13 7 12.2 10 12.2C13 12.2 15.5 13 17.2 15.2A8.9 8.9 0 0 1 2.8 15.2Z" fill="currentColor"/>
+                            </svg>
+                        </span>
+                        Sign in
+                    </button>
+                {% endif %}
+
+                <a href="/register" class="header__btn header__btn--list">List Your Lab</a>
+
+                <button class="header__toggle" id="headerToggle" aria-label="Toggle navigation" aria-expanded="false">
+                    <svg class="header__toggle-icon" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+<!-- ==========================================================================
+     LOCATION MODAL (Figma Faithful Layout from Screenshot 1)
+     ========================================================================== -->
+<div class="loc-modal" id="locationModal" hidden>
+    <div class="loc-modal__backdrop" id="locModalBackdrop"></div>
+    <div class="loc-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="locModalTitle">
+        
+        <!-- Header Controls -->
+        <div class="loc-modal__header">
+            <h2 class="loc-modal__title" id="locModalTitle">Select your location</h2>
+            <button type="button" class="loc-modal__close" id="locModalClose" aria-label="Close modal">✕</button>
+        </div>
+
+        <div class="loc-modal__controls">
+            <!-- Auto-search Input -->
+            <div class="loc-modal__search-box">
+                <span class="loc-modal__search-icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+                <input type="text" class="loc-modal__search-input" id="locSearchInput" placeholder="Search for your location" autocomplete="off">
+                <button type="button" class="loc-modal__search-clear" id="locSearchClear" hidden>✕</button>
+
+                <!-- Location Auto-suggestions Dropdown -->
+                <div class="loc-modal__suggestions" id="locSuggestions" hidden></div>
+            </div>
+
+            <!-- Detect My Location Button -->
+            <button type="button" class="loc-modal__detect-btn" id="locDetectBtn">
+                <span class="loc-modal__detect-icon" aria-hidden="true">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="2" x2="12" y2="6"></line>
+                        <line x1="12" y1="18" x2="12" y2="22"></line>
+                        <line x1="2" y1="12" x2="6" y2="12"></line>
+                        <line x1="18" y1="12" x2="22" y2="12"></line>
+                    </svg>
+                </span>
+                <span>Detect my location</span>
+            </button>
+        </div>
+
+        <!-- Interactive Map Wrapper -->
+        <div class="loc-modal__map-wrap">
+            <div id="locModalMap" class="loc-modal__map"></div>
+            <p class="loc-modal__map-hint">Click anywhere on the map or select a suggested location to set city.</p>
+        </div>
+
+    </div>
+</div>
+
+<!-- Leaflet Map CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+        </div>
+
+        <div class="header__bottom">
+            <div class="container header__bottom-inner">
+                <div class="header__nav-wrapper" id="headerNav">
+                    <div class="header__nav-header">
+                        <a href="/" class="header__nav-logo">
+                            <img src="{% static 'images/logo.svg' %}" alt="LabFinder 360" class="header__nav-logo-img" width="153" height="46" loading="lazy" decoding="async">
+                        </a>
+                        <button class="header__close-btn" id="headerClose" aria-label="Close navigation">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <nav class="header__nav">
+                        <ul class="header__nav-list header__nav-list--left">
+                            <li>
+                                <a href="#categories" class="header__nav-link header__nav-link--categories">
+                                    <span class="header__cat-icon" aria-hidden="true">
+                                        <svg width="14" height="11" viewBox="0 0 14 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+                                            <line x1="1" y1="1.5" x2="13" y2="1.5"></line>
+                                            <line x1="1" y1="5.5" x2="13" y2="5.5"></line>
+                                            <line x1="1" y1="9.5" x2="13" y2="9.5"></line>
+                                        </svg>
+                                    </span>
+                                    All categories
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'search-lab' %}" class="header__nav-link">Find a Lab</a>
+                            </li>
+                        </ul>
+
+                        <ul class="header__nav-list header__nav-list--right">
+                            <li>
+                                <a href="#about" class="header__nav-link">About LabFinder360</a>
+                            </li>
+                            <li>
+                                <a href="#popular-tests" class="header__nav-link">Popular Tests</a>
+                            </li>
+                            <li>
+                                <a href="#faq" class="header__nav-link">FAQ</a>
+                            </li>
+                            <li>
+                                <a href="#for-labs" class="header__nav-link">For Labs</a>
+                            </li>
+                        </ul>
+                    </nav>
+
+                    <div class="header__nav-footer">
+                        {% if request.user.is_authenticated %}
+                            <div class="header__user-group">
+                                <a href="{% url 'dashboard' %}" class="header__signin">
+                                    <span class="header__signin-icon" aria-hidden="true">
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                                            <circle cx="10" cy="7.2" r="3.2" fill="currentColor"/>
+                                            <path d="M2.8 15.2C4.5 13 7 12.2 10 12.2C13 12.2 15.5 13 17.2 15.2A8.9 8.9 0 0 1 2.8 15.2Z" fill="currentColor"/>
+                                        </svg>
+                                    </span>
+                                    Dashboard
+                                </a>
+                                <span class="header__user-divider" aria-hidden="true"></span>
+                                <form method="POST" action="/accounts/logout/" class="header__logout-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="header__logout-btn">
+                                        <span class="header__logout-icon" aria-hidden="true">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                                <polyline points="16 17 21 12 16 7"></polyline>
+                                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                                            </svg>
+                                        </span>
+                                        Sign Out
+                                    </button>
+                                </form>
+                            </div>
+                        {% else %}
+                            <button type="button" data-open-auth="login" class="header__signin js-open-auth-login" title="Sign in">
+                                <span class="header__signin-icon" aria-hidden="true">
+                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                                        <circle cx="10" cy="7.2" r="3.2" fill="currentColor"/>
+                                        <path d="M2.8 15.2C4.5 13 7 12.2 10 12.2C13 12.2 15.5 13 17.2 15.2A8.9 8.9 0 0 1 2.8 15.2Z" fill="currentColor"/>
+                                    </svg>
+                                </span>
+                                Sign in
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="header__backdrop" id="headerBackdrop"></div>
+            </div>
+        </div>
+    </header>
+    {% endblock %}
+
+    {% block content %}
+    {% endblock %}
+
+    {% block footer %}
+    <!-- Footer Section -->
+    <footer class="footer">
+        <div class="container">
+            <!-- Trust Value Props Bar -->
+            <div class="footer__value-props">
+                <div class="footer__prop-item">
+                    <img src="{% static 'images/local_police.svg' %}" alt="" class="footer__prop-icon" width="42" height="42" loading="lazy" decoding="async">
+                    <div class="footer__prop-text">
+                        <h4 class="footer__prop-title">Accreditation verified</h4>
+                        <p class="footer__prop-desc">Checked directly with issuing bodies</p>
+                    </div>
+                </div>
+
+                <div class="footer__prop-item">
+                    <img src="{% static 'images/Group 122.svg' %}" alt="" class="footer__prop-icon" width="42" height="42" loading="lazy" decoding="async">
+                    <div class="footer__prop-text">
+                        <h4 class="footer__prop-title">Escrow-protected payments</h4>
+                        <p class="footer__prop-desc">Released only on approval</p>
+                    </div>
+                </div>
+
+                <div class="footer__prop-item">
+                    <img src="{% static 'images/fingerprint.svg' %}" alt="" class="footer__prop-icon" width="42" height="42" loading="lazy" decoding="async">
+                    <div class="footer__prop-text">
+                        <h4 class="footer__prop-title">Your data stays private</h4>
+                        <p class="footer__prop-desc">Labs never see competing quotes</p>
+                    </div>
+                </div>
+
+                <div class="footer__prop-item">
+                    <img src="{% static 'images/add_location.svg' %}" alt="" class="footer__prop-icon" width="42" height="42" loading="lazy" decoding="async">
+                    <div class="footer__prop-text">
+                        <h4 class="footer__prop-title">Optional sample pickup</h4>
+                        <p class="footer__prop-desc">Courier collection on request</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Columns -->
+            <div class="footer__columns">
+                <div class="footer__col footer__col--brand">
+                    <a href="/" class="footer__logo">
+                        <img src="{% static 'images/logo.svg' %}" alt="LabFinder 360" class="footer__logo-img" width="180" height="52" loading="lazy" decoding="async">
+                    </a>
+                    <p class="footer__brand-desc">
+                        The marketplace for accredited testing, calibration and pharma/clinical labs — search, request and track from one dashboard.
+                    </p>
+                </div>
+
+                <div class="footer__col">
+                    <h5 class="footer__col-title">Platform</h5>
+                    <ul class="footer__links">
+                        <li><a href="/#categories">Categories</a></li>
+                        <li><a href="{% url 'search-product' %}">Browse Products</a></li>
+                        <li><a href="{% url 'search-lab' %}">Browse Labs</a></li>
+                        <li><a href="/#how-it-works">How it works</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer__col">
+                    <h5 class="footer__col-title">For Labs</h5>
+                    <ul class="footer__links">
+                        <li><a href="/register">List your lab</a></li>
+                        <li><a href="#vendor-dashboard">Vendor dashboard</a></li>
+                        <li><a href="#vista-lims">Vista LIMS integration</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer__col">
+                    <h5 class="footer__col-title">Company</h5>
+                    <ul class="footer__links">
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#terms">Terms of Service</a></li>
+                        <li><a href="#privacy">Privacy Policy</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Disclaimer -->
+            <p class="footer__disclaimer">
+                LabFinder360 operates as a marketplace and lead facilitator connecting customers with independent testing laboratories. We verify listed accreditations but do not perform or guarantee test results generated by non-integrated partner labs.
+            </p>
+
+            <!-- Bottom Copyright & Social -->
+            <div class="footer__bottom">
+                <p class="footer__copyright">© 2026 LabFinder360. All rights reserved.</p>
+                <div class="footer__socials">
+                    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+                    <a href="https://twitter.com" target="_blank" rel="noopener noreferrer">Twitter</a>
+                    <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">Instagram</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    {% endblock %}
+    {% include "includes/_auth_modal.html" %}
+
+    {{ request.user.is_authenticated|json_script:"user-authenticated-data" }}
+
+    <!-- Scripts -->
+    <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/auth-modal.js' %}"></script>
+    <script src="{% static 'js/location.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+>>>>>>> c92ac00d20d6c7c99af7e65dfeb8ac644d86c141
 </html>

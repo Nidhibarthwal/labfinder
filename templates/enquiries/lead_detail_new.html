@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends 'accounts/accounts_base.html' %}
 {% load static %}
 
@@ -146,4 +147,154 @@
 
     </div>
 </div>
+=======
+{% extends 'accounts/accounts_base.html' %}
+{% load static %}
+
+{% block meta_data %}
+    <title>Lead #{{ enquiry.pk }} Details - LabFinder 360</title>
+{% endblock %}
+
+{% block content %}
+<div class="lead-container" style="max-width: 1000px; margin: 30px auto; padding: 0 16px;">
+    
+    <!-- Header Card -->
+    <div style="background: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+            <div>
+                <a href="/dashboard/#leads" style="color: #2563EB; text-decoration: none; font-size: 14px;">&larr; Back to Leads Dashboard</a>
+                <h1 style="font-size: 22px; font-weight: 700; color: #111827; margin: 8px 0 4px 0;">
+                    {{ enquiry.product_name }}
+                </h1>
+                <span style="color: #6B7280; font-size: 13px;">Submitted on {{ enquiry.created_at|date:"M d, Y · h:i A" }}</span>
+            </div>
+            
+            <!-- Pipeline Status Dropdown Form -->
+            <form method="post" action="{% url 'lead_detail' enquiry.id %}" style="display: flex; gap: 8px; align-items: center;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_status">
+                {{ status_form.status }}
+                <button type="submit" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">Update Status</button>
+            </form>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+        
+        <!-- Left Column: Requirements & Discussion Thread -->
+        <div>
+            <!-- Request Summary Card -->
+            <div style="background: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB; margin-bottom: 24px;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-top: 0;">Scope &amp; Testing Requirements</h3>
+                <p style="color: #374151; font-size: 14px; line-height: 1.6; white-space: pre-line;">{{ enquiry.description }}</p>
+                
+                {% if enquiry.budget %}
+                    <div style="margin-top: 12px; background: #F3F4F6; padding: 8px 12px; border-radius: 6px; display: inline-block; font-size: 13px; color: #1F2937;">
+                        <strong>Customer Budget:</strong> ₹{{ enquiry.budget }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Two-Way Communication Thread -->
+            <div style="background: #ffffff; padding: 24px; border-radius: 12px; border: 1px solid #E5E7EB;">
+                <h3 style="font-size: 16px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">
+                    Lead Discussion &amp; Technical Follow-ups
+                </h3>
+
+                <!-- Messages Stream -->
+                <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+                    {% for msg in discussions %}
+                        <div style="padding: 14px; border-radius: 10px; background: {% if msg.sender_type == 'lab' %}#EFF6FF{% else %}#F9FAFB{% endif %}; border: 1px solid {% if msg.sender_type == 'lab' %}#BFDBFE{% else %}#E5E7EB{% endif %};">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px;">
+                                <strong style="color: {% if msg.sender_type == 'lab' %}#1D4ED8{% else %}#374151{% endif %};">
+                                    {% if msg.sender_type == 'lab' %}🏥 {{ msg.lab.lab_name|default:"Lab Officer" }}{% else %}👤 {{ enquiry.contact_name|default:msg.sender.email }}{% endif %}
+                                </strong>
+                                <span style="color: #9CA3AF;">{{ msg.created_at|date:"M d, h:i A" }}</span>
+                            </div>
+                            <p style="margin: 0; color: #1F2937; font-size: 14px; white-space: pre-line;">{{ msg.message }}</p>
+                            {% if msg.attachment %}
+                                <div style="margin-top: 8px;">
+                                    <a href="{{ msg.attachment.url }}" target="_blank" style="font-size: 12px; color: #2563EB; text-decoration: none;">📎 View Attachment</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <p style="color: #9CA3AF; font-size: 13px; font-style: italic;">No communication history yet. Send a message below to clarify feasibility or specifications.</p>
+                    {% endfor %}
+                </div>
+
+                <!-- Send Message Form -->
+                <form method="post" enctype="multipart/form-data" action="{% url 'lead_detail' enquiry.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_message">
+                    <div style="margin-bottom: 12px;">
+                        {{ discussion_form.message }}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        {{ discussion_form.attachment }}
+                        <button type="submit" class="btn btn-primary" style="padding: 8px 18px;">Send Follow-up</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column: Quotation & LIMS Job Status -->
+        <div>
+            <!-- Customer Card -->
+            <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #E5E7EB; margin-bottom: 24px;">
+                <h4 style="font-size: 13px; text-transform: uppercase; color: #6B7280; margin: 0 0 12px 0;">Customer Information</h4>
+                <div style="font-weight: 600; color: #111827; font-size: 14px; margin-bottom: 6px;">
+                    {{ enquiry.contact_name|default:"Inbound Client" }}
+                </div>
+                {% if enquiry.email %}
+                    <div style="font-size: 13px; color: #374151; margin-bottom: 4px;">✉️ {{ enquiry.email }}</div>
+                {% endif %}
+                {% if enquiry.mobile_number %}
+                    <div style="font-size: 13px; color: #374151;">📞 {{ enquiry.mobile_number }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Quotation Box -->
+            <div style="background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #E5E7EB; margin-bottom: 24px;">
+                <h4 style="font-size: 13px; text-transform: uppercase; color: #6B7280; margin: 0 0 12px 0;">Official Quotation</h4>
+                {% if quotation %}
+                    <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 14px; border-radius: 8px; margin-bottom: 14px;">
+                        <div style="font-size: 12px; color: #166534;">Quote Reference</div>
+                        <div style="font-size: 16px; font-weight: 700; color: #15803D;">#{{ quotation.quote_number }}</div>
+                        <div style="font-size: 18px; font-weight: 700; color: #111827; margin-top: 6px;">₹{{ quotation.total_amount }}</div>
+                        <div style="font-size: 12px; color: #4B5563; margin-top: 4px;">TAT: {{ quotation.estimated_turnaround_days }} Days</div>
+                    </div>
+
+                    {% if enquiry.status != 'won' and enquiry.status != 'converted' %}
+                        <form method="post" action="{% url 'mark_lead_won' enquiry.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success" style="width: 100%;">
+                                ✓ Mark Lead Won &amp; Accession Sample
+                            </button>
+                        </form>
+                    {% endif %}
+                {% else %}
+                    <p style="font-size: 13px; color: #6B7280; margin-bottom: 14px;">No official quote generated yet.</p>
+                    <a href="{% url 'create_quotation' enquiry.id %}" class="btn btn-primary" style="display: block; text-align: center;">
+                        + Generate Quotation
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- LIMS Job Order Box -->
+            {% if enquiry.lims_job %}
+                <div style="background: #EFF6FF; border: 1px solid #BFDBFE; padding: 20px; border-radius: 12px;">
+                    <h4 style="font-size: 13px; text-transform: uppercase; color: #1E40AF; margin: 0 0 8px 0;">Active LIMS Job Order</h4>
+                    <div style="font-size: 14px; font-weight: 700; color: #1E3A8A;">Job #: {{ enquiry.lims_job.job_number }}</div>
+                    <div style="font-size: 13px; color: #1D4ED8; margin-top: 4px;">Accession ID: {{ enquiry.lims_job.sample_accession_id }}</div>
+                    <div style="margin-top: 10px; font-size: 12px; background: #DBEAFE; color: #1E40AF; padding: 4px 8px; border-radius: 4px; display: inline-block;">
+                        Status: {{ enquiry.lims_job.status|title }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+>>>>>>> c92ac00d20d6c7c99af7e65dfeb8ac644d86c141
 {% endblock %}

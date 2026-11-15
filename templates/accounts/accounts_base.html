@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% load static %}
 {% load socialaccount %}
 <!DOCTYPE html>
@@ -13,6 +14,17 @@
 
         <meta property="og:title" content="LabFinder 360 | Find Testing Labs & Services" />
         <meta property="og:description" content="Find trusted laboratories and testing services with LabFinder 360. Explore labs, testing facilities, and services all in one convenient platform." />
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+{% load socialaccount %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {% block meta_data %}
+>>>>>>> c92ac00d20d6c7c99af7e65dfeb8ac644d86c141
     {% endblock %}
 
     <meta property="og:type" content="website" />
@@ -30,15 +42,23 @@
 <body class="auth-page">
     <!-- Header -->
     {% block header %}
+<<<<<<< HEAD
     <!-- <header class="header header--auth">
+=======
+    <header class="header header--auth">
+>>>>>>> c92ac00d20d6c7c99af7e65dfeb8ac644d86c141
         <div class="container header__inner">
             <a href="/" class="header__logo" aria-label="LabFinder 360 Home">
                 <img src="{% static 'images/logo.svg' %}" alt="LabFinder 360" class="header__logo-img" width="180"
                     height="52">
             </a>
         </div>
+<<<<<<< HEAD
     </header> -->
     {% include 'header.html' %}   
+=======
+    </header>
+>>>>>>> c92ac00d20d6c7c99af7e65dfeb8ac644d86c141
     {% endblock %}
 
     <!-- Main Auth Content -->

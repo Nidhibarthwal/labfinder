@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% load static %}
 
 <div class="lab-card" data-lab-id="{{ lab.id }}"> 
@@ -76,4 +77,84 @@
             </a>
         </div>
     </div>
+=======
+{% load static %}
+
+<div class="lab-card" data-lab-id="{{ lab.id }}"> 
+    <!-- Card Image Header -->
+    <div class="lab-card__img-wrap">
+        {% if lab.lab_logo %}
+            <img src="{{ lab.lab_logo.url }}" alt="{{ lab.lab_name|default:'Laboratory' }}" class="lab-card__img lab-card__img--contain" loading="lazy">
+        {% else %}
+            <img src="{% static 'images/default-lab.png' %}" alt="{{ lab.lab_name|default:'Laboratory' }}" class="lab-card__img" loading="lazy">
+        {% endif %}
+
+        {% if lab.VISTA_code or lab.source == 'vista' %}
+            <div class="lab-card__badge-vista">
+                <img src="{% static 'images/vista-icon.svg' %}" alt="" width="14" height="14">
+                <span><strong>Vista</strong> Integrated</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Card Content Body -->
+    <div class="lab-card__content">
+        <!-- Rating & Reviews -->
+        <div class="lab-card__rating">
+            <span class="lab-card__stars">★</span>
+            <span class="lab-card__score">{{ lab.rating|default:"4.8" }}</span>
+            <span class="lab-card__reviews">({{ lab.review_count|default:"120" }}+ reviews)</span>
+        </div>
+
+        <!-- Lab Name -->
+        <h3 class="lab-card__title" title="{{ lab.lab_name }}">
+            {{ lab.lab_name }}
+        </h3>
+
+        <!-- Location (City, State) -->
+        <p class="lab-card__location">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            {{ lab.lab_city }}{% if lab.lab_state %}, {{ lab.lab_state.name }}{% endif %}
+        </p>
+
+        <!-- Certifications / Accreditation Tags -->
+        <div class="lab-card__cert-tags">
+            {% with accreditations=lab.get_accreditations %}
+                {% if accreditations %}
+                    {% for tag in accreditations|slice:":3" %}
+                        <span class="lab-card__tag">{{ tag }}</span>
+                    {% endfor %}
+                    {% if accreditations|length > 3 %}
+                        <span class="lab-card__tag">+{{ accreditations|length|add:"-3" }} more</span>
+                    {% endif %}
+                {% else %}
+                    <span class="lab-card__tag">&nbsp;</span>
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Footer Price & Action -->
+        <div class="lab-card__footer">
+            <div class="lab-card__price-wrap">
+                <span class="lab-card__price">
+                    {% if lab.min_order_value %}
+                        ₹{{ lab.min_order_value }}
+                    {% else %}
+                        On Request
+                    {% endif %}
+                </span>
+                <!-- <span class="lab-card__tat">
+                    TAT: {{ lab.turnaround_time|default:"24-48 hrs" }}
+                </span> -->
+            </div>
+
+            <a href="{% if lab.slug %}{% url 'lab-detail' lab.slug %}{% else %}/labs/{{ lab.id }}/{% endif %}" class="lab-card__arrow-btn" aria-label="View lab details">
+                <img src="{% static 'images/arrow_forward_ios.svg' %}" alt="Go" width="18" height="18">
+            </a>
+        </div>
+    </div>
+>>>>>>> c92ac00d20d6c7c99af7e65dfeb8ac644d86c141
 </div>

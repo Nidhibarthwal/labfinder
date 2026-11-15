@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends 'accounts/accounts_base.html' %}
 {% load static %}
 {% block meta_data %}
@@ -140,4 +141,148 @@ document.getElementById("sendOTPForm").addEventListener("submit", async function
 });
 </script>
    
+=======
+{% extends 'accounts/accounts_base.html' %}
+{% load static %}
+{% block meta_data %}
+    <title>Let's verify your email | LabFinder 360</title>
+    <meta name="description" content="Log in to LabFinder 360 to manage your lab profile and testing inquiries." />
+    <meta name="keywords" content="LabFinder 360, login, verify email, lab testing, testing services" />
+    <meta name="robots" content="index, follow" />
+    <meta property="og:title" content="Let's verify your email | LabFinder 360" />
+    <meta property="og:description" content="Log in to LabFinder 360 to manage your lab profile and testing inquiries." />
+{% endblock %} 
+
+{% block content %}
+    <main class="auth-main">
+        <!-- Background Blur Shapes -->
+        <div class="auth-bg-shape auth-bg-shape--bottom-left" aria-hidden="true">
+            <img src="{% static 'images/login_bg_bottom_left.svg' %}" alt="" class="auth-bg-img" loading="lazy" decoding="async">
+        </div>
+        <div class="auth-bg-shape auth-bg-shape--top-right" aria-hidden="true">
+            <img src="{% static 'images/login_bg_top_right.svg' %}" alt="" class="auth-bg-img" loading="lazy" decoding="async">
+        </div>
+
+        <!-- Form Card -->
+        <section class="auth-card" aria-labelledby="authTitle">
+    <h1 id="authTitle" class="auth-title h2-bold">
+        Let’s verify your email
+    </h1>
+
+    <p class="auth-subtitle p2-regular">
+        We’ll send a 6-digit code to confirm it’s really you.
+        This becomes your login for managing your lab profile.
+    </p>
+
+    <form id="sendOTPForm" class="auth-form">
+        {% csrf_token %}
+
+        <label for="workEmail" class="auth-label p4-regular">
+            Work Email*
+        </label>
+
+        <div class="auth-input-group">
+            <input
+                type="email"
+                id="workEmail"
+                name="email"
+                class="auth-input p1-regular"
+                placeholder="User@company.com"
+                required="true"
+                autocomplete="email"
+                spellcheck="false"
+                aria-describedby="emailError">
+
+            <button
+                type="submit"
+                id="sendOtpBtn"
+                class="auth-btn-otp p2-med">
+                Send OTP
+            </button>
+        </div>
+
+        <div
+            class="auth-error-message p4-regular"
+            id="emailError"
+            role="alert"
+            aria-live="polite">
+        </div>
+    </form>
+        </section>
+
+        <!-- Centered Illustration -->
+        <div class="auth-illustration-wrap">
+            <img src="{% static 'images/login-illustration.png' %}" alt="Verification illustration" class="auth-illustration"
+                width="843" height="282" loading="lazy" decoding="async">
+        </div>
+    </main>
+    {% endblock %}
+
+    {% block extra_js %}
+
+     <script>
+document.getElementById("sendOTPForm").addEventListener("submit", async function (event) {
+    event.preventDefault();
+
+    const emailInput = document.getElementById("workEmail");
+    const errorElement = document.getElementById("emailError");
+    const sendOtpBtn = document.getElementById("sendOtpBtn");
+
+    const email = emailInput.value.trim();
+
+    errorElement.textContent = "";
+
+    if (!email) {
+        errorElement.textContent = "Please enter your email address.";
+        emailInput.focus();
+        return;
+    }
+
+    if (!emailInput.checkValidity()) {
+        errorElement.textContent = "Please enter a valid email address.";
+        emailInput.focus();
+        return;
+    }
+
+    sendOtpBtn.disabled = true;
+    sendOtpBtn.textContent = "Sending...";
+
+    try {
+        const response = await fetch("{% url 'register' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": document.querySelector(
+                    "[name=csrfmiddlewaretoken]"
+                ).value
+            },
+            body: JSON.stringify({
+                email: email
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            // Store email temporarily for OTP verification page
+            sessionStorage.setItem("verification_email", email);
+            window.location.href = data.redirect_to;                    
+        } else {
+            errorElement.textContent =
+                data.message || "Unable to send OTP. Please try again.";
+        }
+
+    } catch (error) {
+        console.error("Send OTP error:", error);
+
+        errorElement.textContent =
+            "Something went wrong. Please try again.";
+    } finally {
+        sendOtpBtn.disabled = false;
+        sendOtpBtn.textContent = "Send OTP";
+    }
+});
+</script>
+   
+>>>>>>> c92ac00d20d6c7c99af7e65dfeb8ac644d86c141
 {% endblock %}

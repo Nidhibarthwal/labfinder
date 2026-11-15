@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <div id="tab-reviews" class="dash-tab-content">
     
     <div style="margin-bottom: 20px;">
@@ -120,4 +121,128 @@
             wrap.style.display = wrap.style.display === 'block' ? 'none' : 'block';
         }
     }
+=======
+<div id="tab-reviews" class="dash-tab-content">
+    
+    <div style="margin-bottom: 20px;">
+        <h2 style="font-family: var(--font-manrope); font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 4px 0;">Reviews</h2>
+        <p style="font-size: 14px; color: #6B7280; margin: 0;">What customers say after testing with you.</p>
+    </div>
+
+    <div class="reviews-tab-container">
+        
+        <!-- Left Side: Aggregated Rating Card -->
+        <div class="rating-summary-card">
+            <div class="rating-big-score">{{ avg_rating|default:"0.0" }}</div>
+            
+            <div class="rating-stars-row">
+                {% for i in "12345" %}
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="{% if forloop.counter <= avg_rating %}#F59E0B{% else %}#E5E7EB{% endif %}" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 15.27L16.18 19L14.54 11.97L20 7.24L12.81 6.63L10 0L7.19 6.63L0 7.24L5.46 11.97L3.82 19L10 15.27Z"/>
+                    </svg>
+                {% endfor %}
+            </div>
+
+            <div class="rating-count-subtitle">Based on {{ total_count }} reviews</div>
+
+            <div class="rating-breakdown-list">
+                {% for item in rating_breakdown %}
+                <div class="rating-bar-row">
+                    <span>{{ item.star }}★</span>
+                    <div class="rating-bar-track">
+                        <div class="rating-bar-fill" style="width: {{ item.percentage }}%;"></div>
+                    </div>
+                    <span class="rating-bar-pct">{{ item.percentage }}%</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Right Side: Recent Reviews List -->
+        <div class="reviews-feed-card">
+            <div class="reviews-feed-header">
+                <h3 class="reviews-feed-title">Recent reviews</h3>
+                <p class="reviews-feed-subtitle">Reply within 48 hours to maintain your response badge</p>
+            </div>
+
+            <div class="reviews-list">
+                {% if reviews %}
+                    {% for rev in reviews %}
+                    <div class="review-item">
+                        <div class="review-item-top">
+                            <h4 class="reviewer-name">
+    {% if rev.is_anonymous %}
+        Anonymous User
+    {% elif rev.company_name %}
+        {{ rev.company_name }}
+    {% elif rev.reviewer_name %}
+        {{ rev.reviewer_name }}
+    {% elif rev.user and rev.user.get_full_name %}
+        {{ rev.user.get_full_name }}
+    {% else %}
+        Client
+    {% endif %}
+</h4>
+                            <span class="review-date">{{ rev.created_at|timesince }} ago</span>
+                        </div>
+
+                        <!-- Star Rating for this item -->
+                        <div style="display: flex; gap: 2px; margin-bottom: 6px;">
+                            {% for i in "12345" %}
+                            <svg width="14" height="14" viewBox="0 0 20 20" fill="{% if forloop.counter <= rev.rating %}#F59E0B{% else %}#D1D5DB{% endif %}" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M10 15.27L16.18 19L14.54 11.97L20 7.24L12.81 6.63L10 0L7.19 6.63L0 7.24L5.46 11.97L3.82 19L10 15.27Z"/>
+                            </svg>
+                            {% endfor %}
+                        </div>
+
+                        <p class="review-comment">"{{ rev.comment }}"</p>
+
+                        {% if rev.lab_reply %}
+                            <!-- Existing Lab Reply -->
+                            <div class="owner-reply-box">
+                                <div class="owner-reply-title">Your Reply :</div>
+                                <div>{{ rev.lab_reply }}</div>
+                            </div>
+                        {% else %}
+                            <!-- Toggleable Reply Form -->
+                            <button type="button" class="btn-reply-toggle" onclick="toggleReplyForm('{{ rev.pk }}')">
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M8 3.33334V12.6667M3.33334 8H12.6667" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                <span>Reply to this review</span>
+                            </button>
+
+                            <div id="reply-form-{{ rev.pk }}" class="reply-form-wrap">
+                                <form method="post" action="{% url 'reply_lab_review' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="review_id" value="{{ rev.pk }}">
+                                    <textarea name="reply_message" rows="3" class="form-control" placeholder="Write your response..." required style="width: 100%; padding: 10px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 13.5px; margin-bottom: 8px;"></textarea>
+                                    <div style="display: flex; gap: 8px;">
+                                        <button type="submit" style="background: #0c769e; color: #fff; border: none; padding: 6px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;">Post Reply</button>
+                                        <button type="button" onclick="toggleReplyForm('{{ rev.pk }}')" style="background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB; padding: 6px 14px; border-radius: 6px; font-size: 13px; cursor: pointer;">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="text-align: center; padding: 40px; color: #9CA3AF; font-size: 14px;">
+                        No customer reviews received yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function toggleReplyForm(reviewId) {
+        const wrap = document.getElementById(`reply-form-${reviewId}`);
+        if (wrap) {
+            wrap.style.display = wrap.style.display === 'block' ? 'none' : 'block';
+        }
+    }
+>>>>>>> c92ac00d20d6c7c99af7e65dfeb8ac644d86c141
 </script>

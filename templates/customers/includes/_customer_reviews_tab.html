@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% load static %}
 <div class="cust-reviews-card">
     <div class="cust-reviews-header">
@@ -94,3 +95,101 @@
 </div>
 
 <script src="{% static 'js/customer-reviews.js' %}"></script>
+=======
+{% load static %}
+<div class="cust-reviews-card">
+    <div class="cust-reviews-header">
+        <div>
+            <h2>My Submitted Reviews</h2>
+            <p>View lab replies and manage your rating history.</p>
+        </div>
+        <span class="reviews-count-badge">
+            {{ reviews_count }} Review{% if reviews_count != 1 %}s{% endif %}
+        </span>
+    </div>
+
+    <div class="cust-reviews-list">
+        {% if user_reviews %}
+            {% for rev in user_reviews %}
+            <div class="cust-review-item" id="cust-review-{{ rev.pk }}">
+                <div class="cust-review-header">
+                    <div>
+                        <h3 class="lab-name-tag">{{ rev.lab.lab_name }}</h3>
+                        <span class="review-date">Reviewed on {{ rev.created_at|date:"M d, Y" }}</span>
+                    </div>
+                    <button type="button" class="btn-edit-review" onclick="openEditModal('{{ rev.pk }}', '{{ rev.rating }}', '{{ rev.comment|escapejs }}', {{ rev.is_anonymous|yesno:'true,false' }})">
+                        ✎ Edit Review
+                    </button>
+                </div>
+
+                <div class="star-row">
+                    {% for i in "12345" %}
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="{% if forloop.counter <= rev.rating %}#F59E0B{% else %}#E5E7EB{% endif %}" aria-hidden="true">
+                        <path d="M10 15.27L16.18 19L14.54 11.97L20 7.24L12.81 6.63L10 0L7.19 6.63L0 7.24L5.46 11.97L3.82 19L10 15.27Z"/>
+                    </svg>
+                    {% endfor %}
+                    {% if rev.is_anonymous %}
+                        <span class="anon-badge">Posted Anonymously</span>
+                    {% endif %}
+                </div>
+
+                <p class="cust-review-comment" id="review-text-{{ rev.pk }}">"{{ rev.comment }}"</p>
+
+                {% if rev.lab_reply %}
+                    <div class="lab-response-box">
+                        <div class="lab-response-title">Official Reply from {{ rev.lab.lab_name }}</div>
+                        <div class="lab-reply-body">{{ rev.lab_reply }}</div>
+                        {% if rev.replied_at %}
+                            <span class="lab-reply-time">Replied {{ rev.replied_at|timesince }} ago</span>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="awaiting-reply">Awaiting lab response...</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="reviews-empty">You haven't submitted any lab reviews yet.</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Component for Editing Review -->
+<div id="edit-review-modal" class="edit-modal-backdrop">
+    <div class="edit-modal-content">
+        <h3 class="edit-modal-title">Update Your Review</h3>
+
+        <form id="update-review-form" method="post" action="">
+            {% csrf_token %}
+
+            <div class="form-group-sm">
+                <label class="form-label-sm" for="edit-rating-select">Rating</label>
+                <select name="rating" id="edit-rating-select" class="form-select-sm">
+                    <option value="5">5 ★★★★★ (Excellent)</option>
+                    <option value="4">4 ★★★★☆ (Good)</option>
+                    <option value="3">3 ★★★☆☆ (Average)</option>
+                    <option value="2">2 ★★☆☆☆ (Poor)</option>
+                    <option value="1">1 ★☆☆☆☆ (Terrible)</option>
+                </select>
+            </div>
+
+            <div class="form-group-sm">
+                <label class="form-label-sm" for="edit-comment-text">Review Comment</label>
+                <textarea name="comment" id="edit-comment-text" rows="4" class="form-textarea-sm" required></textarea>
+            </div>
+
+            <div class="form-check-row">
+                <input type="checkbox" name="is_anonymous" id="edit-anonymous-check">
+                <label for="edit-anonymous-check">Keep review anonymous</label>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" onclick="closeEditModal()" class="btn-modal-cancel">Cancel</button>
+                <button type="submit" id="btn-save-review-update" class="btn-modal-save">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{% static 'js/customer-reviews.js' %}"></script>
+>>>>>>> c92ac00d20d6c7c99af7e65dfeb8ac644d86c141

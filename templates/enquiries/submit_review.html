@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {% extends 'base.html' %}
 {% load static %}
 
@@ -71,3 +72,78 @@
 
 <script src="{% static 'js/submit-review.js' %}"></script>
 {% endblock %}
+=======
+{% extends 'base.html' %}
+{% load static %}
+
+{% block meta_data %}
+    <title>Submit Review - {{ lab.lab_name }} | LabFinder 360</title>
+{% endblock %}
+
+{% block content %}
+<main class="review-main">
+    <div class="container review-form-wrap">
+
+        <div class="review-summary-card">
+            <h1>Write a Review for {{ branch.lab_name }}</h1>
+            <p>Share your testing experience to help other buyers choose accredited laboratory services.</p>
+
+            <form id="reviewForm" method="POST" action="">
+                {% csrf_token %}
+
+                <div class="review-field">
+                    <label class="review-label">REVIEW TITLE / HEADLINE *</label>
+                    <input type="text" name="title" required
+                           placeholder="e.g. Excellent testing accuracy and timely report delivery"
+                           class="review-input">
+                </div>
+
+                <div class="review-field review-field--cats">
+                    <label class="review-label review-label--spaced">RATE EVALUATION CATEGORIES *</label>
+
+                    <div class="cat-rating-list">
+                        {% for cat in categories %}
+                        <div class="cat-rating-row">
+                            <div>
+                                <strong>{{ cat.name }}</strong>
+                                {% if cat.description %}
+                                    <span class="cat-desc">{{ cat.description }}</span>
+                                {% endif %}
+                            </div>
+
+                            <div class="star-rating-group">
+                                {% for star in "54321" %}
+                                <input type="radio" id="cat_{{ cat.pk }}_star_{{ star }}"
+                                       name="category_rating_{{ cat.pk }}" value="{{ star }}" required>
+                                <label for="cat_{{ cat.pk }}_star_{{ star }}" title="{{ star }} Stars">★</label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="review-field">
+                    <label class="review-label">DETAILED FEEDBACK *</label>
+                    <textarea name="summary" rows="4" required
+                              placeholder="Describe sample pickup turnaround, parameter accuracy, or customer support..."
+                              class="review-textarea"></textarea>
+                </div>
+
+                <div class="review-anon-row">
+                    <input type="checkbox" name="is_anonymous" id="isAnonymous">
+                    <label for="isAnonymous">Post review anonymously (Hides your name publicly)</label>
+                </div>
+
+                <div class="modal-actions">
+                    <a href="{% url 'lab-detail' pk=branch.pk %}" class="btn-modal-cancel">Cancel</a>
+                    <button type="button" id="btnReviewSubmit" class="btn-modal-save">Submit Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script src="{% static 'js/submit-review.js' %}"></script>
+{% endblock %}
+>>>>>>> c92ac00d20d6c7c99af7e65dfeb8ac644d86c141
