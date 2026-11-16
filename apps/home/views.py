@@ -1,5 +1,5 @@
 from urllib.parse import unquote
-from django.db.models import Q, Count, Prefetch
+from django.db.models import Q, Count, Prefetch, Case, When, Value, IntegerField
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
@@ -313,14 +313,28 @@ def search_labs_by_name(query, limit=None, subcategory_id=None, category_id=None
     if filter_q:
         branches = branches.filter(filter_q).distinct()
 
-    branches = (
-        branches.prefetch_related(
-            "branch_accreditation__accred",
-            "lab_scope__certificate__accred",
-            "lab_scope__facility_scope__certificate__accred"
-        )
-        .order_by("lab_name")
+    branches = branches.prefetch_related(
+        "branch_accreditation__accred",
+        "lab_scope__certificate__accred",
+        "lab_scope__facility_scope__certificate__accred"
     )
+
+    if q:
+        branches = branches.annotate(
+            search_priority=Case(
+                When(lab_city__iexact=q, then=Value(1)),
+                When(lab_city__istartswith=q, then=Value(2)),
+                When(lab_city__icontains=q, then=Value(3)),
+                When(lab_name__iexact=q, then=Value(4)),
+                When(lab_name__istartswith=q, then=Value(5)),
+                When(lab_name__icontains=q, then=Value(6)),
+                When(org_name__icontains=q, then=Value(7)),
+                default=Value(8),
+                output_field=IntegerField(),
+            )
+        ).order_by("search_priority", "lab_name")
+    else:
+        branches = branches.order_by("lab_name")
     if limit:
         branches = branches[:limit]
     else:

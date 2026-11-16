@@ -86,12 +86,23 @@ function odInitFlash() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  ORDER DETAIL — Open dispute tab on hash                            */
+/*  ORDER DETAIL — Open active tab on query param or hash              */
 /* ------------------------------------------------------------------ */
-function odCheckHash() {
+function odCheckActiveTab() {
+  var params = new URLSearchParams(window.location.search);
+  var subtab = params.get('subtab') || (window.location.hash ? window.location.hash.replace('#', '') : null);
+  if (subtab) {
+    if (subtab === 'documents') subtab = 'docs';
+    if (subtab === 'payments') subtab = 'qi';
+    var btn = document.getElementById('tab-' + subtab);
+    if (btn) {
+      odTab(btn, subtab);
+      return;
+    }
+  }
   if (window.location.hash === '#dispute') {
-    var btn = document.getElementById('tab-dispute');
-    if (btn) { odTab(btn, 'dispute'); }
+    var disputeBtn = document.getElementById('tab-dispute');
+    if (disputeBtn) { odTab(disputeBtn, 'dispute'); }
   }
 }
 
@@ -105,5 +116,5 @@ document.addEventListener('DOMContentLoaded', function () {
   odScrollChatToBottom();
   odInitAttach();
   odInitFlash();
-  odCheckHash();
+  odCheckActiveTab();
 });

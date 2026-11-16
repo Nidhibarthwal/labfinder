@@ -89,6 +89,14 @@
   box-sizing: border-box;
 }
 
+.lp .od-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 .lp-card {
   background: #fff;
   border: 1px solid #e8eef5;

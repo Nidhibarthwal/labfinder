@@ -513,10 +513,11 @@ class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
 
         message_text = request.POST.get("message", "").strip()
         lab_id = request.POST.get("lab") or request.GET.get("lab")
+        subtab = request.POST.get("subtab") or request.GET.get("subtab") or "quotes"
 
         if not message_text:
             messages.error(request, "Message cannot be empty.")
-            return redirect(self._detail_url(enquiry, lab_id))
+            return redirect(self._detail_url(enquiry, lab_id, subtab))
 
         lab_lead = None
         if lab_id:
@@ -532,7 +533,7 @@ class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
                 request,
                 "Select a laboratory conversation before sending a message.",
             )
-            return redirect(self._detail_url(enquiry, None))
+            return redirect(self._detail_url(enquiry, None, subtab))
 
         EnquiryDiscussion.objects.create(
             lab_lead=lab_lead,
@@ -549,13 +550,18 @@ class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
             lab_lead.save(update_fields=["status", "status_changed_at", "updated_at"])
 
         messages.success(request, "Your message has been sent to the lab.")
-        return redirect(self._detail_url(enquiry, lab_lead.lab_id))
+        return redirect(self._detail_url(enquiry, lab_lead.lab_id, subtab))
 
     @staticmethod
-    def _detail_url(enquiry, lab_id):
+    def _detail_url(enquiry, lab_id, subtab=None):
         url = reverse("customer_lead_detail", kwargs={"enquiry_id": enquiry.pk})
+        params = []
         if lab_id:
-            url = f"{url}?lab={lab_id}"
+            params.append(f"lab={lab_id}")
+        if subtab:
+            params.append(f"subtab={subtab}")
+        if params:
+            url = f"{url}?{'&'.join(params)}"
         return url
 
 
@@ -612,4 +618,4 @@ class ProcessCustomerDecisionView(LoginRequiredMixin, View):
             messages.info(request, "You have declined this quotation.")
 
         url = reverse("customer_lead_detail", kwargs={"enquiry_id": enquiry.pk})
-        return redirect(f"{url}?lab={lab_lead.lab_id}")
+        return redirect(f"{url}?subtab=quotes&lab={lab_lead.lab_id}")

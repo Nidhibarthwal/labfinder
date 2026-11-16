@@ -1233,6 +1233,14 @@ def order_detail(request, order_id):
 
     if request.method == "POST":
         action = request.POST.get("action")
+        subtab = request.POST.get("subtab") or request.GET.get("subtab")
+
+        def _redirect_with_subtab(target_subtab):
+            st = subtab or target_subtab
+            url = reverse("order_detail", kwargs={"order_id": order.pk})
+            if st:
+                url = f"{url}?subtab={st}"
+            return redirect(url)
 
         if action == "add_message":
             msg_form = OrderMessageForm(request.POST, request.FILES)
@@ -1245,9 +1253,10 @@ def order_detail(request, order_id):
                     m.is_internal = False
                 m.save()
                 messages.success(request, "Message sent.")
-                return redirect("order_detail", order_id=order.pk)
+                return _redirect_with_subtab("chat")
             else:
-                messages.error(request, f"Failed to send message. Please check the form. -{msg_form.errors}")
+                messages.error(request, f"Failed to send message: {msg_form.errors.as_text()}")
+                return _redirect_with_subtab("chat")
 
         elif action == "upload_invoice" and is_lab_side:
             invoice_form = OrderInvoiceForm(request.POST, request.FILES, instance=order)
@@ -1256,7 +1265,10 @@ def order_detail(request, order_id):
                 o.invoice_uploaded_at = timezone.now()
                 o.save()
                 messages.success(request, "Invoice uploaded.")
-                return redirect("order_detail", order_id=order.pk)
+                return _redirect_with_subtab("qi")
+            else:
+                messages.error(request, f"Failed to upload invoice: {invoice_form.errors.as_text()}")
+                return _redirect_with_subtab("qi")
 
         elif action == "upload_document":
             doc_form = OrderDocumentForm(request.POST, request.FILES)
@@ -1266,7 +1278,10 @@ def order_detail(request, order_id):
                 d.uploaded_by = request.user
                 d.save()
                 messages.success(request, "Document uploaded.")
-                return redirect("order_detail", order_id=order.pk)
+                return _redirect_with_subtab("docs" if is_lab_side else "documents")
+            else:
+                messages.error(request, f"Failed to upload document: {doc_form.errors.as_text()}")
+                return _redirect_with_subtab("docs" if is_lab_side else "documents")
 
         elif action == "mark_complete_customer" and is_customer:
             order.status = "completed"
@@ -1275,7 +1290,7 @@ def order_detail(request, order_id):
             order.completion_requested_by = ""
             order.save()
             messages.success(request, "Order marked as completed.")
-            return redirect("order_detail", order_id=order.pk)
+            return _redirect_with_subtab("overview")
 
         elif action == "mark_complete_lab" and is_lab_side:
             order.status = "pending_customer_completion"
@@ -1285,7 +1300,7 @@ def order_detail(request, order_id):
                 request,
                 "Completion requested. Waiting for customer to confirm.",
             )
-            return redirect("order_detail", order_id=order.pk)
+            return _redirect_with_subtab("overview")
 
         elif action == "confirm_completion_customer" and is_customer:
             if order.status == "pending_customer_completion":
@@ -1295,7 +1310,7 @@ def order_detail(request, order_id):
                 order.completion_requested_by = ""
                 order.save()
                 messages.success(request, "Order completion confirmed.")
-            return redirect("order_detail", order_id=order.pk)
+            return _redirect_with_subtab("overview")
 
         elif action == "decline_completion_customer" and is_customer:
             if order.status == "pending_customer_completion":
@@ -1303,7 +1318,7 @@ def order_detail(request, order_id):
                 order.completion_requested_by = ""
                 order.save(update_fields=["status", "completion_requested_by", "updated_at"])
                 messages.info(request, "Completion declined. Order remains in progress.")
-            return redirect("order_detail", order_id=order.pk)
+            return _redirect_with_subtab("overview")
 
         elif action == "pay_advance" and is_customer:
             if order.status in ("payment", "new"):
@@ -1311,7 +1326,7 @@ def order_detail(request, order_id):
                 order.sample_received_at = timezone.now()
                 order.save(update_fields=["status", "sample_received_at", "updated_at"])
             messages.success(request, "Advance payment placed in escrow. Please arrange sample dispatch.")
-            return redirect("order_detail", order_id=order.pk)
+            return _redirect_with_subtab("payments")
 
         elif action == "raise_dispute":
             dispute_form = DisputeForm(request.POST)
@@ -1325,7 +1340,10 @@ def order_detail(request, order_id):
                 order.status = "disputed"
                 order.save(update_fields=["status", "updated_at"])
                 messages.warning(request, "Dispute raised. LabFinder team will review.")
-                return redirect("order_detail", order_id=order.pk)
+                return _redirect_with_subtab("dispute")
+            else:
+                messages.error(request, f"Failed to raise dispute: {dispute_form.errors.as_text()}")
+                return _redirect_with_subtab("dispute")
 
     if is_customer and not is_lab_side:
         # Customer-facing Order & Payment View (Figma Orders_Payments.png)
@@ -1392,6 +1410,9 @@ def order_detail(request, order_id):
         "enquiries/order_detail.html",
         {
             "order": order,
+            "branch": user_branch or order.lab,
+            "active_tab": "orders",
+            "subtab": request.GET.get("subtab", "overview"),
             "order_messages": messages_qs,
             "msg_form": msg_form,
             "invoice_form": invoice_form,

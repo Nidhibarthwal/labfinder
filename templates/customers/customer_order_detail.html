@@ -132,6 +132,7 @@
                       <form method="post">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="pay_advance">
+                        <input type="hidden" name="subtab" value="payments">
                         <button type="submit" class="cd-btn cd-btn--green">Pay now</button>
                       </form>
                     {% else %}
@@ -194,7 +195,7 @@
                           {{ m.sender.get_full_name|default:m.sender.username }}
                           <span style="font-weight: 400; color: #64748b; font-size: 12px;">({{ m.get_sender_type_display }})</span>
                         </h3>
-                        <p style="margin: 4px 0 0; font-size: 13.5px; color: #334155;">{{ m.body }}</p>
+                        <p style="margin: 4px 0 0; font-size: 13.5px; color: #334155;">{{ m.message|default:m.body }}</p>
                         {% if m.attachment %}
                           <a href="{{ m.attachment.url }}" download class="cd-link-download" style="display: inline-block; margin-top: 4px;">Attachment</a>
                         {% endif %}
@@ -210,6 +211,7 @@
                 <form method="post" enctype="multipart/form-data" style="border-top: 1px solid #f1f5f9; padding-top: 18px;">
                   {% csrf_token %}
                   <input type="hidden" name="action" value="add_message">
+                  <input type="hidden" name="subtab" value="chat">
                   <div class="cd-form-group">
                     <label class="cd-form-label" for="id_msg_body">Write a message</label>
                     <textarea id="id_msg_body" name="message" rows="3" class="cd-form-control" placeholder="Ask about test progress, sample requirements, or timeline..." required></textarea>
@@ -296,6 +298,7 @@
                   <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="raise_dispute">
+                    <input type="hidden" name="subtab" value="dispute">
                     <div class="cd-form-group">
                       <label class="cd-form-label" for="id_dispute_reason">Dispute Reason &amp; Details</label>
                       <textarea id="id_dispute_reason" name="reason" rows="3" class="cd-form-control" placeholder="Explain the issue with test parameters, turnaround, or reports..." required></textarea>
@@ -323,6 +326,7 @@
               <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="pay_advance">
+                <input type="hidden" name="subtab" value="payments">
                 <button type="submit" class="cd-btn cd-btn--amber cd-btn-full">
                   Pay ₹{{ half_amount }}
                 </button>
@@ -351,6 +355,7 @@
               <form method="post">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="confirm_completion_customer">
+                <input type="hidden" name="subtab" value="overview">
                 <button type="submit" class="cd-btn cd-btn--green cd-btn-full">
                   Confirm &amp; Release Escrow
                 </button>
