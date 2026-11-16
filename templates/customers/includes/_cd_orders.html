@@ -113,13 +113,7 @@
               {% endif %}
             </td>
             <td>
-              {% if o.status == 'completed' %}
-                <span class="cd-payment-badge cd-payment-badge--paid">Paid in full</span>
-              {% elif o.status == 'in_progress' %}
-                <span class="cd-payment-badge cd-payment-badge--partial">Paid advance</span>
-              {% else %}
-                <span class="cd-payment-badge cd-payment-badge--unpaid">Not paid</span>
-              {% endif %}
+              <span class="cd-payment-badge cd-payment-badge--{{ o.payment_status }}">{{ o.get_payment_status_display }}</span>
             </td>
             <td>
               <span class="cd-pill cd-pill--{{ o.status }}">{{ o.get_status_display }}</span>

@@ -48,7 +48,7 @@
               <span class="cd-cell-text">{{ enq.sample_count|default:"1" }}</span>
             </td>
             <td>
-              <span class="cd-cell-bold">{% if enq.budget %}₹{{ enq.budget }}{% else %}Flexible{% endif %}</span>
+              <span class="cd-cell-bold">{% if enq.budget %}{{ enq.budget }}{% else %}Flexible{% endif %}</span>
             </td>
             <td>
               <span class="cd-cell-text">{{ enq.get_urgency_display|default:"Flexible" }}</span>

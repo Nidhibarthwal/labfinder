@@ -35,7 +35,7 @@
             {% if enquiry.lab_leads.count > 1 %} +{{ enquiry.lab_leads.count|add:"-1" }} more{% endif %}
             &bull; {{ enquiry.quantity_or_sample_info|default:"2 samples" }}
             &bull; Budget {% if enquiry.budget %}₹{{ enquiry.budget }}{% else %}Flexible{% endif %}
-            &bull; By {{ enquiry.urgency|default:"Flexible" }}
+            &bull; By {{ enquiry.get_urgency_display|default:"Flexible" }}
           </p>
         </div>
         <div class="cd-detail-header__actions">

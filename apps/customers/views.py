@@ -168,6 +168,8 @@ def get_customer_dashboard_context(request):
     else:
         testing_expenditure_display = f"{expenditure_sum:,.0f}"
 
+    # testing_expenditure_display = f"₹{float(expenditure_sum):,.0f}"
+    testing_expenditure_display = f"{float(expenditure_sum):,.0f}"
     # 2. Recent Activities Overview (Left column)
     recent_activities = []
     for enq in all_items:

@@ -107,7 +107,8 @@
             {% if subtab == 'payments' %}
               <!-- ================= PAYMENTS TAB (Figma Orders_Payments.png) ================= -->
               <div class="cd-card-body">
-                <h2 class="cd-invoices-header">Invoices</h2>
+                <h2 class="cd-invoices-header">Invoices <span class="error">(
+                  Right now static data)</span></h2>
 
                 <!-- Invoice 1: Advance 50% -->
                 <div class="cd-invoice-item">
@@ -211,7 +212,7 @@
                   <input type="hidden" name="action" value="add_message">
                   <div class="cd-form-group">
                     <label class="cd-form-label" for="id_msg_body">Write a message</label>
-                    <textarea id="id_msg_body" name="body" rows="3" class="cd-form-control" placeholder="Ask about test progress, sample requirements, or timeline..." required></textarea>
+                    <textarea id="id_msg_body" name="message" rows="3" class="cd-form-control" placeholder="Ask about test progress, sample requirements, or timeline..." required></textarea>
                   </div>
                   <button type="submit" class="cd-btn cd-btn--primary">Send Message</button>
                 </form>
@@ -397,7 +398,7 @@
           <div class="cd-card-summary">
             <h2 class="cd-card-summary__header">Payment &bull; Escrow</h2>
             <div class="cd-summary-row">
-              <span>Order total</span>
+              <span>Order Total</span>
               <strong class="cd-summary-row--bold">₹{{ total_amount }}</strong>
             </div>
             <div class="cd-summary-row">

@@ -1246,6 +1246,8 @@ def order_detail(request, order_id):
                 m.save()
                 messages.success(request, "Message sent.")
                 return redirect("order_detail", order_id=order.pk)
+            else:
+                messages.error(request, f"Failed to send message. Please check the form. -{msg_form.errors}")
 
         elif action == "upload_invoice" and is_lab_side:
             invoice_form = OrderInvoiceForm(request.POST, request.FILES, instance=order)

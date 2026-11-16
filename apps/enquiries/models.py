@@ -39,12 +39,19 @@ URGENCY_CHOICES = [
 ]
 
 ORDER_STATUS_CHOICES = [
-    ("sample_received", "Sample Received"),
-    ("in_progress", "In Progress"),
+    ("sample_received", "Sample Received"), # Payment Pending
+    ("in_progress", "In Testing"),
     ("pending_customer_completion", "Awaiting Customer Confirmation"),
+    ("report_ready", "Report Ready"),
     ("completed", "Completed"),
     ("disputed", "In Dispute"),
     ("cancelled", "Cancelled"),
+]
+
+ORDER_PAYMENT_STATUS_CHOICES = [
+    ("not_paid", "Not Paid"),
+    ("partially_paid", "Partially Paid"),
+    ("paid", "Paid in full"),
 ]
 
 DISPUTE_STATUS_CHOICES = [
@@ -382,6 +389,10 @@ class LIMSJobOrder(models.Model):
     status = models.CharField(
         max_length=40, choices=ORDER_STATUS_CHOICES,
         default="in_progress", db_index=True,
+    )
+    payment_status = models.CharField(
+            max_length=40, choices=ORDER_PAYMENT_STATUS_CHOICES,
+            default="not_paid", db_index=True,
     )
     sample_received_at = models.DateTimeField(null=True, blank=True)
     invoice = models.FileField(
