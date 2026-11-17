@@ -11,7 +11,7 @@ from django_json_widget.widgets import JSONEditorWidget
 from .models import (
     BranchImage, BranchItem, BranchManpower, LabCategory, LabCategoryField, LabSocialLink, LabWebPage, LegalIdProofDocType, LabAddressProofDocType, Branch,
     Accreditation, ManpowerRoleDepartment, ManpowerRoles, ProductService, TestingPackage, TestingScopeFacility,
-    LabConfiguration, LabTeamMember, BranchManpowerPermission
+    LabConfiguration, BranchManpowerPermission
 )
 
 

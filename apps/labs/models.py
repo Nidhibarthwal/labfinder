@@ -1550,8 +1550,6 @@ class LabConfiguration(Trackable):
 class BranchManpowerPermission(Trackable):
     """
     Git repository-like portal access and granular section permissions for lab management.
-    Users are selected from BranchManpower (company employees). In BranchManpower they hold
-    their company designation (e.g. Senior Chemist, Lab Director), while this model defines
     their portal access level (Lab Admin, Lead Manager, Viewer, Custom) and section permissions.
     """
     ROLE_CHOICES = (

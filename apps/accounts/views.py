@@ -24,7 +24,7 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 User = get_user_model()
 from apps.labs.models import (
     Branch, BranchImage, LabCategory, LabSocialLink, ProductService, TestingPackage, TestingPackageItem, User,
-    Accreditation, BranchItem, TestingScopeFacility, BranchManpower, LabConfiguration, LabTeamMember,
+    Accreditation, BranchItem, TestingScopeFacility, BranchManpower, LabConfiguration,
     BranchManpowerPermission
 )
 from django.contrib.auth.models import User, Group
