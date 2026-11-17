@@ -174,6 +174,9 @@ def get_current_branch(request):
         branch = getattr(request.user, "lab_user", None)
         if branch:
             return branch
+        branch = Branch.objects.filter(user=request.user).first()
+        if branch:
+            return branch
         branch = Branch.objects.filter(contact_email__iexact=request.user.email).first()
         if branch:
             return branch
@@ -2072,6 +2075,32 @@ class DashboardView(View):
             product_services = list(current_branch.product_services.filter(is_active=True))
             all_facility_photos = list(current_branch.facility_images.filter(is_active=True))
 
+            if tab == "scope":
+                scopes_with_facilities = (
+                    BranchItem.objects.filter(lab=current_branch, is_deleted=False)
+                    .select_related("service_category", "unit", "gst")
+                    .prefetch_related(
+                        "facility_scope",
+                        "facility_scope__method_test",
+                        "facility_scope__range_unit",
+                        "test_type",
+                        "category",
+                    )
+                    .order_by("sort_order", "is_number")
+                )
+                published_scope_count = BranchItem.objects.filter(lab=current_branch, is_deleted=False, is_disable=False, is_public=True).count()
+                unpublished_scope_count = BranchItem.objects.filter(lab=current_branch, is_deleted=False).exclude(is_disable=False, is_public=True).count()
+                total_scope_count = scopes_with_facilities.count()
+            else:
+                scopes_with_facilities = (
+                    BranchItem.objects.filter(lab=current_branch, is_deleted=False, is_disable=False)
+                    .prefetch_related("test_type", "facility_scope")
+                    .order_by("sort_order", "is_number")[:30]
+                )
+                published_scope_count = 0
+                unpublished_scope_count = 0
+                total_scope_count = scope_count
+
             context = {
                 "email": email,
                 "branch": current_branch,
@@ -2095,11 +2124,10 @@ class DashboardView(View):
                     .select_related("accred")
                     .order_by("id")
                 ),
-                "scopes_with_facilities": (
-                    BranchItem.objects.filter(lab=current_branch, is_deleted=False, is_disable=False)
-                    .order_by("sort_order", "is_number")[:30]
-                ),
-                "scope_count": scope_count,
+                "scopes_with_facilities": scopes_with_facilities,
+                "scope_count": total_scope_count,
+                "published_scope_count": published_scope_count,
+                "unpublished_scope_count": unpublished_scope_count,
                 "facility_images": all_facility_photos if tab == "profile" else photos,
                 "all_facility_photos": all_facility_photos,
                 "profile_pct": profile_pct,
@@ -2299,7 +2327,31 @@ class DashboardView(View):
                 photo.delete()
             return JsonResponse({"status": "success"})
 
-        # ── 10. Full Profile Update ────────────────────────────────────
+        # ── 10. Scope Status Toggle & Delete ───────────────────────────
+        elif action == "toggle_scope_status":
+            scope_id = request.POST.get("scope_id")
+            if scope_id:
+                branch_item = BranchItem.objects.filter(id=scope_id, lab=branch).first()
+                if branch_item:
+                    branch_item.is_public = not branch_item.is_public
+                    if branch_item.is_public:
+                        branch_item.is_disable = False
+                    branch_item.save(update_fields=["is_public", "is_disable"])
+                    is_active = branch_item.is_public and not branch_item.is_disable
+                    return JsonResponse({"status": "success", "is_public": is_active})
+            return JsonResponse({"status": "error", "message": "Scope not found"}, status=404)
+
+        elif action == "delete_scope":
+            scope_id = request.POST.get("scope_id")
+            if scope_id:
+                branch_item = BranchItem.objects.filter(id=scope_id, lab=branch).first()
+                if branch_item:
+                    branch_item.facility_scope.all().delete()
+                    branch_item.delete()
+                    return JsonResponse({"status": "success", "message": "Scope deleted successfully."})
+            return JsonResponse({"status": "error", "message": "Scope not found"}, status=404)
+
+        # ── 11. Full Profile Update ────────────────────────────────────
         elif action == "update_profile":
             branch.lab_name = request.POST.get("legal_lab_name") or request.POST.get("lab_name") or branch.lab_name
             phone = request.POST.get("phone_number") or request.POST.get("contact_mobile")

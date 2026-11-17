@@ -3,6 +3,9 @@
 {% block meta_data %}<title>Lab Dashboard | LabFinder 360</title>{% endblock %}
 {% block content %}
 <link rel="stylesheet" href="{% static 'css/lab-portal.css' %}">
+{% if active_tab == 'scope' %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endif %}
 <div class="lp">
   {% include 'accounts/includes/_lp_header_nav.html' %}
   <div class="lp-main">
@@ -17,11 +20,7 @@
     {% elif active_tab == 'reviews' %}
       {% include 'accounts/includes/_lp_reviews.html' %}
     {% elif active_tab == 'scope' %}
-      <div class="lp-card"><h2>Test & Scope</h2><p class="lp-muted">{{ scope_count }} published tests.</p>
-        {% for s in scopes_with_facilities|slice:":12" %}
-          <div class="lp-step"><div><h3>{{ s.is_number|default:s.is_title|default:"Test" }}</h3><p>{{ s.is_title }}</p></div></div>
-        {% empty %}<p>No tests published yet.</p>{% endfor %}
-      </div>
+      {% include 'accounts/includes/_lp_scope.html' %}
     {% else %}
       <div class="lp-card"><h2>{{ active_tab|title }}</h2><p class="lp-muted">This section is coming next.</p></div>
     {% endif %}

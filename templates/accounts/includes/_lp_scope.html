@@ -1,0 +1,718 @@
+{% load static %}
+
+<!-- Top Bar -->
+<div class="lp-head">
+  <div>
+    <h2 style="margin:0; font-size:20px; font-weight:700; color:#0F172A;">Test & Scope</h2>
+    <p class="lp-muted">Manage the tests, standards, and parameters this lab offers.</p>
+  </div>
+  <div style="display:flex; gap:10px; align-items:center;">
+    <button type="button" class="lp-btn lp-btn--ghost" id="btnTopImportExcel" onclick="openExcelImport()" style="display:inline-flex; align-items:center; gap:6px; color:#0284C7; border:1px solid #E2E8F0; background:#fff;">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+        <path d="M9 1.5H3.5C2.67157 1.5 2 2.17157 2 3V13C2 13.8284 2.67157 14.5 3.5 14.5H12.5C13.3284 14.5 14 13.8284 14 13V6.5L9 1.5Z" stroke="#0284C7" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M9 1.5V6.5H14" stroke="#0284C7" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M8 9V12M8 9L6.5 10.5M8 9L9.5 10.5" stroke="#0284C7" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Import Excel</span>
+    </button>
+    <button type="button" class="lp-btn" id="btnTopAddTest" onclick="openProductModal()" style="display:inline-flex; align-items:center; gap:6px;">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 3V13M3 8H13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Add Test</span>
+    </button>
+  </div>
+</div>
+
+<!-- Toolbar: Filter Pills, View Mode Switcher, and Search Input -->
+<div class="lp-scope-toolbar">
+  <div class="lp-scope-toolbar-top">
+    <!-- Filter Pills: All / Published / Unpublished -->
+    <div class="lp-scope-filter-pills" id="scopeFilterPills">
+      <button type="button" class="lp-scope-pill is-active" data-filter="all" onclick="filterByStatus('all', this)">
+        All {{ scope_count }}
+      </button>
+      <button type="button" class="lp-scope-pill" data-filter="published" onclick="filterByStatus('published', this)">
+        Published ({{ published_scope_count }})
+      </button>
+      <button type="button" class="lp-scope-pill" data-filter="unpublished" onclick="filterByStatus('unpublished', this)">
+        Unpublished ({{ unpublished_scope_count }})
+      </button>
+    </div>
+
+    <!-- View Mode Switch: Cards vs Table -->
+    <div class="lp-view-mode-toggle">
+      <button type="button" class="lp-view-mode-btn is-active" id="btnViewCards" title="Card View" onclick="switchScopeView('cards')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      </button>
+      <button type="button" class="lp-view-mode-btn" id="btnViewTable" title="Table View" onclick="switchScopeView('table')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Search Input Bar -->
+  <div class="lp-scope-search-box">
+    <svg class="lp-scope-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"></circle>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+    </svg>
+    <input type="text" id="lpScopeSearch" class="lp-scope-search-input" placeholder="Search for test and parameters" autocomplete="off" oninput="filterScopeItems(this.value)">
+  </div>
+</div>
+
+<!-- ============================================================
+     1. CARD GRID VIEW (Figma: Test & Scope.png)
+     ============================================================ -->
+<div class="lp-scope-cards-grid" id="scopeCardsView">
+  {% for scope in scopes_with_facilities %}
+    {% with dept_list=scope.test_type.all %}
+      <div class="lp-scope-card" data-scope-id="{{ scope.id }}" data-status="{% if scope.is_public and not scope.is_disable %}published{% else %}unpublished{% endif %}" data-search="{% if scope.is_number %}{{ scope.is_number|lower }}{% endif %} {% if scope.is_title %}{{ scope.is_title|lower }}{% endif %} {% for f in scope.facility_scope.all %}{{ f.parameter|lower }} {% endfor %}">
+        
+        <!-- Hidden JSON for edit modal -->
+        <script type="application/json" class="scope-parameters-json">
+        [
+          {% for facility in scope.facility_scope.all %}
+          {
+            "id": "{{ facility.id }}",
+            "name": "{{ facility.parameter|escapejs }}",
+            "method": "{% for m in facility.method_test.all %}{{ m.name|escapejs }}{% endfor %}",
+            "unit": "{{ facility.range_unit.name|default:''|escapejs }}"
+          }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ]
+        </script>
+        <script type="application/json" class="scope-details-json">
+        {
+          "id": "{{ scope.id }}",
+          "name": "{{ scope.is_number|default:''|escapejs }}",
+          "title": "{{ scope.is_title|default:''|escapejs }}",
+          "notes": "{{ scope.description|default:''|escapejs }}",
+          "departments": [{% for dept in dept_list %}"{{ dept.name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+        }
+        </script>
+
+        <!-- Card Title -->
+        <h3 class="lp-scope-title" title="{% if scope.is_number %}{{ scope.is_number }}{% endif %} {% if scope.is_title and scope.is_title != scope.is_number %}- {{ scope.is_title }}{% endif %}">
+          {% if scope.is_number %}
+            {{ scope.is_number }}
+          {% else %}
+            {{ scope.is_title|default:"Standard / Method" }}
+          {% endif %}
+          {% if scope.is_title and scope.is_title != scope.is_number %}
+            - {{ scope.is_title }}
+          {% endif %}
+        </h3>
+
+        <!-- Badges & Status Toggle -->
+        <div class="lp-scope-meta">
+          <div class="lp-scope-badges">
+            {% for dept in dept_list %}
+              {% with dname=dept.name|lower %}
+                {% if "chem" in dname %}
+                  <span class="lp-dept-badge lp-dept-badge--chem" title="Chemical Testing">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M5.5 1.5H10.5M8 1.5V6L11.5 13C11.8 13.5 11.4 14.5 10.5 14.5H5.5C4.6 14.5 4.2 13.5 4.5 13L8 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    Chemical
+                  </span>
+                {% elif "mech" in dname %}
+                  <span class="lp-dept-badge lp-dept-badge--mech" title="Mechanical Testing">
+                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 13L7 9M9 7L13 3M11 1L15 5L13.5 6.5L9.5 2.5L11 1Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                    Mechanical
+                  </span>
+                {% elif "metal" in dname %}
+                  <span class="lp-dept-badge lp-dept-badge--metal" title="Metallurgical Testing">Metallurgical</span>
+                {% elif "elec" in dname %}
+                  <span class="lp-dept-badge lp-dept-badge--elec" title="Electrical Testing">Electrical</span>
+                {% else %}
+                  <span class="lp-dept-badge lp-dept-badge--other">{{ dept.name }}</span>
+                {% endif %}
+              {% endwith %}
+            {% empty %}
+              <span class="lp-dept-badge lp-dept-badge--other">General</span>
+            {% endfor %}
+          </div>
+
+          <!-- Active Toggle Switch -->
+          <label class="lp-toggle-switch" title="Toggle Published / Unpublished">
+            <input type="checkbox" class="scope-status-toggle" data-scope-id="{{ scope.id }}" {% if scope.is_public and not scope.is_disable %}checked{% endif %} onchange="toggleScopeStatus('{{ scope.id }}', this)">
+            <span class="lp-toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- Card Footer -->
+        <div class="lp-scope-card-footer">
+          <span class="lp-scope-param-count">
+            {{ scope.facility_scope.count }} Parameter{{ scope.facility_scope.count|pluralize }}
+          </span>
+          <button type="button" class="lp-scope-edit-btn" onclick="editScope('{{ scope.id }}')" title="Edit Scope & Parameters">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>Edit</span>
+          </button>
+        </div>
+      </div>
+    {% endwith %}
+  {% empty %}
+    <div class="lp-scope-empty" style="grid-column: 1 / -1;">
+      <h3 style="font-size:16px; font-weight:700; color:#0F172A; margin:0 0 6px;">No tests added to scope yet</h3>
+      <p style="font-size:13px; color:#64748B; margin:0 0 16px;">Add testing standards and specific parameter capabilities to start receiving customer quotes.</p>
+      <button type="button" class="lp-btn" onclick="openProductModal()">+ Add Test to Catalog</button>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- ============================================================
+     2. TABLE VIEW (matching lab-review-detail/)
+     ============================================================ -->
+<div id="scopeTableView" style="display:none; margin-top:16px; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; overflow:hidden;">
+  <table style="width:100%; border-collapse:collapse; text-align:left;">
+    <thead>
+      <tr style="background-color:#F8FAFC; border-bottom:1px solid #E2E8F0;">
+        <th style="padding:14px 18px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase;">STANDARD / SPECIFICATION</th>
+        <th style="padding:14px 18px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase; width:220px;">CATEGORY / DEPARTMENT</th>
+        <th style="padding:14px 18px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase; width:130px;">PARAMETERS</th>
+        <th style="padding:14px 18px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase; width:100px;">STATUS</th>
+        <th style="width:70px; padding:14px 18px;"></th>
+      </tr>
+    </thead>
+    <tbody id="scopeTableBody">
+      {% for scope in scopes_with_facilities %}
+        {% with dept_list=scope.test_type.all %}
+          <tr class="ps-table-row" data-scope-id="{{ scope.id }}" data-status="{% if scope.is_public and not scope.is_disable %}published{% else %}unpublished{% endif %}" data-search="{% if scope.is_number %}{{ scope.is_number|lower }}{% endif %} {% if scope.is_title %}{{ scope.is_title|lower }}{% endif %} {% for f in scope.facility_scope.all %}{{ f.parameter|lower }} {% endfor %}" style="border-bottom:1px solid #F1F5F9; vertical-align:top;">
+            
+            <td style="padding:16px 18px;">
+              <div style="font-size:14px; font-weight:700; color:#0F172A; margin-bottom:4px;">
+                {% if scope.is_number %}{{ scope.is_number }}{% else %}Untitled Standard{% endif %}
+              </div>
+              {% if scope.is_title and scope.is_title != scope.is_number %}
+                <div style="font-size:12.5px; line-height:1.45; color:#64748B;">
+                  {{ scope.is_title }}
+                </div>
+              {% endif %}
+            </td>
+
+            <td style="padding:16px 18px;">
+              <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                {% for dept in dept_list %}
+                  {% with dname=dept.name|lower %}
+                    {% if "chem" in dname %}
+                      <span class="lp-dept-badge lp-dept-badge--chem">Chemical</span>
+                    {% elif "mech" in dname %}
+                      <span class="lp-dept-badge lp-dept-badge--mech">Mechanical</span>
+                    {% else %}
+                      <span class="lp-dept-badge lp-dept-badge--other">{{ dept.name }}</span>
+                    {% endif %}
+                  {% endwith %}
+                {% empty %}
+                  <span class="lp-dept-badge lp-dept-badge--other">General</span>
+                {% endfor %}
+              </div>
+            </td>
+
+            <td style="padding:16px 18px;">
+              <span style="font-size:13px; font-weight:600; color:#334155;">
+                {{ scope.facility_scope.count }} Params
+              </span>
+            </td>
+
+            <td style="padding:16px 18px;">
+              <label class="lp-toggle-switch" title="Toggle Published / Unpublished">
+                <input type="checkbox" class="scope-status-toggle" data-scope-id="{{ scope.id }}" {% if scope.is_public and not scope.is_disable %}checked{% endif %} onchange="toggleScopeStatus('{{ scope.id }}', this)">
+                <span class="lp-toggle-slider"></span>
+              </label>
+            </td>
+
+            <td style="padding:16px 18px; text-align:right;">
+              <button type="button" class="lp-scope-edit-btn" onclick="editScope('{{ scope.id }}')" title="Edit Scope & Parameters">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        {% endwith %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================
+     3. PRODUCT MODAL: ADD / EDIT PRODUCT SCOPE (matching review-details.html)
+     ============================================================ -->
+<div class="product-modal-backdrop" id="addProductModal" aria-hidden="true">
+  <form class="product-modal" id="addProductModalForm" role="dialog" aria-modal="true" aria-labelledby="productModalTitle" method="POST" action="{% url 'save-product-scope' %}" enctype="multipart/form-data">
+    {% csrf_token %}
+    <input type="hidden" name="branch_id" id="modalBranchId" value="{{ branch.id }}">
+    <input type="hidden" name="scope_id" id="modalScopeId" value="">
+
+    <!-- Modal Header -->
+    <div class="product-modal__header">
+      <div class="product-modal__header-left">
+        <div class="product-modal__icon-badge" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" width="21" height="26" viewBox="0 0 21 26" fill="none">
+            <path d="M0 25.0556V0H2.27778V2.27778H18.2222V0H20.5V25.0556H18.2222V22.7778H2.27778V25.0556H0ZM2.27778 11.3889H4.55556V6.83333H11.3889V11.3889H18.2222V4.55556H2.27778V11.3889ZM2.27778 20.5H9.11111V15.9444H15.9444V20.5H18.2222V13.6667H2.27778V20.5ZM6.83333 11.3889H9.11111V9.11111H6.83333V11.3889ZM11.3889 20.5H13.6667V18.2222H11.3889V20.5Z" fill="#4F46E5"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="product-modal__title" id="productModalTitle">Add Product to Catalog</h2>
+          <p class="product-modal__subtitle">Create your testing scopes to attract the right buyers.</p>
+        </div>
+      </div>
+      <button type="button" class="product-modal__close-btn" id="btnCloseProductModal" onclick="closeProductModal()" aria-label="Close dialog">
+        <svg width="10" height="10" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+          <path d="M1.5 1.5L6.5 6.5M6.5 1.5L1.5 6.5" stroke="#4F576D" stroke-width="1.25" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Modal Step 1: Product / Standard Details -->
+    <div class="product-modal__step" id="productModalStep1">
+      <div class="product-modal__body">
+        <div class="product-modal__content-wrap">
+          <div class="product-modal__intro">
+            <h3 class="product-modal__heading">What product or material do you test?</h3>
+            <p class="product-modal__desc">Define the overarching product group or testing standard first. You'll configure specific parameters in the next step.</p>
+          </div>
+
+          <div class="product-modal__form">
+            <div class="product-modal__field" id="productNameField">
+              <label class="product-modal__label" for="productNameInput">
+                PRODUCT / MATERIAL / STANDARD NAME *
+              </label>
+              <input type="text" class="product-modal__input" id="productNameInput" name="product_name" placeholder="e.g. Is 15328 - PVC-U Pipes, Polycarbonate Resins, Structural Steel" autocomplete="off" required>
+            </div>
+
+            <div class="product-modal__field">
+              <span class="product-modal__label">TYPE OF TESTING</span>
+              <div class="product-modal__chips" id="productTestingChips">
+                {% for department in all_departments %}
+                  <button type="button" class="product-modal__chip" data-type="{{ department.name }}" onclick="this.classList.toggle('product-modal__chip--selected')">
+                    <span class="product-modal__chip-icon" aria-hidden="true">
+                      <svg width="15" height="15" viewBox="0 0 18 18" fill="none">
+                        <path d="M9.89319 14.4708L8.10681 14.4708L8.10681 9.87724L3.52923 9.89319V8.10681H8.12276L8.09086 8.10681L8.10681 3.52923L9.89319 3.52923L9.87724 8.10681L14.4708 8.10681V9.89319L9.89319 9.87724L9.89319 14.4708Z" fill="currentColor"/>
+                      </svg>
+                    </span>
+                    <span>{{ department.name }}</span>
+                  </button>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="product-modal__field">
+              <label class="product-modal__label" for="productScopeNotes">
+                SCOPE DESCRIPTION / NOTES
+              </label>
+              <textarea class="product-modal__textarea" id="productScopeNotes" name="scope_notes" rows="4" placeholder="Any specific context, limitation or general specification regarding this standard"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="product-modal__footer">
+        <button type="button" class="product-modal__btn-secondary" onclick="closeProductModal()">Cancel</button>
+        <button type="button" class="product-modal__btn-primary" id="btnGoToStep2" onclick="goToStep2()">
+          <span>Add Parameters</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M7.49563 15.814L6.44043 14.749L11.33 9.81397L6.44043 4.87896L7.49563 3.81396L13.4404 9.81397L7.49563 15.814Z" fill="#181A1F"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal Step 2: Parameters Table & Excel Upload -->
+    <div class="product-modal__step product-modal__step--hidden" id="productModalStep2">
+      <div class="product-modal__subbar">
+        <div class="product-modal__subbar-left">
+          <h3 class="product-modal__subbar-title" id="step2ProductTitle">Standard Name</h3>
+          <p class="product-modal__subbar-subtitle" id="step2ProductTags">Testing Types</p>
+        </div>
+        <div class="product-modal__subbar-right">
+          <input type="file" id="excelFileInput" name="excel_file" accept=".xlsx, .xls, .csv" style="display:none;" onchange="handleExcelFileSelected(this)">
+          <label for="excelFileInput" class="product-modal__import-btn" style="cursor:pointer;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M9 1.5H3.5C2.67157 1.5 2 2.17157 2 3V13C2 13.8284 2.67157 14.5 3.5 14.5H12.5C13.3284 14.5 14 13.8284 14 13V6.5L9 1.5Z" stroke="#0284C7" stroke-width="1.4" stroke-linejoin="round"/>
+              <path d="M9 1.5V6.5H14" stroke="#0284C7" stroke-width="1.4" stroke-linejoin="round"/>
+              <path d="M8 9V12M8 9L6.5 10.5M8 9L9.5 10.5" stroke="#0284C7" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span id="excelImportBtnText">Via Excel</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="product-modal__table-container">
+        <div class="product-modal__table-header">
+          <div class="product-modal__th product-modal__col-param">Parameter Name *</div>
+          <div class="product-modal__th product-modal__col-method">Test Method / Standard</div>
+          <div class="product-modal__th product-modal__col-unit">Unit / Limit</div>
+          <div class="product-modal__th product-modal__col-action"></div>
+        </div>
+        <div class="product-modal__table-body" id="parametersTableBody">
+          <!-- Parameter rows populated dynamically -->
+        </div>
+        <div class="product-modal__add-row-wrap" style="padding:10px 14px;">
+          <button type="button" class="product-modal__add-row-btn" onclick="addParamRow('', '', '')">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5V12.5M1.5 7H12.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>Add New Row</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="product-modal__footer">
+        <button type="button" class="product-modal__btn-secondary" onclick="backToStep1()">Back</button>
+        <button type="button" class="product-modal__btn-primary" id="btnSaveCatalog" onclick="handleSaveCatalog()">
+          <span id="saveCatalogBtnText">Save Scope</span>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M7.49563 15.814L6.44043 14.749L11.33 9.81397L6.44043 4.87896L7.49563 3.81396L13.4404 9.81397L7.49563 15.814Z" fill="#181A1F"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- ============================================================
+     JavaScript for Test & Scope Management
+     ============================================================ -->
+<script>
+(function() {
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+
+  // 1. View Switcher (Cards vs Table)
+  window.switchScopeView = function(mode) {
+    const cards = document.getElementById('scopeCardsView');
+    const table = document.getElementById('scopeTableView');
+    const btnCards = document.getElementById('btnViewCards');
+    const btnTable = document.getElementById('btnViewTable');
+
+    if (mode === 'table') {
+      if (cards) cards.style.display = 'none';
+      if (table) table.style.display = 'block';
+      btnCards?.classList.remove('is-active');
+      btnTable?.classList.add('is-active');
+    } else {
+      if (cards) cards.style.display = 'grid';
+      if (table) table.style.display = 'none';
+      btnTable?.classList.remove('is-active');
+      btnCards?.classList.add('is-active');
+    }
+  };
+
+  // 2. Filter Pills (All / Published / Unpublished)
+  let currentFilter = 'all';
+  window.filterByStatus = function(status, btn) {
+    currentFilter = status;
+    document.querySelectorAll('#scopeFilterPills .lp-scope-pill').forEach(p => p.classList.remove('is-active'));
+    btn?.classList.add('is-active');
+    applyFilters();
+  };
+
+  // 3. Search Filter
+  let currentSearch = '';
+  window.filterScopeItems = function(query) {
+    currentSearch = (query || '').toLowerCase().trim();
+    applyFilters();
+  };
+
+  function applyFilters() {
+    const items = document.querySelectorAll('.lp-scope-card, .ps-table-row');
+    items.forEach(el => {
+      const status = el.getAttribute('data-status') || '';
+      const searchHay = el.getAttribute('data-search') || '';
+
+      const matchesStatus = currentFilter === 'all' || status === currentFilter;
+      const matchesSearch = !currentSearch || searchHay.includes(currentSearch);
+
+      el.style.display = (matchesStatus && matchesSearch) ? '' : 'none';
+    });
+  }
+
+  // 4. Active Status Toggle
+  window.toggleScopeStatus = async function(scopeId, checkbox) {
+    const fd = new FormData();
+    fd.append('action', 'toggle_scope_status');
+    fd.append('scope_id', scopeId);
+    fd.append('csrfmiddlewaretoken', csrfToken);
+
+    try {
+      const res = await fetch(window.location.href, {
+        method: 'POST',
+        body: fd,
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        checkbox.checked = data.is_public;
+        const newStatus = data.is_public ? 'published' : 'unpublished';
+        document.querySelectorAll(`[data-scope-id="${scopeId}"]`).forEach(el => {
+          el.setAttribute('data-status', newStatus);
+        });
+      } else {
+        checkbox.checked = !checkbox.checked;
+        alert(data.message || 'Failed to update status.');
+      }
+    } catch(err) {
+      checkbox.checked = !checkbox.checked;
+      console.error('Error toggling scope:', err);
+    }
+  };
+
+  // 5. Open Modal (Add / Edit)
+  window.openProductModal = function(scopeId = '', details = null, params = []) {
+    const modal = document.getElementById('addProductModal');
+    const modalScopeId = document.getElementById('modalScopeId');
+    const modalTitle = document.getElementById('productModalTitle');
+    const nameInput = document.getElementById('productNameInput');
+    const notesInput = document.getElementById('productScopeNotes');
+    const chipsWrap = document.getElementById('productTestingChips');
+    const step2Title = document.getElementById('step2ProductTitle');
+    const step2Tags = document.getElementById('step2ProductTags');
+    const paramsBody = document.getElementById('parametersTableBody');
+
+    // Reset chips
+    chipsWrap?.querySelectorAll('.product-modal__chip').forEach(c => {
+      c.classList.remove('product-modal__chip--selected');
+    });
+
+    if (scopeId && details) {
+      modalTitle.textContent = 'Edit Test & Scope';
+      modalScopeId.value = scopeId;
+      nameInput.value = details.name || details.title || '';
+      notesInput.value = details.notes || '';
+
+      const depts = (details.departments || []).map(d => String(d).toLowerCase().trim());
+      chipsWrap?.querySelectorAll('.product-modal__chip').forEach(c => {
+        const val = (c.getAttribute('data-type') || c.textContent || '').toLowerCase().trim();
+        if (depts.includes(val)) {
+          c.classList.add('product-modal__chip--selected');
+        }
+      });
+
+      step2Title.textContent = details.name || details.title || 'Selected Standard';
+      step2Tags.textContent = (details.departments || []).join(', ') || 'General';
+
+      if (paramsBody) {
+        paramsBody.innerHTML = '';
+        if (params && params.length > 0) {
+          params.forEach(p => addParamRow(p.name, p.method, p.unit));
+        } else {
+          addParamRow('', '', '');
+        }
+      }
+    } else {
+      modalTitle.textContent = 'Add Test to Catalog';
+      modalScopeId.value = '';
+      nameInput.value = '';
+      notesInput.value = '';
+      step2Title.textContent = 'New Test / Standard';
+      step2Tags.textContent = '';
+      if (paramsBody) {
+        paramsBody.innerHTML = '';
+        addParamRow('', '', '');
+      }
+    }
+
+    // Show Step 1, hide Step 2
+    document.getElementById('productModalStep1')?.classList.remove('product-modal__step--hidden');
+    document.getElementById('productModalStep2')?.classList.add('product-modal__step--hidden');
+
+    modal?.classList.add('is-open');
+    modal?.setAttribute('aria-hidden', 'false');
+    nameInput?.focus();
+  };
+
+  window.closeProductModal = function() {
+    const modal = document.getElementById('addProductModal');
+    modal?.classList.remove('is-open');
+    modal?.setAttribute('aria-hidden', 'true');
+  };
+
+  // Close modal on escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeProductModal();
+  });
+
+  // Step 1 -> Step 2
+  window.goToStep2 = function() {
+    const nameInput = document.getElementById('productNameInput');
+    const name = (nameInput?.value || '').trim();
+    if (!name) {
+      alert('Please enter a product or standard name.');
+      nameInput?.focus();
+      return;
+    }
+
+    const step2Title = document.getElementById('step2ProductTitle');
+    const step2Tags = document.getElementById('step2ProductTags');
+    const chipsWrap = document.getElementById('productTestingChips');
+
+    const selectedTypes = [];
+    chipsWrap?.querySelectorAll('.product-modal__chip--selected').forEach(c => {
+      selectedTypes.push(c.getAttribute('data-type') || c.textContent.trim());
+    });
+
+    if (step2Title) step2Title.textContent = name;
+    if (step2Tags) step2Tags.textContent = selectedTypes.join(', ') || 'General';
+
+    document.getElementById('productModalStep1')?.classList.add('product-modal__step--hidden');
+    document.getElementById('productModalStep2')?.classList.remove('product-modal__step--hidden');
+  };
+
+  window.backToStep1 = function() {
+    document.getElementById('productModalStep2')?.classList.add('product-modal__step--hidden');
+    document.getElementById('productModalStep1')?.classList.remove('product-modal__step--hidden');
+  };
+
+  // Parameter Row Creator
+  window.addParamRow = function(name = '', method = '', unit = '') {
+    const tbody = document.getElementById('parametersTableBody');
+    if (!tbody) return;
+    const row = document.createElement('div');
+    row.className = 'product-modal__row';
+    row.innerHTML = `
+      <div class="product-modal__cell-param">
+        <input type="text" required class="product-modal__row-input param-name-input" name="param_name[]" value="${escapeHtml(name)}" placeholder="Parameter Name...">
+      </div>
+      <div class="product-modal__cell-method">
+        <input type="text" class="product-modal__row-input param-method-input" name="param_method[]" value="${escapeHtml(method)}" placeholder="Standard / Method...">
+      </div>
+      <div class="product-modal__cell-unit">
+        <input type="text" class="product-modal__row-input param-unit-input" name="param_unit[]" value="${escapeHtml(unit)}" placeholder="Unit / Limit">
+      </div>
+      <div class="product-modal__cell-action">
+        <button type="button" class="product-modal__del-btn" aria-label="Delete parameter" onclick="this.closest('.product-modal__row').remove()">
+          <svg width="17" height="17" viewBox="0 0 17 17" fill="none"><path d="M6.8 11.9L8.7 10L10.5 11.9L11.5 10.9L9.7 9L11.5 7.1L10.5 6.1L8.7 8L6.8 6.1L5.8 7.1L7.6 9L5.8 10.9L6.8 11.9ZM5.1 15.2C4.7 15.2 4.3 15 4 14.7C3.7 14.4 3.6 14.1 3.6 13.7V4.3H2.9V2.9H6.5V2.2H10.8V2.9H14.4V4.3H13.7V13.7C13.7 14.1 13.6 14.4 13.3 14.7C13 15 12.7 15.2 12.3 15.2H5.1ZM12.3 4.3H5.1V13.7H12.3V4.3Z" fill="#686868"/></svg>
+        </button>
+      </div>
+    `;
+    tbody.appendChild(row);
+  };
+
+  // Edit Scope
+  window.editScope = function(scopeId) {
+    const card = document.querySelector(`.lp-scope-card[data-scope-id="${scopeId}"]`) ||
+                 document.querySelector(`.ps-table-row[data-scope-id="${scopeId}"]`);
+    if (!card) return;
+
+    let details = null;
+    let params = [];
+
+    const detailsScript = card.querySelector('.scope-details-json');
+    if (detailsScript) {
+      try { details = JSON.parse(detailsScript.textContent); } catch(e){}
+    }
+
+    const paramsScript = card.querySelector('.scope-parameters-json');
+    if (paramsScript) {
+      try { params = JSON.parse(paramsScript.textContent); } catch(e){}
+    }
+
+    openProductModal(scopeId, details, params);
+  };
+
+  // Excel Import direct or inside Step 2
+  window.openExcelImport = function() {
+    openProductModal();
+    goToStep2();
+    document.getElementById('excelFileInput')?.click();
+  };
+
+  window.handleExcelFileSelected = function(input) {
+    if (input.files && input.files[0]) {
+      const textSpan = document.getElementById('excelImportBtnText');
+      if (textSpan) textSpan.textContent = `Attached: ${input.files[0].name.slice(0, 15)}...`;
+    }
+  };
+
+  // Save Scope via AJAX to save-product-scope
+  window.handleSaveCatalog = async function() {
+    const scopeId = document.getElementById('modalScopeId')?.value || '';
+    const productName = document.getElementById('productNameInput')?.value.trim() || '';
+    const scopeNotes = document.getElementById('productScopeNotes')?.value.trim() || '';
+
+    if (!scopeId && !productName) {
+      backToStep1();
+      alert('Please enter a product or standard name.');
+      document.getElementById('productNameInput')?.focus();
+      return;
+    }
+
+    const paramNames = [], paramMethods = [], paramUnits = [];
+    document.querySelectorAll('#parametersTableBody .product-modal__row').forEach(row => {
+      const name = row.querySelector('.param-name-input')?.value.trim() || '';
+      if (name) {
+        paramNames.push(name);
+        paramMethods.push(row.querySelector('.param-method-input')?.value.trim() || '');
+        paramUnits.push(row.querySelector('.param-unit-input')?.value.trim() || '');
+      }
+    });
+
+    const excelFile = document.getElementById('excelFileInput')?.files?.[0];
+    if (paramNames.length === 0 && !excelFile) {
+      alert('Please enter at least one parameter or attach an Excel file.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', csrfToken);
+    formData.append('branch_id', '{{ branch.id }}');
+    if (scopeId) formData.append('scope_id', scopeId);
+    formData.append('product_name', productName);
+    formData.append('scope_notes', scopeNotes);
+
+    document.querySelectorAll('#productTestingChips .product-modal__chip--selected').forEach(c => {
+      formData.append('testing_types[]', c.getAttribute('data-type') || c.textContent.trim());
+    });
+    paramNames.forEach(n => formData.append('param_name[]', n));
+    paramMethods.forEach(m => formData.append('param_method[]', m));
+    paramUnits.forEach(u => formData.append('param_unit[]', u));
+    if (excelFile) formData.append('excel_file', excelFile);
+
+    const btn = document.getElementById('btnSaveCatalog');
+    const btnText = document.getElementById('saveCatalogBtnText');
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.textContent = 'Saving...';
+
+    try {
+      const res = await fetch("{% url 'save-product-scope' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        closeProductModal();
+        window.location.reload();
+      } else {
+        alert(data.message || 'Failed to save scope.');
+      }
+    } catch(err) {
+      console.error('Save scope error:', err);
+      alert('Network error while saving.');
+    } finally {
+      if (btn) btn.disabled = false;
+      if (btnText) btnText.textContent = 'Save Scope';
+    }
+  };
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // Auto-open modal if ?add=1 is in URL
+  if (new URLSearchParams(window.location.search).get('add') === '1') {
+    openProductModal();
+  }
+})();
+</script>
