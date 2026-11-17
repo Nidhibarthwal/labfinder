@@ -45,7 +45,7 @@
         </td>
         <td data-label="Location">{% if e.lab and e.lab.lab_city %}{{ e.lab.lab_city }}{% elif branch.lab_city %}{{ branch.lab_city }}{% else %}—{% endif %}</td>
         <td data-label="Status"><span class="lp-pill {{ row.status }}">{{ row.status_display }}</span></td>
-        <td data-label="Budget">{% if e.budget %}₹{{ e.budget }}{% else %}—{% endif %}</td>
+        <td data-label="Budget">{% if e.budget %}{% if "₹" in e.budget %}{{ e.budget }}{% else %}₹{{ e.budget }}{% endif %}{% else %}—{% endif %}</td>
         <td class="lp-row-chevron" aria-hidden="true">›</td>
       </tr>
       {% endwith %}
@@ -82,7 +82,7 @@
         <span>{% if e.lab and e.lab.lab_city %}{{ e.lab.lab_city }}{% elif branch.lab_city %}{{ branch.lab_city }}{% else %}—{% endif %}</span>
         {% if e.budget %}
           <span class="lp-meta-dot">·</span>
-          <span>₹{{ e.budget }}</span>
+          <span>{% if "₹" in e.budget %}{{ e.budget }}{% else %}₹{{ e.budget }}{% endif %}</span>
         {% endif %}
       </div>
       <div class="lp-lead-card__email lp-sub">

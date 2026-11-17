@@ -275,9 +275,17 @@
                     </div>
                     <div class="enq-pills">
                         <button type="button" class="enq-pill is-active" data-pill-group="budget" data-value="">Not sure yet</button>
-                        <button type="button" class="enq-pill" data-pill-group="budget" data-value="₹2k – ₹5k">₹2k – ₹5k</button>
-                        <button type="button" class="enq-pill" data-pill-group="budget" data-value="₹5k – ₹10k">₹5k – ₹10k</button>
-                        <button type="button" class="enq-pill" data-pill-group="budget" data-value="₹10k+">₹10k+</button>
+                        <button type="button" class="enq-pill" data-pill-group="budget" data-value="₹5000-7000">₹5,000 – ₹7,000</button>
+                        <button type="button" class="enq-pill" data-pill-group="budget" data-value="₹7000-20000">₹7,000 – ₹20,000</button>
+                        <button type="button" class="enq-pill" data-pill-group="budget" data-value="₹20000-50000">₹20,000 – ₹50,000</button>
+                        <button type="button" class="enq-pill" data-pill-group="budget" data-value="₹50000+">₹50,000+</button>
+                    </div>
+                    <div class="enq-budget-custom-wrap" style="margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <span style="font-size: 13px; color: #64748b; font-weight: 500;">Or enter custom budget:</span>
+                        <div style="position: relative; width: 220px;">
+                            <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b; font-weight: 600; font-size: 14px;">₹</span>
+                            <input type="text" id="id_custom_budget" class="enq-input" style="padding-left: 24px; height: 36px; font-size: 13px; border-radius: 6px; width: 100%; border: 1px solid #cbd5e1;" placeholder="e.g. 50000 or 5000-7000">
+                        </div>
                     </div>
                     <input type="hidden" name="budget" id="id_budget" data-pill-target="budget" value="">
                 </section>

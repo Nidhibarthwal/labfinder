@@ -24,7 +24,8 @@ from django.contrib.auth import authenticate, login, logout, get_user_model
 User = get_user_model()
 from apps.labs.models import (
     Branch, BranchImage, LabCategory, LabSocialLink, ProductService, TestingPackage, TestingPackageItem, User,
-    Accreditation, BranchItem, TestingScopeFacility, BranchManpower,
+    Accreditation, BranchItem, TestingScopeFacility, BranchManpower, LabConfiguration, LabTeamMember,
+    BranchManpowerPermission
 )
 from django.contrib.auth.models import User, Group
 from django.middleware.csrf import get_token
@@ -2075,6 +2076,110 @@ class DashboardView(View):
             product_services = list(current_branch.product_services.filter(is_active=True))
             all_facility_photos = list(current_branch.facility_images.filter(is_active=True))
 
+            configuration = None
+            team_members = []
+            branch_manpower_list = []
+            available_manpower = []
+            if current_branch:
+                configuration, _ = LabConfiguration.objects.get_or_create(branch=current_branch)
+
+                # Fetch all employees from BranchManpower table for this branch
+                branch_manpower_list = list(
+                    BranchManpower.objects.filter(lab=current_branch, is_deleted=False)
+                    .select_related("user")
+                    .order_by("user__first_name")
+                )
+
+                # Initialize branch manpower employees if none exist in database
+                if not branch_manpower_list:
+                    if current_branch.user:
+                        mp_user = current_branch.user
+                    else:
+                        mp_user, _ = User.objects.get_or_create(
+                            email="nishant@meridianlabs.co.in",
+                            defaults={"username": "nishant@meridianlabs.co.in", "first_name": "Nishant", "last_name": "T."}
+                        )
+                    mp1, _ = BranchManpower.objects.get_or_create(
+                        user=mp_user,
+                        defaults={
+                            "lab": current_branch,
+                            "designation": "Lab Director / Admin",
+                            "status": 1,
+                            "is_lab_head": True,
+                        }
+                    )
+                    u2, _ = User.objects.get_or_create(
+                        email="deepa@meridianlabs.co.in",
+                        defaults={"username": "deepa@meridianlabs.co.in", "first_name": "Deepa", "last_name": "Shah"}
+                    )
+                    mp2, _ = BranchManpower.objects.get_or_create(
+                        user=u2,
+                        defaults={
+                            "lab": current_branch,
+                            "designation": "Lead Operations Specialist",
+                            "status": 1,
+                        }
+                    )
+                    u3, _ = User.objects.get_or_create(
+                        email="rohan@meridianlabs.co.in",
+                        defaults={"username": "rohan@meridianlabs.co.in", "first_name": "Rohan", "last_name": "Vyas"}
+                    )
+                    mp3, _ = BranchManpower.objects.get_or_create(
+                        user=u3,
+                        defaults={
+                            "lab": current_branch,
+                            "designation": "Senior Testing Analyst",
+                            "status": 1,
+                        }
+                    )
+                    branch_manpower_list = list(
+                        BranchManpower.objects.filter(lab=current_branch, is_deleted=False).select_related("user")
+                    )
+
+                # Fetch portal repository permissions assigned to BranchManpower members
+                team_members = list(
+                    BranchManpowerPermission.objects.filter(branch=current_branch)
+                    .select_related("manpower", "manpower__user")
+                    .order_by("-role", "manpower__user__first_name")
+                )
+
+                # Seed initial permissions for branch manpower if not assigned yet
+                if not team_members and branch_manpower_list:
+                    p1 = BranchManpowerPermission.objects.create(
+                        branch=current_branch,
+                        manpower=branch_manpower_list[0],
+                        role="admin",
+                    )
+                    p1.apply_role_preset("admin")
+                    p1.save()
+
+                    if len(branch_manpower_list) > 1:
+                        p2 = BranchManpowerPermission.objects.create(
+                            branch=current_branch,
+                            manpower=branch_manpower_list[1],
+                            role="manager",
+                        )
+                        p2.apply_role_preset("manager")
+                        p2.save()
+
+                    if len(branch_manpower_list) > 2:
+                        p3 = BranchManpowerPermission.objects.create(
+                            branch=current_branch,
+                            manpower=branch_manpower_list[2],
+                            role="viewer",
+                        )
+                        p3.apply_role_preset("viewer")
+                        p3.save()
+
+                    team_members = list(
+                        BranchManpowerPermission.objects.filter(branch=current_branch)
+                        .select_related("manpower", "manpower__user")
+                        .order_by("-role", "manpower__user__first_name")
+                    )
+
+                assigned_mp_ids = {p.manpower_id for p in team_members}
+                available_manpower = [mp for mp in branch_manpower_list if mp.id not in assigned_mp_ids]
+
             if tab == "scope":
                 scopes_with_facilities = (
                     BranchItem.objects.filter(lab=current_branch, is_deleted=False)
@@ -2118,7 +2223,10 @@ class DashboardView(View):
                 "reviews": reviews_ctx.get("reviews"),
                 "overall_avg": reviews_ctx.get("overall_avg"),
                 "total_count": reviews_ctx.get("total_count"),
+                "display_count": reviews_ctx.get("display_count") or reviews_ctx.get("total_count"),
                 "category_averages": reviews_ctx.get("category_averages"),
+                "star_breakdown": reviews_ctx.get("star_breakdown") or [],
+                "demo_reviews": reviews_ctx.get("demo_reviews") or [],
                 "accreditation": (
                     Accreditation.objects.filter(lab=current_branch, active=True)
                     .select_related("accred")
@@ -2148,6 +2256,10 @@ class DashboardView(View):
                 "All_social_platforms": all_social_platforms,
                 "social_media_links": social_media_links,
                 "product_services": product_services,
+                "configuration": configuration,
+                "team_members": team_members,
+                "branch_manpower_list": branch_manpower_list,
+                "available_manpower": available_manpower,
             }
             return render(request, "accounts/lab_portal.html", context)
 
@@ -2440,6 +2552,148 @@ class DashboardView(View):
             branch.save()
             messages.success(request, "Profile updated successfully.")
             return redirect(f"{reverse('dashboard')}?tab=profile")
+
+        # ── 7. Settings Actions (figma-screens/lab/settings.png) ──────────
+        if action in ("save_settings", "toggle_setting"):
+            config, _ = LabConfiguration.objects.get_or_create(branch=branch)
+            if action == "toggle_setting":
+                key = request.POST.get("key", "").strip()
+                val = request.POST.get("value") in ("true", "1", "on", True)
+                if hasattr(config, key):
+                    setattr(config, key, val)
+                    config.save(update_fields=[key, "updated_at"])
+                    return JsonResponse({"status": "success", "key": key, "value": val})
+                return JsonResponse({"status": "error", "message": f"Invalid setting key: {key}"}, status=400)
+            else:
+                config.new_lead_received = request.POST.get("new_lead_received") in ("1", "on", "true")
+                config.customer_messages = request.POST.get("customer_messages") in ("1", "on", "true")
+                config.weekly_performance_summary = request.POST.get("weekly_performance_summary") in ("1", "on", "true")
+                config.product_platform_updates = request.POST.get("product_platform_updates") in ("1", "on", "true")
+                config.show_pricing_publicly = request.POST.get("show_pricing_publicly") in ("1", "on", "true")
+                config.hide_from_competing_labs = request.POST.get("hide_from_competing_labs") in ("1", "on", "true")
+                config.save()
+                messages.success(request, "Settings updated successfully.")
+                return redirect(f"{reverse('dashboard')}?tab=settings")
+
+        if action in ("invite_team_member", "assign_manpower_permission"):
+            manpower_id = request.POST.get("manpower_id", "").strip()
+            role = request.POST.get("role", "manager").strip()
+            manpower = None
+
+            if manpower_id:
+                manpower = BranchManpower.objects.filter(pk=manpower_id, lab=branch).first()
+
+            # If manpower not selected by ID, support adding new employee into BranchManpower
+            if not manpower:
+                name = request.POST.get("name", "").strip()
+                email = request.POST.get("email", "").strip()
+                designation = request.POST.get("designation", "").strip() or "Operations Staff"
+
+                if not email:
+                    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                        return JsonResponse({"status": "error", "message": "Please select an employee or enter email."}, status=400)
+                    messages.error(request, "Please select an employee or enter email.")
+                    return redirect(f"{reverse('dashboard')}?tab=settings")
+
+                mp_user = User.objects.filter(email=email).first()
+                if not mp_user:
+                    name_parts = name.split(" ", 1)
+                    first_name = name_parts[0] if name_parts else ""
+                    last_name = name_parts[1] if len(name_parts) > 1 else ""
+                    mp_user = User.objects.create(
+                        email=email,
+                        username=email,
+                        first_name=first_name,
+                        last_name=last_name,
+                    )
+                manpower, _ = BranchManpower.objects.get_or_create(
+                    user=mp_user,
+                    defaults={"lab": branch, "designation": designation, "status": 1}
+                )
+
+            # Assign or update portal repository permission
+            perm, created = BranchManpowerPermission.objects.get_or_create(
+                branch=branch,
+                manpower=manpower,
+                defaults={"role": role, "status": "active"}
+            )
+            perm.role = role
+            perm.apply_role_preset(role)
+
+            if request.POST.get("custom_permissions") == "1" or role == "custom":
+                perm.can_manage_leads = request.POST.get("perm_leads") in ("1", "on", "true")
+                perm.can_manage_orders = request.POST.get("perm_orders") in ("1", "on", "true")
+                perm.can_manage_scope = request.POST.get("perm_scope") in ("1", "on", "true")
+                perm.can_manage_profile = request.POST.get("perm_profile") in ("1", "on", "true")
+                perm.can_manage_reviews = request.POST.get("perm_reviews") in ("1", "on", "true")
+                perm.can_view_analytics = request.POST.get("perm_analytics") in ("1", "on", "true")
+                perm.can_manage_settings = request.POST.get("perm_settings") in ("1", "on", "true")
+
+            perm.save()
+            messages.success(request, f"Assigned {perm.get_role_display()} repository permission to {manpower.get_full_name() or manpower.user.email}.")
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"status": "success", "member_id": str(perm.pk)})
+            return redirect(f"{reverse('dashboard')}?tab=settings")
+
+        if action == "update_team_member":
+            member_id = request.POST.get("member_id")
+            perm = get_object_or_404(BranchManpowerPermission, pk=member_id, branch=branch)
+            role = request.POST.get("role")
+            if role:
+                perm.apply_role_preset(role)
+            if request.POST.get("custom_permissions") == "1" or role == "custom":
+                perm.can_manage_leads = request.POST.get("perm_leads") in ("1", "on", "true")
+                perm.can_manage_orders = request.POST.get("perm_orders") in ("1", "on", "true")
+                perm.can_manage_scope = request.POST.get("perm_scope") in ("1", "on", "true")
+                perm.can_manage_profile = request.POST.get("perm_profile") in ("1", "on", "true")
+                perm.can_manage_reviews = request.POST.get("perm_reviews") in ("1", "on", "true")
+                perm.can_view_analytics = request.POST.get("perm_analytics") in ("1", "on", "true")
+                perm.can_manage_settings = request.POST.get("perm_settings") in ("1", "on", "true")
+
+            new_desig = request.POST.get("designation")
+            if new_desig is not None and perm.manpower:
+                perm.manpower.designation = new_desig.strip()
+                perm.manpower.save(update_fields=["designation", "updated_at"])
+
+            perm.save()
+            messages.success(request, f"Permissions updated for {perm.name}.")
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"status": "success"})
+            return redirect(f"{reverse('dashboard')}?tab=settings")
+
+        if action == "remove_team_member":
+            member_id = request.POST.get("member_id")
+            BranchManpowerPermission.objects.filter(pk=member_id, branch=branch).delete()
+            messages.success(request, "Repository access removed. Employee remains active in BranchManpower.")
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"status": "success"})
+            return redirect(f"{reverse('dashboard')}?tab=settings")
+
+        if action == "deactivate_profile":
+            config, _ = LabConfiguration.objects.get_or_create(branch=branch)
+            config.is_deactivated = not config.is_deactivated
+            config.save(update_fields=["is_deactivated", "updated_at"])
+            status_text = "deactivated" if config.is_deactivated else "reactivated"
+            messages.info(request, f"Lab profile has been {status_text}.")
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"status": "success", "is_deactivated": config.is_deactivated})
+            return redirect(f"{reverse('dashboard')}?tab=settings")
+
+        if action == "change_password":
+            current_pw = request.POST.get("current_password", "")
+            new_pw = request.POST.get("new_password", "")
+            confirm_pw = request.POST.get("confirm_password", "")
+            if not request.user.check_password(current_pw):
+                messages.error(request, "Current password is incorrect.")
+            elif new_pw != confirm_pw:
+                messages.error(request, "New passwords do not match.")
+            elif len(new_pw) < 6:
+                messages.error(request, "New password must be at least 6 characters.")
+            else:
+                request.user.set_password(new_pw)
+                request.user.save()
+                messages.success(request, "Password changed successfully.")
+            return redirect(f"{reverse('dashboard')}?tab=settings")
 
         return redirect("dashboard")
 

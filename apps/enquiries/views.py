@@ -962,7 +962,7 @@ def get_leads_dashboard_context(request, current_branch):
 def get_reviews_dashboard_context(request, current_branch):
     reviews = LabReview.objects.filter(
         lab=current_branch, is_approved=True
-    ).prefetch_related("category_ratings__category")
+    ).prefetch_related("category_ratings__category").order_by("-created_at")
 
     total_count = reviews.count()
     overall_avg = (
@@ -985,12 +985,81 @@ def get_reviews_dashboard_context(request, current_branch):
             {"name": cat.name, "avg_score": round(avg_score, 1)}
         )
 
+    # Star distribution (5★ to 1★)
+    star_breakdown = []
+    if total_count > 0:
+        counts = {5: 0, 4: 0, 3: 0, 2: 0, 1: 0}
+        for r in reviews:
+            r_val = int(round(float(r.overall_rating or 0)))
+            r_val = max(1, min(5, r_val))
+            counts[r_val] += 1
+        for s in [5, 4, 3, 2, 1]:
+            pct = round((counts[s] / total_count) * 100)
+            star_breakdown.append({
+                "stars": s,
+                "label": f"{s}★",
+                "count": counts[s],
+                "pct": pct,
+            })
+    # else:
+    #     # Static Data for now
+    #     star_breakdown = [
+    #         {"stars": 5, "label": "5★", "count": 23, "pct": 72},
+    #         {"stars": 4, "label": "4★", "count": 6, "pct": 19},
+    #         {"stars": 3, "label": "3★", "count": 2, "pct": 6},
+    #         {"stars": 2, "label": "2★", "count": 1, "pct": 2},
+    #         {"stars": 1, "label": "1★", "count": 0, "pct": 1},
+    #     ]
+
+    demo_reviews = [
+        {
+            "pk": "demo-1",
+            "reviewer_name": "Apex Packaging Pvt. Ltd.",
+            "time_ago": "2 weeks ago",
+            "rating": 5,
+            "stars_range": range(5),
+            "summary": "Fast turnaround on our tensile strength batch — report was detailed and the team explained the results clearly over a call.",
+            "lab_reply": None,
+        },
+        {
+            "pk": "demo-2",
+            "reviewer_name": "Coastal Pipes Ltd.",
+            "time_ago": "1 month ago",
+            "rating": 5,
+            "stars_range": range(5),
+            "summary": "Reliable pressure-testing partner for over a year now. Reports are always on time and audit-ready.",
+            "lab_reply": "appreciate this — happy to support your next export cycle too!",
+        },
+        {
+            "pk": "demo-3",
+            "reviewer_name": "Bright Steel Industries",
+            "time_ago": "1 month ago",
+            "rating": 4,
+            "stars_range": range(4),
+            "empty_stars_range": range(1),
+            "summary": "Good accuracy on the salt spray results, though pickup scheduling took a day longer than expected.",
+            "lab_reply": None,
+        },
+        {
+            "pk": "demo-4",
+            "reviewer_name": "Patel Agro Exports",
+            "time_ago": "2 months ago",
+            "rating": 5,
+            "stars_range": range(5),
+            "summary": "Excellent FSSAI documentation support — made our export compliance process much smoother.",
+            "lab_reply": "Really appreciate this — happy to support your next export cycle too!",
+        },
+    ]
+
     context = {
         "reviews": reviews,
         "total_count": total_count,
-        "overall_avg": round(overall_avg, 1),
+        "display_count": total_count if total_count > 0 else 32,
+        "overall_avg": round(overall_avg, 1) if overall_avg > 0 else 4.7,
         "category_averages": category_averages,
         "active_categories": active_categories,
+        "star_breakdown": star_breakdown,
+        "demo_reviews": demo_reviews if total_count == 0 else [],
     }
 
     rendered_html = render_to_string(
@@ -1074,6 +1143,14 @@ class ReplyLabReviewView(View):
     def post(self, request, *args, **kwargs):
         review_id = request.POST.get("review_id")
         reply_message = request.POST.get("reply_message", "").strip()
+
+        # Handle demo review replies gracefully
+        if str(review_id).startswith("demo-"):
+            messages.success(request, "Your reply has been published.")
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"status": "success", "reply": reply_message})
+            return redirect(f"{reverse('dashboard')}?tab=reviews")
+
         review = get_object_or_404(LabReview, pk=review_id)
 
         if reply_message:
@@ -1082,7 +1159,9 @@ class ReplyLabReviewView(View):
             review.save(update_fields=["lab_reply", "replied_at", "updated_at"])
             messages.success(request, "Your reply has been published.")
 
-        return redirect("dashboard")
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"status": "success", "reply": reply_message})
+        return redirect(f"{reverse('dashboard')}?tab=reviews")
 
 
 class UpdateCustomerReviewView(LoginRequiredMixin, View):

@@ -21,6 +21,8 @@
       {% include 'accounts/includes/_lp_reviews.html' %}
     {% elif active_tab == 'scope' %}
       {% include 'accounts/includes/_lp_scope.html' %}
+    {% elif active_tab == 'settings' %}
+      {% include 'accounts/includes/_lp_settings.html' %}
     {% else %}
       <div class="lp-card"><h2>{{ active_tab|title }}</h2><p class="lp-muted">This section is coming next.</p></div>
     {% endif %}

@@ -10,7 +10,8 @@ from django_json_widget.widgets import JSONEditorWidget
 
 from .models import (
     BranchImage, BranchItem, BranchManpower, LabCategory, LabCategoryField, LabSocialLink, LabWebPage, LegalIdProofDocType, LabAddressProofDocType, Branch,
-    Accreditation, ManpowerRoleDepartment, ManpowerRoles, ProductService, TestingPackage, TestingScopeFacility
+    Accreditation, ManpowerRoleDepartment, ManpowerRoles, ProductService, TestingPackage, TestingScopeFacility,
+    LabConfiguration, LabTeamMember, BranchManpowerPermission
 )
 
 
@@ -183,13 +184,22 @@ class AccreditationAdmin(admin.ModelAdmin):
 
 
 
+class BranchManpowerPermissionInline(admin.StackedInline):
+    model = BranchManpowerPermission
+    can_delete = True
+    extra = 0
+    verbose_name = "Portal Repository Permissions"
+    verbose_name_plural = "Portal Repository Permissions"
+
+
 @admin.register(BranchManpower)
 class BranchManpowerAdmin(ImportExportMixin, admin.ModelAdmin):
     list_display = ['id', 'user', 'lab', 'designation',
                     'is_deleted', 'created_at', 'updated_at']
     search_fields = ('lab__lab_name', 'user__username', 'designation',)
-    raw_id_fields = ('lab', 'created_by', 'updated_by', 'lab')
+    raw_id_fields = ('lab', 'created_by', 'updated_by')
     list_filter = ('is_deleted', 'tags')
+    inlines = [BranchManpowerPermissionInline]
 
 
 @admin.register(ManpowerRoleDepartment)
@@ -288,3 +298,48 @@ class LabCategoryAdmin(admin.ModelAdmin):
 @admin.register(LabCategoryField)
 class LabCategoryFieldAdmin(admin.ModelAdmin):
     list_display = ('id','category','field_key')
+
+
+@admin.register(LabConfiguration)
+class LabConfigurationAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'branch', 'plan_tier',
+        'new_lead_received', 'customer_messages', 'weekly_performance_summary',
+        'product_platform_updates', 'show_pricing_publicly', 'hide_from_competing_labs',
+        'is_deactivated', 'created_at', 'updated_at'
+    )
+    list_filter = (
+        'plan_tier', 'new_lead_received', 'customer_messages', 'weekly_performance_summary',
+        'product_platform_updates', 'show_pricing_publicly', 'hide_from_competing_labs', 'is_deactivated'
+    )
+    search_fields = ('branch__lab_name', 'branch__lab_code', 'branch__contact_email')
+    raw_id_fields = ('branch',)
+
+
+@admin.register(BranchManpowerPermission)
+class BranchManpowerPermissionAdmin(admin.ModelAdmin):
+    list_display = (
+        'get_member_name', 'get_member_email', 'get_member_designation', 'branch', 'role', 'status',
+        'can_manage_leads', 'can_manage_orders', 'can_manage_scope',
+        'can_manage_profile', 'can_manage_reviews', 'can_view_analytics', 'can_manage_settings',
+        'created_at'
+    )
+    list_filter = (
+        'role', 'status',
+        'can_manage_leads', 'can_manage_orders', 'can_manage_scope',
+        'can_manage_profile', 'can_manage_reviews', 'can_view_analytics', 'can_manage_settings'
+    )
+    search_fields = ('manpower__user__username', 'manpower__user__email', 'manpower__designation', 'branch__lab_name')
+    raw_id_fields = ('branch', 'manpower')
+
+    def get_member_name(self, obj):
+        return obj.name
+    get_member_name.short_description = "Name"
+
+    def get_member_email(self, obj):
+        return obj.email
+    get_member_email.short_description = "Email"
+
+    def get_member_designation(self, obj):
+        return obj.designation
+    get_member_designation.short_description = "Company Designation"

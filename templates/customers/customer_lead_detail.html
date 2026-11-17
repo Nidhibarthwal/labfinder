@@ -34,7 +34,7 @@
             {{ enquiry.product_name }}
             {% if enquiry.lab_leads.count > 1 %} +{{ enquiry.lab_leads.count|add:"-1" }} more{% endif %}
             &bull; {{ enquiry.quantity_or_sample_info|default:"2 samples" }}
-            &bull; Budget {% if enquiry.budget %}₹{{ enquiry.budget }}{% else %}Flexible{% endif %}
+            &bull; Budget {% if enquiry.budget %}{% if "₹" in enquiry.budget %}{{ enquiry.budget }}{% else %}₹{{ enquiry.budget }}{% endif %}{% else %}Flexible{% endif %}
             &bull; By {{ enquiry.get_urgency_display|default:"Flexible" }}
           </p>
         </div>

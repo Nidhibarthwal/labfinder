@@ -1476,3 +1476,218 @@ class TestingPackageItem(Trackable):
 
     class Meta:
         unique_together = ('package', 'product')
+
+
+class LabConfiguration(Trackable):
+    """Configuration table for lab dashboard settings and notifications."""
+    branch = models.OneToOneField(
+        Branch,
+        on_delete=models.CASCADE,
+        related_name="configuration",
+        verbose_name="Laboratory / Branch",
+    )
+    # Notifications (Choose what you get alerted about)
+    new_lead_received = models.BooleanField(
+        default=True,
+        verbose_name="New Lead Received",
+        help_text="Email + push notification instantly when a new lead is received",
+    )
+    customer_messages = models.BooleanField(
+        default=True,
+        verbose_name="Customer Messages",
+        help_text="Email when a customer replies or sends a message",
+    )
+    weekly_performance_summary = models.BooleanField(
+        default=True,
+        verbose_name="Weekly Performance Summary",
+        help_text="Views, leads and response-time digest",
+    )
+    product_platform_updates = models.BooleanField(
+        default=False,
+        verbose_name="Product & Platform Updates",
+        help_text="New features, announcements and policy changes",
+    )
+
+    # Account Settings (Permanent & Profile level actions)
+    show_pricing_publicly = models.BooleanField(
+        default=True,
+        verbose_name="Show Pricing Publicly",
+        help_text="Hide to require an enquiry before buyers see prices",
+    )
+    hide_from_competing_labs = models.BooleanField(
+        default=False,
+        verbose_name="Hide from Competing Labs",
+        help_text="Don't appear in 'similar labs' on competitor pages",
+    )
+    is_deactivated = models.BooleanField(
+        default=False,
+        verbose_name="Deactivate Lab Profile",
+        help_text="Hide this location from search temporarily",
+    )
+
+    # Plan & Billing
+    plan_tier = models.CharField(
+        max_length=50,
+        default="free",
+        choices=[
+            ("free", "Verified Partner Lab (Free Plan)"),
+            ("vista_sync", "Vista LIMS Sync Plan"),
+            ("pro", "Pro Lab Plan"),
+        ],
+        verbose_name="Plan Tier",
+    )
+    extra_settings = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        verbose_name = "Lab Configuration"
+        verbose_name_plural = "Lab Configurations"
+
+    def __str__(self):
+        branch_name = self.branch.lab_name if self.branch else "Unknown Lab"
+        return f"Configuration for {branch_name}"
+
+
+class BranchManpowerPermission(Trackable):
+    """
+    Git repository-like portal access and granular section permissions for lab management.
+    Users are selected from BranchManpower (company employees). In BranchManpower they hold
+    their company designation (e.g. Senior Chemist, Lab Director), while this model defines
+    their portal access level (Lab Admin, Lead Manager, Viewer, Custom) and section permissions.
+    """
+    ROLE_CHOICES = (
+        ("admin", "Lab Admin"),
+        ("manager", "Lead Manager"),
+        ("viewer", "Viewer"),
+        ("custom", "Custom"),
+    )
+    STATUS_CHOICES = (
+        ("active", "Active"),
+        ("suspended", "Suspended"),
+    )
+
+    branch = models.ForeignKey(
+        Branch,
+        on_delete=models.CASCADE,
+        related_name="manpower_permissions",
+        verbose_name="Laboratory / Branch",
+    )
+    manpower = models.OneToOneField(
+        BranchManpower,
+        on_delete=models.CASCADE,
+        related_name="portal_permission",
+        verbose_name="Branch Manpower Employee",
+    )
+    role = models.CharField(
+        max_length=50,
+        choices=ROLE_CHOICES,
+        default="manager",
+        verbose_name="Portal Repository Role",
+    )
+
+    # Section / Feature Permissions (Git repository-style access control)
+    can_manage_leads = models.BooleanField(
+        default=True,
+        verbose_name="Leads Access",
+        help_text="View and reply to inbound customer leads",
+    )
+    can_manage_orders = models.BooleanField(
+        default=True,
+        verbose_name="Orders & Payments",
+        help_text="Manage active orders, milestone approvals, and payments",
+    )
+    can_manage_scope = models.BooleanField(
+        default=False,
+        verbose_name="Test & Scope Management",
+        help_text="Add, edit, and publish testing parameters and scopes",
+    )
+    can_manage_profile = models.BooleanField(
+        default=False,
+        verbose_name="Profile & Facility Details",
+        help_text="Edit lab contact details, facility pictures, and accreditations",
+    )
+    can_manage_reviews = models.BooleanField(
+        default=True,
+        verbose_name="Customer Reviews",
+        help_text="View customer ratings and publish official lab replies",
+    )
+    can_view_analytics = models.BooleanField(
+        default=True,
+        verbose_name="Analytics & Reports",
+        help_text="View traffic, conversion rates, and performance statistics",
+    )
+    can_manage_settings = models.BooleanField(
+        default=False,
+        verbose_name="Settings & Team Access",
+        help_text="Manage lab notification preferences, billing, and team members",
+    )
+
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
+
+    class Meta:
+        verbose_name = "Branch Manpower Portal Permission"
+        verbose_name_plural = "Branch Manpower Portal Permissions"
+        ordering = ["-role", "manpower__user__first_name"]
+
+    def __str__(self):
+        name = self.get_full_name()
+        desig = self.manpower.designation if self.manpower and self.manpower.designation else "Staff"
+        return f"{name} ({desig}) — {self.get_role_display()} at {self.branch.lab_name if self.branch else ''}"
+
+    @property
+    def name(self):
+        return self.get_full_name()
+
+    @property
+    def email(self):
+        return self.manpower.user.email if self.manpower and self.manpower.user else ""
+
+    @property
+    def designation(self):
+        return self.manpower.designation if self.manpower else ""
+
+    def get_full_name(self):
+        if not self.manpower or not self.manpower.user:
+            return "Team Member"
+        full = self.manpower.get_full_name()
+        return full if full else (self.manpower.user.get_full_name() or self.manpower.user.username)
+
+    def get_initials(self):
+        nm = self.get_full_name()
+        if not nm or nm == "Team Member":
+            em = self.email
+            return (em[:2] if em else "TM").upper()
+        parts = nm.strip().split()
+        if len(parts) >= 2:
+            return f"{parts[0][0]}{parts[1][0]}".upper()
+        return nm[:2].upper()
+
+    def apply_role_preset(self, role):
+        self.role = role
+        if role == "admin":
+            self.can_manage_leads = True
+            self.can_manage_orders = True
+            self.can_manage_scope = True
+            self.can_manage_profile = True
+            self.can_manage_reviews = True
+            self.can_view_analytics = True
+            self.can_manage_settings = True
+        elif role == "manager":
+            self.can_manage_leads = True
+            self.can_manage_orders = True
+            self.can_manage_scope = False
+            self.can_manage_profile = False
+            self.can_manage_reviews = True
+            self.can_view_analytics = True
+            self.can_manage_settings = False
+        elif role == "viewer":
+            self.can_manage_leads = False
+            self.can_manage_orders = False
+            self.can_manage_scope = False
+            self.can_manage_profile = False
+            self.can_manage_reviews = False
+            self.can_view_analytics = True
+            self.can_manage_settings = False
+
+
+# Backward compatibility alias
+LabTeamMember = BranchManpowerPermission

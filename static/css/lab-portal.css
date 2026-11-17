@@ -3820,3 +3820,657 @@
 .lp-btn--green:hover {
   background: #047857;
 }
+
+/* ==========================================================================
+   Reviews Tab Styling (figma-screens/lab/Reviews.png)
+   ========================================================================== */
+.lp-reviews-grid {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.lp-reviews-score-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 28px 22px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.lp-reviews-big-score {
+  font-size: 46px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.lp-reviews-stars {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.lp-star-icon {
+  width: 20px;
+  height: 20px;
+  color: #f59e0b;
+}
+
+.lp-reviews-count-text {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.lp-reviews-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lp-reviews-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.lp-reviews-bar-label {
+  width: 24px;
+  color: #64748b;
+  font-weight: 500;
+  text-align: left;
+}
+
+.lp-reviews-bar-track {
+  flex: 1;
+  height: 7px;
+  background-color: #f1f5f9;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.lp-reviews-bar-fill {
+  height: 100%;
+  background-color: #f59e0b;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+.lp-reviews-bar-pct {
+  width: 32px;
+  color: #64748b;
+  font-weight: 500;
+  text-align: right;
+  font-size: 13px;
+}
+
+.lp-reviews-list-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 28px 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.lp-reviews-list-head {
+  margin-bottom: 24px;
+}
+
+.lp-reviews-list-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.lp-reviews-list-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.lp-reviews-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-review-item {
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 22px;
+  margin-bottom: 22px;
+}
+
+.lp-review-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.lp-review-item__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.lp-review-author {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.lp-review-time {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.lp-review-item__stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.lp-star-icon--sm {
+  width: 15px;
+  height: 15px;
+}
+
+.lp-star-icon--sm.is-filled {
+  color: #f59e0b;
+}
+
+.lp-star-icon--sm.is-empty {
+  color: #cbd5e1;
+}
+
+.lp-review-text {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+  margin: 6px 0 12px 0;
+}
+
+.lp-review-reply-callout {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 10px;
+}
+
+.lp-review-reply-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 3px;
+}
+
+.lp-review-reply-text {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.lp-btn-reply-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid #0284c7;
+  background: #ffffff;
+  color: #0284c7;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lp-btn-reply-toggle:hover {
+  background: #f0f9ff;
+}
+
+.lp-review-reply-form {
+  margin-top: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+}
+
+@media (max-width: 860px) {
+  .lp-reviews-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Settings Tab Styling (figma-screens/lab/settings.png)
+   ========================================================================== */
+.lp-settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 880px;
+}
+
+.lp-settings-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.lp-settings-card-head {
+  margin-bottom: 20px;
+}
+
+.lp-settings-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 4px 0;
+}
+
+.lp-settings-section-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Plan & Billing Banner */
+.lp-billing-banner {
+  background: #0f3d32;
+  border-radius: 10px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.lp-billing-banner__title {
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.lp-billing-banner__sub {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.lp-btn-upgrade-plan {
+  background: #eab308;
+  color: #0f172a;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.lp-btn-upgrade-plan:hover {
+  background: #ca8a04;
+}
+
+/* Settings Toggle Rows */
+.lp-settings-toggle-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-settings-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 16px;
+}
+
+.lp-settings-toggle-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.lp-settings-toggle-row:first-child {
+  padding-top: 0;
+}
+
+.lp-settings-toggle-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 3px;
+}
+
+.lp-settings-toggle-desc {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* iOS Toggle Switch */
+.lp-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.lp-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.lp-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: .25s ease;
+  border-radius: 24px;
+}
+
+.lp-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .25s ease;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.lp-switch input:checked + .lp-slider {
+  background-color: #059669;
+}
+
+.lp-switch input:checked + .lp-slider:before {
+  transform: translateX(20px);
+}
+
+/* Team Access List */
+.lp-team-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.lp-team-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+}
+
+.lp-team-row:hover {
+  background: #f8fafc;
+}
+
+.lp-team-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #0f3d32;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.lp-team-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.lp-team-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.lp-team-designation-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 1px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.lp-team-email {
+  font-size: 13px;
+  color: #64748b;
+  word-break: break-all;
+}
+
+.lp-team-role-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.lp-team-role-badge {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.lp-team-role--admin {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.lp-team-role--manager {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.lp-team-role--viewer {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.lp-btn-icon-subtle {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.lp-btn-icon-subtle:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.lp-btn-invite {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lp-btn-invite:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+/* Account Settings Buttons */
+.lp-btn-link-action {
+  background: transparent;
+  border: none;
+  color: #0284c7;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.lp-btn-link-action:hover {
+  text-decoration: underline;
+}
+
+.lp-btn-danger-outline {
+  background: #ffffff;
+  border: 1px solid #fecdd3;
+  color: #e11d48;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lp-btn-danger-outline:hover {
+  background: #fff1f2;
+  border-color: #fda4af;
+}
+
+/* Modal and Permissions styling */
+.lp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.lp-modal-box {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.lp-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #64748b;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.lp-modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lp-permissions-group {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lp-permissions-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #475569;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
+.lp-perm-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #334155;
+  cursor: pointer;
+}
+
+.lp-perm-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  accent-color: #059669;
+  flex-shrink: 0;
+}
+
+.lp-btn-danger-text {
+  background: transparent;
+  border: none;
+  color: #e11d48;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.lp-btn-danger-text:hover {
+  text-decoration: underline;
+}

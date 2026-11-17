@@ -12,6 +12,7 @@
   }
 
   function initPills() {
+    var customBudget = qs('#id_custom_budget');
     qsa('[data-pill-group]').forEach(function (pill) {
       pill.addEventListener('click', function () {
         var group = pill.getAttribute('data-pill-group');
@@ -22,8 +23,34 @@
           target.value = value;
           target.dispatchEvent(new Event('change', { bubbles: true }));
         }
+        if (group === 'budget' && customBudget) {
+          customBudget.value = '';
+        }
       });
     });
+
+    if (customBudget) {
+      customBudget.addEventListener('input', function () {
+        var val = customBudget.value.trim();
+        var target = qs('[data-pill-target="budget"]');
+        if (val) {
+          qsa('[data-pill-group="budget"]').forEach(function (el) {
+            el.classList.remove('is-active');
+          });
+          var formatted = val.startsWith('₹') ? val : ('₹' + val);
+          if (target) {
+            target.value = formatted;
+            target.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        } else {
+          setActivePill('budget', '');
+          if (target) {
+            target.value = '';
+            target.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+      });
+    }
   }
 
   function initOptions() {

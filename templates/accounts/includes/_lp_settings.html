@@ -1,0 +1,544 @@
+{% load static %}
+
+<div class="lp-head" style="margin-bottom: 24px;">
+  <div>
+    <h2 style="font-size: 20px; font-weight: 700; color: #1e293b; margin: 0 0 4px 0;">Settings</h2>
+    <p class="lp-muted" style="margin: 0; font-size: 14px; color: #64748b;">Manage notifications, team access, and billing.</p>
+  </div>
+</div>
+
+<div class="lp-settings-container">
+
+  <!-- 1. Plan & Billing Banner Card -->
+  <div class="lp-card lp-settings-card" style="padding: 24px;">
+    <h3 class="lp-settings-section-title">Plan & billing</h3>
+    <div class="lp-billing-banner">
+      <div class="lp-billing-banner__info">
+        <div class="lp-billing-banner__title">Verified Partner Lab</div>
+        <div class="lp-billing-banner__sub">Free plan • Upgrade to Vista LIMS for real-time sync</div>
+      </div>
+      <div class="lp-billing-banner__action">
+        <button type="button" class="lp-btn-upgrade-plan" onclick="alert('Upgrade to Vista LIMS integration coming soon! Contact support for early access.')">Upgrade Plan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Notifications Card -->
+  <div class="lp-card lp-settings-card">
+    <div class="lp-settings-card-head">
+      <h3 class="lp-settings-section-title">Notifications</h3>
+      <p class="lp-settings-section-sub">Choose what you get alerted about</p>
+    </div>
+
+    <div class="lp-settings-toggle-list">
+      <!-- Item 1: New lead received -->
+      <div class="lp-settings-toggle-row">
+        <div class="lp-settings-toggle-info">
+          <div class="lp-settings-toggle-name">New lead received</div>
+          <div class="lp-settings-toggle-desc">Email + push notification instantly</div>
+        </div>
+        <div class="lp-settings-toggle-control">
+          <label class="lp-switch">
+            <input type="checkbox" id="toggle_new_lead" onchange="ajaxToggleSetting('new_lead_received', this.checked)" {% if configuration.new_lead_received %}checked{% endif %}>
+            <span class="lp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Item 2: Customer messages -->
+      <div class="lp-settings-toggle-row">
+        <div class="lp-settings-toggle-info">
+          <div class="lp-settings-toggle-name">Customer messages</div>
+          <div class="lp-settings-toggle-desc">Email when a customer replies</div>
+        </div>
+        <div class="lp-settings-toggle-control">
+          <label class="lp-switch">
+            <input type="checkbox" id="toggle_customer_msg" onchange="ajaxToggleSetting('customer_messages', this.checked)" {% if configuration.customer_messages %}checked{% endif %}>
+            <span class="lp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Item 3: Weekly performance summary -->
+      <div class="lp-settings-toggle-row">
+        <div class="lp-settings-toggle-info">
+          <div class="lp-settings-toggle-name">Weekly performance summary</div>
+          <div class="lp-settings-toggle-desc">Views, leads and response-time digest</div>
+        </div>
+        <div class="lp-settings-toggle-control">
+          <label class="lp-switch">
+            <input type="checkbox" id="toggle_weekly_perf" onchange="ajaxToggleSetting('weekly_performance_summary', this.checked)" {% if configuration.weekly_performance_summary %}checked{% endif %}>
+            <span class="lp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Item 4: Product & platform updates -->
+      <div class="lp-settings-toggle-row">
+        <div class="lp-settings-toggle-info">
+          <div class="lp-settings-toggle-name">Product & platform updates</div>
+          <div class="lp-settings-toggle-desc">New features and policy changes</div>
+        </div>
+        <div class="lp-settings-toggle-control">
+          <label class="lp-switch">
+            <input type="checkbox" id="toggle_product_updates" onchange="ajaxToggleSetting('product_platform_updates', this.checked)" {% if configuration.product_platform_updates %}checked{% endif %}>
+            <span class="lp-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Team Access Card (Git repository-style permissions from BranchManpower) -->
+  <div class="lp-card lp-settings-card">
+    <div class="lp-settings-card-head">
+      <h3 class="lp-settings-section-title">Team access</h3>
+      <p class="lp-settings-section-sub">Who can manage this lab's profile and leads (selected from company Branch Manpower)</p>
+    </div>
+
+    <div class="lp-team-list">
+      {% for member in team_members %}
+        <div class="lp-team-row">
+          <div class="lp-team-avatar">{{ member.get_initials }}</div>
+          <div class="lp-team-details">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span class="lp-team-name">{{ member.name }}</span>
+              {% if member.designation %}
+                <span class="lp-team-designation-badge">{{ member.designation }}</span>
+              {% endif %}
+            </div>
+            <div class="lp-team-email">{{ member.email }}</div>
+          </div>
+          <div class="lp-team-role-wrap">
+            <span class="lp-team-role-badge lp-team-role--{{ member.role }}">{{ member.get_role_display }}</span>
+            <button type="button" class="lp-btn-icon-subtle" onclick="openMemberPermissionsModal('{{ member.pk }}', '{{ member.name|escapejs }}', '{{ member.designation|default:''|escapejs }}', '{{ member.role }}', {{ member.can_manage_leads|yesno:'true,false' }}, {{ member.can_manage_orders|yesno:'true,false' }}, {{ member.can_manage_scope|yesno:'true,false' }}, {{ member.can_manage_profile|yesno:'true,false' }}, {{ member.can_manage_reviews|yesno:'true,false' }}, {{ member.can_view_analytics|yesno:'true,false' }}, {{ member.can_manage_settings|yesno:'true,false' }})" title="Configure Section Permissions">
+              <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"/></svg>
+            </button>
+          </div>
+        </div>
+      {% empty %}
+        <div class="lp-muted" style="padding: 12px 0;">No team members assigned portal permissions yet.</div>
+      {% endfor %}
+    </div>
+
+    <div style="margin-top: 18px;">
+      <button type="button" class="lp-btn-invite" onclick="openInviteModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Invite team member
+      </button>
+    </div>
+  </div>
+
+  <!-- 4. Account Settings Card -->
+  <div class="lp-card lp-settings-card">
+    <div class="lp-settings-card-head">
+      <h3 class="lp-settings-section-title">Account Settings</h3>
+      <p class="lp-settings-section-sub">These actions are permanent</p>
+    </div>
+
+    <div class="lp-settings-toggle-list">
+      <!-- Item 1: Show pricing publicly -->
+      <div class="lp-settings-toggle-row">
+        <div class="lp-settings-toggle-info">
+          <div class="lp-settings-toggle-name">Show pricing publicly</div>
+          <div class="lp-settings-toggle-desc">Hide to require an enquiry before buyers see prices</div>
+        </div>
+        <div class="lp-settings-toggle-control">
+          <label class="lp-switch">
+            <input type="checkbox" id="toggle_pricing_public" onchange="ajaxToggleSetting('show_pricing_publicly', this.checked)" {% if configuration.show_pricing_publicly %}checked{% endif %}>
+            <span class="lp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Item 2: Hide from competing labs -->
+      <div class="lp-settings-toggle-row">
+        <div class="lp-settings-toggle-info">
+          <div class="lp-settings-toggle-name">Hide from competing labs</div>
+          <div class="lp-settings-toggle-desc">Don't appear in "similar labs" on competitor pages</div>
+        </div>
+        <div class="lp-settings-toggle-control">
+          <label class="lp-switch">
+            <input type="checkbox" id="toggle_hide_competing" onchange="ajaxToggleSetting('hide_from_competing_labs', this.checked)" {% if configuration.hide_from_competing_labs %}checked{% endif %}>
+            <span class="lp-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Item 3: Change Password -->
+      <div class="lp-settings-toggle-row">
+        <div class="lp-settings-toggle-info">
+          <div class="lp-settings-toggle-name">Change Password</div>
+          <div class="lp-settings-toggle-desc">Verify and add new password</div>
+        </div>
+        <div class="lp-settings-toggle-control">
+          <button type="button" class="lp-btn-link-action" onclick="openPasswordModal()">Change Password</button>
+        </div>
+      </div>
+
+      <!-- Item 4: Deactivate lab profile -->
+      <div class="lp-settings-toggle-row">
+        <div class="lp-settings-toggle-info">
+          <div class="lp-settings-toggle-name">Deactivate lab profile</div>
+          <div class="lp-settings-toggle-desc">Hide this location from search temporarily</div>
+        </div>
+        <div class="lp-settings-toggle-control">
+          <button type="button" class="lp-btn-danger-outline" onclick="confirmDeactivateProfile()">
+            {% if configuration.is_deactivated %}Reactivate{% else %}Deactivate{% endif %}
+          </button>
+        </div>
+      </div>
+
+      <!-- Item 5: Delete this branch -->
+      <div class="lp-settings-toggle-row">
+        <div class="lp-settings-toggle-info">
+          <div class="lp-settings-toggle-name">Delete this branch</div>
+          <div class="lp-settings-toggle-desc">Permanently remove {{ branch.lab_city|default:branch.lab_name }} branch and its data</div>
+        </div>
+        <div class="lp-settings-toggle-control">
+          <button type="button" class="lp-btn-danger-outline" onclick="confirmDeleteBranch()">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal: Assign / Invite Team Member (Selected from BranchManpower) -->
+<div id="inviteMemberModal" class="lp-modal-backdrop" style="display: none;">
+  <div class="lp-modal-box">
+    <div class="lp-modal-head">
+      <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a;">Assign Team Member Permissions</h3>
+      <button type="button" class="lp-modal-close" onclick="closeInviteModal()">&times;</button>
+    </div>
+    <form method="post" action="{% url 'dashboard' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="invite_team_member">
+      <div class="lp-modal-body">
+        
+        <!-- Selection from BranchManpower -->
+        <div class="lp-form-group">
+          <label class="lp-form-label">Select Employee from Branch Manpower *</label>
+          <select name="manpower_id" id="inviteManpowerSelect" class="lp-select" onchange="toggleManualEmployee(this.value)">
+            {% if available_manpower %}
+              <option value="">-- Choose Employee from Branch Manpower --</option>
+              {% for emp in available_manpower %}
+                <option value="{{ emp.id }}">{{ emp.get_full_name|default:emp.user.username }} ({{ emp.user.email }}) — {{ emp.designation|default:"Staff" }}</option>
+              {% endfor %}
+              <option value="__new__">+ Register New Employee in Branch Manpower</option>
+            {% else %}
+              <option value="__new__">+ Register New Employee in Branch Manpower</option>
+            {% endif %}
+          </select>
+          <small style="color: #64748b; font-size: 12px; margin-top: 4px; display: block;">Users already registered in this branch's manpower can be assigned portal update access.</small>
+        </div>
+
+        <!-- Optional fields to add new employee to BranchManpower if not listed yet -->
+        <div id="newEmployeeFields" style="display: {% if available_manpower %}none{% else %}block{% endif %}; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 14px;">
+          <div style="font-size: 13px; font-weight: 700; color: #166534; margin-bottom: 8px;">New Branch Manpower Member:</div>
+          <div class="lp-form-group" style="margin-bottom: 10px;">
+            <label class="lp-form-label" style="font-size: 12px;">Full Name *</label>
+            <input type="text" name="name" id="newEmpName" class="lp-input" placeholder="e.g. Priya Sharma">
+          </div>
+          <div class="lp-form-group" style="margin-bottom: 10px;">
+            <label class="lp-form-label" style="font-size: 12px;">Email Address *</label>
+            <input type="email" name="email" id="newEmpEmail" class="lp-input" placeholder="priya@labdomain.com">
+          </div>
+          <div class="lp-form-group" style="margin-bottom: 0;">
+            <label class="lp-form-label" style="font-size: 12px;">Company Designation in Lab *</label>
+            <input type="text" name="designation" id="newEmpDesignation" class="lp-input" placeholder="e.g. Operations Manager / Chemist">
+          </div>
+        </div>
+
+        <div class="lp-form-group">
+          <label class="lp-form-label">Repository Access Role</label>
+          <select name="role" id="inviteRoleSelect" class="lp-select" onchange="syncRolePermissions(this.value, 'invite')">
+            <option value="admin">Lab Admin (Full repository access)</option>
+            <option value="manager" selected>Lead Manager (Leads, Orders, Reviews)</option>
+            <option value="viewer">Viewer (Read-only analytics & metrics)</option>
+            <option value="custom">Custom Permissions...</option>
+          </select>
+        </div>
+
+        <!-- Git-like Repository Section Permissions -->
+        <div class="lp-permissions-group">
+          <div class="lp-permissions-title">Repository Section Permissions</div>
+          <input type="hidden" name="custom_permissions" id="inviteCustomPerms" value="0">
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_leads" id="invite_perm_leads" checked>
+            <span><strong>Leads:</strong> View customer enquiries and submit quotes</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_orders" id="invite_perm_orders" checked>
+            <span><strong>Orders:</strong> Manage orders, test reports and payments</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_scope" id="invite_perm_scope">
+            <span><strong>Test & Scope:</strong> Add, edit and publish testing scopes</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_profile" id="invite_perm_profile">
+            <span><strong>Profile:</strong> Update facility photos, address and accreditations</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_reviews" id="invite_perm_reviews" checked>
+            <span><strong>Reviews:</strong> View feedback and publish official lab replies</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_analytics" id="invite_perm_analytics" checked>
+            <span><strong>Analytics:</strong> Access traffic and lead conversion reports</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_settings" id="invite_perm_settings">
+            <span><strong>Settings:</strong> Manage billing, notifications and team access</span>
+          </label>
+        </div>
+      </div>
+      <div class="lp-modal-footer">
+        <button type="button" class="lp-btn lp-btn--outline" onclick="closeInviteModal()">Cancel</button>
+        <button type="submit" class="lp-btn lp-btn--primary">Assign Permissions</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Edit Team Member Permissions -->
+<div id="memberPermModal" class="lp-modal-backdrop" style="display: none;">
+  <div class="lp-modal-box">
+    <div class="lp-modal-head">
+      <div>
+        <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a;"><span id="permMemberName"></span></h3>
+        <p style="margin: 2px 0 0 0; font-size: 13px; color: #64748b;">Branch Manpower Employee Repository Permissions</p>
+      </div>
+      <button type="button" class="lp-modal-close" onclick="closeMemberPermissionsModal()">&times;</button>
+    </div>
+    <form method="post" action="{% url 'dashboard' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="update_team_member">
+      <input type="hidden" name="member_id" id="permMemberId">
+      <input type="hidden" name="custom_permissions" value="1">
+      <div class="lp-modal-body">
+        
+        <div class="lp-form-group">
+          <label class="lp-form-label">Company Designation in Lab</label>
+          <input type="text" name="designation" id="editMemberDesignation" class="lp-input" placeholder="e.g. Lead Operations Specialist">
+        </div>
+
+        <div class="lp-form-group">
+          <label class="lp-form-label">Repository Role</label>
+          <select name="role" id="editMemberRoleSelect" class="lp-select" onchange="syncRolePermissions(this.value, 'edit')">
+            <option value="admin">Lab Admin (Full repository access)</option>
+            <option value="manager">Lead Manager (Leads, Orders, Reviews)</option>
+            <option value="viewer">Viewer (Read-only analytics & metrics)</option>
+            <option value="custom">Custom Permissions</option>
+          </select>
+        </div>
+
+        <div class="lp-permissions-group">
+          <div class="lp-permissions-title">Repository Section Access</div>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_leads" id="edit_perm_leads">
+            <span><strong>Leads:</strong> View customer enquiries and submit quotes</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_orders" id="edit_perm_orders">
+            <span><strong>Orders:</strong> Manage orders, test reports and payments</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_scope" id="edit_perm_scope">
+            <span><strong>Test & Scope:</strong> Add, edit and publish testing scopes</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_profile" id="edit_perm_profile">
+            <span><strong>Profile:</strong> Update facility photos, address and accreditations</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_reviews" id="edit_perm_reviews">
+            <span><strong>Reviews:</strong> View feedback and publish official lab replies</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_analytics" id="edit_perm_analytics">
+            <span><strong>Analytics:</strong> Access traffic and lead conversion reports</span>
+          </label>
+          <label class="lp-perm-check">
+            <input type="checkbox" name="perm_settings" id="edit_perm_settings">
+            <span><strong>Settings:</strong> Manage billing, notifications and team access</span>
+          </label>
+        </div>
+      </div>
+      <div class="lp-modal-footer" style="justify-content: space-between;">
+        <button type="button" class="lp-btn-danger-text" onclick="removeCurrentMember()">Revoke Access</button>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="lp-btn lp-btn--outline" onclick="closeMemberPermissionsModal()">Cancel</button>
+          <button type="submit" class="lp-btn lp-btn--primary">Save Permissions</button>
+        </div>
+      </div>
+    </form>
+    <form id="removeMemberForm" method="post" action="{% url 'dashboard' %}" style="display: none;">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="remove_team_member">
+      <input type="hidden" name="member_id" id="removeMemberId">
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Change Password -->
+<div id="passwordModal" class="lp-modal-backdrop" style="display: none;">
+  <div class="lp-modal-box">
+    <div class="lp-modal-head">
+      <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a;">Change Password</h3>
+      <button type="button" class="lp-modal-close" onclick="closePasswordModal()">&times;</button>
+    </div>
+    <form method="post" action="{% url 'dashboard' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="change_password">
+      <div class="lp-modal-body">
+        <div class="lp-form-group">
+          <label class="lp-form-label">Current Password *</label>
+          <input type="password" name="current_password" class="lp-input" required>
+        </div>
+        <div class="lp-form-group">
+          <label class="lp-form-label">New Password *</label>
+          <input type="password" name="new_password" class="lp-input" minlength="6" required>
+        </div>
+        <div class="lp-form-group">
+          <label class="lp-form-label">Confirm New Password *</label>
+          <input type="password" name="confirm_password" class="lp-input" minlength="6" required>
+        </div>
+      </div>
+      <div class="lp-modal-footer">
+        <button type="button" class="lp-btn lp-btn--outline" onclick="closePasswordModal()">Cancel</button>
+        <button type="submit" class="lp-btn lp-btn--primary">Update Password</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Hidden action forms for Deactivate & Delete -->
+<form id="deactivateProfileForm" method="post" action="{% url 'dashboard' %}" style="display: none;">
+  {% csrf_token %}
+  <input type="hidden" name="action" value="deactivate_profile">
+</form>
+
+<script>
+// AJAX setting toggle helper
+function ajaxToggleSetting(key, value) {
+  var formData = new FormData();
+  formData.append('action', 'toggle_setting');
+  formData.append('key', key);
+  formData.append('value', value);
+  formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+  fetch('{% url "dashboard" %}', {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.status !== 'success') {
+      console.error('Failed to update setting:', data);
+    }
+  })
+  .catch(function(err) {
+    console.error('Network error updating setting:', err);
+  });
+}
+
+// Invite modal handlers
+function openInviteModal() {
+  document.getElementById('inviteMemberModal').style.display = 'flex';
+}
+function closeInviteModal() {
+  document.getElementById('inviteMemberModal').style.display = 'none';
+}
+
+function toggleManualEmployee(val) {
+  var box = document.getElementById('newEmployeeFields');
+  var nameInp = document.getElementById('newEmpName');
+  var emailInp = document.getElementById('newEmpEmail');
+  var desigInp = document.getElementById('newEmpDesignation');
+  if (val === '__new__') {
+    box.style.display = 'block';
+    nameInp.required = true;
+    emailInp.required = true;
+  } else {
+    box.style.display = 'none';
+    nameInp.required = false;
+    emailInp.required = false;
+  }
+}
+
+// Edit member permissions handlers
+function openMemberPermissionsModal(id, name, designation, role, leads, orders, scope, profile, reviews, analytics, settings) {
+  document.getElementById('permMemberId').value = id;
+  document.getElementById('removeMemberId').value = id;
+  document.getElementById('permMemberName').textContent = name;
+  document.getElementById('editMemberDesignation').value = designation || '';
+  document.getElementById('editMemberRoleSelect').value = role;
+
+  document.getElementById('edit_perm_leads').checked = leads;
+  document.getElementById('edit_perm_orders').checked = orders;
+  document.getElementById('edit_perm_scope').checked = scope;
+  document.getElementById('edit_perm_profile').checked = profile;
+  document.getElementById('edit_perm_reviews').checked = reviews;
+  document.getElementById('edit_perm_analytics').checked = analytics;
+  document.getElementById('edit_perm_settings').checked = settings;
+
+  document.getElementById('memberPermModal').style.display = 'flex';
+}
+function closeMemberPermissionsModal() {
+  document.getElementById('memberPermModal').style.display = 'none';
+}
+function removeCurrentMember() {
+  if (confirm('Revoke portal repository access for this member? They will remain in Branch Manpower as a company employee.')) {
+    document.getElementById('removeMemberForm').submit();
+  }
+}
+
+// Role presets synchronizer
+function syncRolePermissions(role, prefix) {
+  var leads = document.getElementById(prefix + '_perm_leads');
+  var orders = document.getElementById(prefix + '_perm_orders');
+  var scope = document.getElementById(prefix + '_perm_scope');
+  var profile = document.getElementById(prefix + '_perm_profile');
+  var reviews = document.getElementById(prefix + '_perm_reviews');
+  var analytics = document.getElementById(prefix + '_perm_analytics');
+  var settings = document.getElementById(prefix + '_perm_settings');
+
+  if (role === 'admin') {
+    leads.checked = true; orders.checked = true; scope.checked = true;
+    profile.checked = true; reviews.checked = true; analytics.checked = true; settings.checked = true;
+  } else if (role === 'manager') {
+    leads.checked = true; orders.checked = true; scope.checked = false;
+    profile.checked = false; reviews.checked = true; analytics.checked = true; settings.checked = false;
+  } else if (role === 'viewer') {
+    leads.checked = false; orders.checked = false; scope.checked = false;
+    profile.checked = false; reviews.checked = false; analytics.checked = true; settings.checked = false;
+  }
+}
+
+// Password modal handlers
+function openPasswordModal() {
+  document.getElementById('passwordModal').style.display = 'flex';
+}
+function closePasswordModal() {
+  document.getElementById('passwordModal').style.display = 'none';
+}
+
+// Deactivate / Delete handlers
+function confirmDeactivateProfile() {
+  var isDeactivated = {% if configuration.is_deactivated %}true{% else %}false{% endif %};
+  var msg = isDeactivated ? 'Reactivate this lab location so it appears in search results again?' : 'Are you sure you want to deactivate this lab profile? It will be temporarily hidden from customer searches.';
+  if (confirm(msg)) {
+    document.getElementById('deactivateProfileForm').submit();
+  }
+}
+function confirmDeleteBranch() {
+  if (confirm('WARNING: Permanently remove this branch and all related data? This cannot be undone.')) {
+    alert('Branch deletion requires superadmin clearance. A request has been logged.');
+  }
+}
+</script>
