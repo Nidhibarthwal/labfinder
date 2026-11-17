@@ -99,55 +99,9 @@
           </div>
         {% endfor %}
       {% else %}
-        {# Render showcase reviews matching Figma design when no database reviews yet #}
-        {% for demo in demo_reviews %}
-          <div class="lp-review-item">
-            <div class="lp-review-item__top">
-              <span class="lp-review-author">{{ demo.reviewer_name }}</span>
-              <span class="lp-review-time">{{ demo.time_ago }}</span>
-            </div>
-
-            <div class="lp-review-item__stars">
-              {% for i in demo.stars_range %}
-                <svg class="lp-star-icon lp-star-icon--sm is-filled" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                </svg>
-              {% endfor %}
-              {% for i in demo.empty_stars_range %}
-                <svg class="lp-star-icon lp-star-icon--sm is-empty" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                </svg>
-              {% endfor %}
-            </div>
-
-            <div class="lp-review-text">"{{ demo.summary }}"</div>
-
-            {% if demo.lab_reply %}
-              <div class="lp-review-reply-callout">
-                <div class="lp-review-reply-label">Your Reply :</div>
-                <div class="lp-review-reply-text">{{ demo.lab_reply }}</div>
-              </div>
-            {% else %}
-              <div class="lp-review-reply-action">
-                <button type="button" class="lp-btn-reply-toggle" onclick="toggleReviewReplyForm('{{ demo.pk }}')">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                  Reply to this review
-                </button>
-                <div id="reply-form-{{ demo.pk }}" class="lp-review-reply-form" style="display: none;">
-                  <form method="post" action="{% url 'reply_lab_review' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="review_id" value="{{ demo.pk }}">
-                    <textarea name="reply_message" rows="3" class="lp-textarea" placeholder="Write your professional response..." required></textarea>
-                    <div style="margin-top: 8px; display: flex; gap: 8px;">
-                      <button type="submit" class="lp-btn lp-btn--primary lp-btn--sm">Publish reply</button>
-                      <button type="button" class="lp-btn lp-btn--outline lp-btn--sm" onclick="toggleReviewReplyForm('{{ demo.pk }}')">Cancel</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            {% endif %}
-          </div>
-        {% endfor %}
+        <div class="lp-reviews-empty">
+          <p>No reviews yet. Encourage your clients to leave feedback!</p>
+        </div>
       {% endif %}
     </div>
   </div>
@@ -165,4 +119,60 @@ function toggleReviewReplyForm(id) {
     el.style.display = 'none';
   }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.lp-review-reply-form form').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var submitBtn = form.querySelector('button[type="submit"]');
+      var textarea = form.querySelector('textarea');
+      var replyText = textarea ? textarea.value.trim() : '';
+      if (!replyText) return;
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Publishing...';
+      }
+
+      var formData = new FormData(form);
+      fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(function(res) {
+        return res.json().then(function(data) {
+          return { ok: res.ok, data: data };
+        });
+      })
+      .then(function(res) {
+        if (res.ok && res.data.status === 'success') {
+          var actionContainer = form.closest('.lp-review-reply-action');
+          if (actionContainer) {
+            var callout = document.createElement('div');
+            callout.className = 'lp-review-reply-callout';
+            callout.innerHTML = '<div class="lp-review-reply-label">Your Reply :</div><div class="lp-review-reply-text">' + (res.data.reply || replyText) + '</div>';
+            actionContainer.parentNode.replaceChild(callout, actionContainer);
+          }
+          if (typeof showSiteToast === 'function') {
+            showSiteToast(res.data.message || 'Your reply has been published.', 'success');
+          }
+        } else {
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Publish reply';
+          }
+          if (typeof showSiteToast === 'function') {
+            showSiteToast(res.data.message || 'Failed to publish reply.', 'error');
+          }
+        }
+      })
+      .catch(function(err) {
+        form.submit();
+      });
+    });
+  });
+});
 </script>

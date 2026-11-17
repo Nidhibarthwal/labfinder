@@ -195,7 +195,7 @@
                           {{ m.sender.get_full_name|default:m.sender.username }}
                           <span style="font-weight: 400; color: #64748b; font-size: 12px;">({{ m.get_sender_type_display }})</span>
                         </h3>
-                        <p style="margin: 4px 0 0; font-size: 13.5px; color: #334155;">{{ m.message|default:m.body }}</p>
+                        <p style="margin: 4px 0 0; font-size: 13.5px; color: #334155;">{{ m.message|default:"-" }}</p>
                         {% if m.attachment %}
                           <a href="{{ m.attachment.url }}" download class="cd-link-download" style="display: inline-block; margin-top: 4px;">Attachment</a>
                         {% endif %}

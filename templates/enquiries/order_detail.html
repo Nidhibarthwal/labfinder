@@ -191,24 +191,26 @@
           {% with quotation=order.lab_lead.quotation %}
           {% if quotation %}
           <p class="od-section-title">TEST ITEMS</p>
-          <table class="od-items-table">
-            <thead>
-              <tr>
-                <th>TEST</th>
-                <th>STANDARD</th>
-                <th class="right">RATE</th>
-                <th class="right">AMOUNT</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>{{ order.enquiry.product_name }}</strong></td>
-                <td>{{ order.enquiry.preferred_services|default:"—" }}</td>
-                <td class="right">&#8377;{{ quotation.total_amount|floatformat:0 }}</td>
-                <td class="right">&#8377;{{ quotation.total_amount|floatformat:0 }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="od-table-responsive">
+            <table class="od-items-table">
+              <thead>
+                <tr>
+                  <th>TEST</th>
+                  <th>STANDARD</th>
+                  <th class="right">RATE</th>
+                  <th class="right">AMOUNT</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>{{ order.enquiry.product_name }}</strong></td>
+                  <td>{{ order.enquiry.preferred_services|default:"—" }}</td>
+                  <td class="right">&#8377;{{ quotation.total_amount|floatformat:0 }}</td>
+                  <td class="right">&#8377;{{ quotation.total_amount|floatformat:0 }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
           <div class="od-items-total od-items-total--spaced">
             <div class="od-subtotal-row">
               <span>Subtotal</span><span class="val">&#8377;{{ quotation.total_amount|floatformat:0 }}</span>

@@ -389,26 +389,27 @@
       <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: #0f172a;">Change Password</h3>
       <button type="button" class="lp-modal-close" onclick="closePasswordModal()">&times;</button>
     </div>
-    <form method="post" action="{% url 'dashboard' %}">
+    <form method="post" action="{% url 'dashboard' %}" id="changePasswordForm">
       {% csrf_token %}
       <input type="hidden" name="action" value="change_password">
       <div class="lp-modal-body">
+        <div id="passwordModalAlert" style="display: none; padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; margin-bottom: 14px;"></div>
         <div class="lp-form-group">
           <label class="lp-form-label">Current Password *</label>
-          <input type="password" name="current_password" class="lp-input" required>
+          <input type="password" name="current_password" id="current_password" class="lp-input" required autocomplete="current-password">
         </div>
         <div class="lp-form-group">
           <label class="lp-form-label">New Password *</label>
-          <input type="password" name="new_password" class="lp-input" minlength="6" required>
+          <input type="password" name="new_password" id="new_password" class="lp-input" minlength="6" required autocomplete="new-password">
         </div>
         <div class="lp-form-group">
           <label class="lp-form-label">Confirm New Password *</label>
-          <input type="password" name="confirm_password" class="lp-input" minlength="6" required>
+          <input type="password" name="confirm_password" id="confirm_password" class="lp-input" minlength="6" required autocomplete="new-password">
         </div>
       </div>
       <div class="lp-modal-footer">
         <button type="button" class="lp-btn lp-btn--outline" onclick="closePasswordModal()">Cancel</button>
-        <button type="submit" class="lp-btn lp-btn--primary">Update Password</button>
+        <button type="submit" class="lp-btn lp-btn--primary" id="changePasswordSubmitBtn">Update Password</button>
       </div>
     </form>
   </div>
@@ -522,11 +523,129 @@ function syncRolePermissions(role, prefix) {
 
 // Password modal handlers
 function openPasswordModal() {
+  var alertBox = document.getElementById('passwordModalAlert');
+  if (alertBox) {
+    alertBox.style.display = 'none';
+    alertBox.textContent = '';
+  }
   document.getElementById('passwordModal').style.display = 'flex';
 }
 function closePasswordModal() {
   document.getElementById('passwordModal').style.display = 'none';
+  var form = document.getElementById('changePasswordForm');
+  if (form) form.reset();
+  var alertBox = document.getElementById('passwordModalAlert');
+  if (alertBox) {
+    alertBox.style.display = 'none';
+    alertBox.textContent = '';
+  }
 }
+
+function showPwAlert(msg, isError) {
+  var alertBox = document.getElementById('passwordModalAlert');
+  if (!alertBox) return;
+  alertBox.style.display = 'block';
+  alertBox.textContent = msg;
+  if (isError) {
+    alertBox.style.backgroundColor = '#fef2f2';
+    alertBox.style.color = '#991b1b';
+    alertBox.style.border = '1px solid #fecaca';
+  } else {
+    alertBox.style.backgroundColor = '#f0fdf4';
+    alertBox.style.color = '#166534';
+    alertBox.style.border = '1px solid #bbf7d0';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  {% if messages %}
+    {% for message in messages %}
+      {% if "password" in message.tags or "password" in message|lower or "current password" in message|lower %}
+        openPasswordModal();
+        showPwAlert("{{ message|escapejs }}", {% if message.tags == 'error' %}true{% else %}false{% endif %});
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+
+  var pwForm = document.getElementById('changePasswordForm');
+  if (pwForm) {
+    pwForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var submitBtn = document.getElementById('changePasswordSubmitBtn');
+      var currentPw = (document.getElementById('current_password').value || '').trim();
+      var newPw = (document.getElementById('new_password').value || '').trim();
+      var confirmPw = (document.getElementById('confirm_password').value || '').trim();
+
+      if (!currentPw) {
+        showPwAlert('Please enter your current password.', true);
+        return;
+      }
+      if (!newPw) {
+        showPwAlert('Please enter a new password.', true);
+        return;
+      }
+      if (newPw.length < 6) {
+        showPwAlert('New password must be at least 6 characters.', true);
+        return;
+      }
+      if (newPw !== confirmPw) {
+        showPwAlert('New passwords do not match.', true);
+        return;
+      }
+      if (currentPw === newPw) {
+        showPwAlert('New password cannot be the same as your current password.', true);
+        return;
+      }
+
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Updating...';
+      }
+
+      var csrfInput = pwForm.querySelector('[name=csrfmiddlewaretoken]');
+      var csrfToken = csrfInput ? csrfInput.value : '';
+      var formData = new FormData(pwForm);
+
+      fetch(pwForm.action || window.location.pathname, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        credentials: 'same-origin'
+      })
+      .then(function(res) {
+        return res.json().catch(function() {
+          return { status: 'error', message: 'Current password is incorrect.' };
+        });
+      })
+      .then(function(data) {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Update Password';
+        }
+        if (data && data.status === 'success') {
+          showPwAlert(data.message || 'Password changed successfully.', false);
+          setTimeout(function() {
+            closePasswordModal();
+          }, 1500);
+        } else {
+          var errMsg = (data && data.message) ? data.message : 'Current password is incorrect.';
+          showPwAlert(errMsg, true);
+        }
+      })
+      .catch(function(err) {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Update Password';
+        }
+        showPwAlert('Current password is incorrect.', true);
+      });
+    });
+  }
+});
 
 // Deactivate / Delete handlers
 function confirmDeactivateProfile() {

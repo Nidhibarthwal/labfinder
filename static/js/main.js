@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = shouldOpen ? 'hidden' : '';
     }
 
-    if (headerToggle && headerNav) {
+    if (headerToggle && headerNav && !headerToggle.dataset.hdrBound) {
+        headerToggle.dataset.hdrBound = 'true';
         headerToggle.addEventListener('click', () => toggleMenu());
 
         const headerClose = document.getElementById('headerClose');

@@ -634,12 +634,48 @@ textarea.form-control {
 @media (max-width: 900px) { .od-grid { grid-template-columns: 1fr; } }
 
 /* ---- Tab Nav ---- */
-.od-tabs        { display: flex; border-bottom: 2px solid #E5E7EB; margin-bottom: 0; gap: 0; }
-.od-tab         { padding: 12px 18px; font-size: 14px; color: #6B7280; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; display: flex; align-items: center; gap: 6px; background: none; border-top: none; border-left: none; border-right: none; }
+.od-tabs {
+  display: flex;
+  align-items: center;
+  border-bottom: 2px solid #E5E7EB;
+  margin-bottom: 0;
+  gap: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+}
+.od-tabs::-webkit-scrollbar {
+  display: none;
+}
+.od-tab {
+  padding: 12px 18px;
+  font-size: 14px;
+  color: #6B7280;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
 .od-tab:hover   { color: #0F3D39; }
 .od-tab.active  { color: #0F3D39; border-bottom-color: #0F3D39; font-weight: 600; }
 .od-badge       { background: #E5E7EB; color: #374151; border-radius: 999px; font-size: 11px; padding: 1px 7px; font-weight: 600; }
 .od-tab.active .od-badge { background: #0F3D39; color: #fff; }
+
+.od-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 12px;
+}
 
 /* ---- Main card area ---- */
 .od-main-card           { background: #fff; border: 1px solid #E5E7EB; border-radius: 12px; overflow: hidden; }
@@ -832,3 +868,140 @@ textarea.form-control {
 .od-btn--sm                  { padding: 5px 12px; font-size: 12px; }
 .od-btn--mt                  { margin-top: 8px; }
 .od-btn--sm-create           { font-size: 13px; padding: 7px 14px; }
+
+/* ---- Order Detail Responsive Breakpoints ---- */
+@media (max-width: 992px) {
+  .od-wrap {
+    padding: 20px 16px 50px;
+  }
+  .od-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .od-sidebar {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .od-wrap {
+    padding: 16px 12px 40px;
+  }
+  .od-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .od-header-left h1 {
+    font-size: 20px;
+  }
+  .od-header-btns {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .od-header-btns .od-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .od-stepper {
+    padding: 16px 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-bottom: 16px;
+  }
+  .od-stepper::-webkit-scrollbar {
+    display: none;
+  }
+  .od-steps {
+    min-width: 580px;
+  }
+  .od-tabs {
+    padding: 0 4px;
+  }
+  .od-tab {
+    padding: 12px 14px;
+    font-size: 13.5px;
+  }
+  .od-tab-content {
+    padding: 18px 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .od-items-table {
+    min-width: 480px;
+  }
+  .od-subtotal-row,
+  .od-total-row {
+    gap: 20px;
+  }
+  .od-completion-btns {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .od-completion-btns .od-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .od-qi-item {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .od-qi-right {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px dashed #e5e7eb;
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+  .od-doc-item {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .od-doc-info {
+    min-width: 0;
+    max-width: calc(100% - 90px);
+  }
+  .od-doc-name {
+    word-break: break-all;
+  }
+  .od-chat-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .od-chat-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    height: 60px;
+  }
+  .od-msg {
+    max-width: 88%;
+  }
+  .od-cust-actions {
+    grid-template-columns: 1fr;
+  }
+  .od-cust-row {
+    word-break: break-word;
+  }
+  .od-dispute-banner {
+    padding: 14px 16px;
+  }
+  .od-dispute-active {
+    padding: 14px 16px;
+  }
+  .od-dispute-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .od-next-action,
+  .od-cust-card,
+  .od-pay-card {
+    padding: 16px;
+  }
+}

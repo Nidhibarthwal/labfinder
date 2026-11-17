@@ -180,7 +180,7 @@
                     <nav class="header__nav">
                         <ul class="header__nav-list header__nav-list--left">
                             <li>
-                                <a href="#categories" class="header__nav-link header__nav-link--categories">
+                                <a href="/#categories" class="header__nav-link header__nav-link--categories">
                                     <span class="header__cat-icon" aria-hidden="true">
                                         <svg width="14" height="11" viewBox="0 0 14 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
                                             <line x1="1" y1="1.5" x2="13" y2="1.5"></line>
@@ -198,16 +198,16 @@
 
                         <ul class="header__nav-list header__nav-list--right">
                             <li>
-                                <a href="#about" class="header__nav-link">About LabFinder360</a>
+                                <a href="/#about" class="header__nav-link">About LabFinder360</a>
                             </li>
                             <li>
-                                <a href="#popular-tests" class="header__nav-link">Popular Tests</a>
+                                <a href="/#popular-tests" class="header__nav-link">Popular Tests</a>
                             </li>
                             <li>
-                                <a href="#faq" class="header__nav-link">FAQ</a>
+                                <a href="/#for-labs" class="header__nav-link">For Labs</a>
                             </li>
-                            <li>
-                                <a href="#for-labs" class="header__nav-link">For Labs</a>
+                            <li class="header__nav-item--mobile-only">
+                                <a href="/register" class="header__nav-link header__nav-link--highlight">List Your Lab</a>
                             </li>
                         </ul>
                     </nav>
@@ -260,9 +260,58 @@
     </header>
     <script>
     (function() {
+        // Mobile Drawer Toggle
+        var headerToggle = document.getElementById('headerToggle');
+        var headerNav = document.getElementById('headerNav');
+        var headerBackdrop = document.getElementById('headerBackdrop');
+        var headerClose = document.getElementById('headerClose');
+
+        function toggleMenu(open) {
+            if (!headerNav) return;
+            var shouldOpen = (open !== undefined) ? open : !headerNav.classList.contains('active');
+            if (headerToggle) {
+                headerToggle.classList.toggle('active', shouldOpen);
+                headerToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+            }
+            headerNav.classList.toggle('active', shouldOpen);
+            if (headerBackdrop) headerBackdrop.classList.toggle('active', shouldOpen);
+            document.body.style.overflow = shouldOpen ? 'hidden' : '';
+        }
+
+        if (headerToggle && !headerToggle.dataset.hdrBound) {
+            headerToggle.dataset.hdrBound = 'true';
+            headerToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleMenu();
+            });
+        }
+        if (headerClose && !headerClose.dataset.hdrBound) {
+            headerClose.dataset.hdrBound = 'true';
+            headerClose.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleMenu(false);
+            });
+        }
+        if (headerBackdrop && !headerBackdrop.dataset.hdrBound) {
+            headerBackdrop.dataset.hdrBound = 'true';
+            headerBackdrop.addEventListener('click', function(e) {
+                e.stopPropagation();
+                toggleMenu(false);
+            });
+        }
+        if (headerNav) {
+            headerNav.querySelectorAll('a').forEach(function(link) {
+                link.addEventListener('click', function() {
+                    toggleMenu(false);
+                });
+            });
+        }
+
+        // User dropdown menu
         var userBtn = document.getElementById('headerUserMenuBtn');
         var userMenu = document.getElementById('headerUserMenu');
-        if (userBtn && userMenu) {
+        if (userBtn && userMenu && !userBtn.dataset.hdrBound) {
+            userBtn.dataset.hdrBound = 'true';
             userBtn.addEventListener('click', function(e) {
                 e.stopPropagation();
                 var isOpen = !userMenu.hasAttribute('hidden');
@@ -280,6 +329,31 @@
                     userBtn.setAttribute('aria-expanded', 'false');
                 }
             });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    userMenu.setAttribute('hidden', '');
+                    userBtn.setAttribute('aria-expanded', 'false');
+                    toggleMenu(false);
+                }
+            });
+        }
+
+        // Auto-scroll active tabs into view smoothly on mobile
+        function centerActiveTabs() {
+            var activeTabs = document.querySelectorAll('.cd-tab.is-active, .lp-tabs a.is-active, .cd-subtab.is-active, .od-tab.active');
+            activeTabs.forEach(function(tab) {
+                var parent = tab.parentElement;
+                if (parent && parent.scrollWidth > parent.clientWidth) {
+                    var tabLeft = tab.offsetLeft - parent.offsetLeft;
+                    var scrollPos = tabLeft - (parent.clientWidth / 2) + (tab.offsetWidth / 2);
+                    parent.scrollTo({ left: Math.max(0, scrollPos), behavior: 'smooth' });
+                }
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', centerActiveTabs);
+        } else {
+            centerActiveTabs();
         }
     })();
     </script>

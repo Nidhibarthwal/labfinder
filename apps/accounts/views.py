@@ -20,7 +20,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 
 from apps.accounts.models import OTPVerification
-from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth import authenticate, login, logout, get_user_model, update_session_auth_hash
 User = get_user_model()
 from apps.labs.models import (
     Branch, BranchImage, LabCategory, LabSocialLink, ProductService, TestingPackage, TestingPackageItem, User,
@@ -2013,10 +2013,12 @@ class DashboardView(View):
         user_groups = request.user.groups.values_list('name', flat=True)
         if 'customer' in user_groups or 'Customer' in user_groups:
             return render_customer_dashboard(request)
-        elif 'lab' in user_groups or 'Lab' in user_groups or Branch.objects.filter(user=request.user):
+        elif 'lab' in user_groups or 'Lab' in user_groups or Branch.objects.filter(user=request.user).exists():
             lab_login = True
             email = request.user.email
-            current_branch = Branch.objects.get(user=request.user) 
+            current_branch = Branch.objects.filter(user=request.user).first()
+            if not current_branch and email:
+                current_branch = Branch.objects.filter(contact_email__iexact=email).first() 
 
         else:
             # check session
@@ -2094,44 +2096,7 @@ class DashboardView(View):
                 if not branch_manpower_list:
                     if current_branch.user:
                         mp_user = current_branch.user
-                    else:
-                        mp_user, _ = User.objects.get_or_create(
-                            email="nishant@meridianlabs.co.in",
-                            defaults={"username": "nishant@meridianlabs.co.in", "first_name": "Nishant", "last_name": "T."}
-                        )
-                    mp1, _ = BranchManpower.objects.get_or_create(
-                        user=mp_user,
-                        defaults={
-                            "lab": current_branch,
-                            "designation": "Lab Director / Admin",
-                            "status": 1,
-                            "is_lab_head": True,
-                        }
-                    )
-                    u2, _ = User.objects.get_or_create(
-                        email="deepa@meridianlabs.co.in",
-                        defaults={"username": "deepa@meridianlabs.co.in", "first_name": "Deepa", "last_name": "Shah"}
-                    )
-                    mp2, _ = BranchManpower.objects.get_or_create(
-                        user=u2,
-                        defaults={
-                            "lab": current_branch,
-                            "designation": "Lead Operations Specialist",
-                            "status": 1,
-                        }
-                    )
-                    u3, _ = User.objects.get_or_create(
-                        email="rohan@meridianlabs.co.in",
-                        defaults={"username": "rohan@meridianlabs.co.in", "first_name": "Rohan", "last_name": "Vyas"}
-                    )
-                    mp3, _ = BranchManpower.objects.get_or_create(
-                        user=u3,
-                        defaults={
-                            "lab": current_branch,
-                            "designation": "Senior Testing Analyst",
-                            "status": 1,
-                        }
-                    )
+                    
                     branch_manpower_list = list(
                         BranchManpower.objects.filter(lab=current_branch, is_deleted=False).select_related("user")
                     )
@@ -2226,7 +2191,6 @@ class DashboardView(View):
                 "display_count": reviews_ctx.get("display_count") or reviews_ctx.get("total_count"),
                 "category_averages": reviews_ctx.get("category_averages"),
                 "star_breakdown": reviews_ctx.get("star_breakdown") or [],
-                "demo_reviews": reviews_ctx.get("demo_reviews") or [],
                 "accreditation": (
                     Accreditation.objects.filter(lab=current_branch, active=True)
                     .select_related("accred")
@@ -2269,13 +2233,51 @@ class DashboardView(View):
                 return JsonResponse({"status": "error", "message": "Unauthorized"}, status=401)
             return redirect("register")
 
+        action = request.POST.get("action", "")
+
+        # ── Password Change Action (User-level, independent of Branch) ──
+        if action == "change_password":
+            current_pw = request.POST.get("current_password", "")
+            new_pw = request.POST.get("new_password", "")
+            confirm_pw = request.POST.get("confirm_password", "")
+            is_ajax = (
+                request.headers.get("x-requested-with") == "XMLHttpRequest"
+                or "application/json" in request.headers.get("accept", "")
+            )
+
+            error_msg = None
+            if not current_pw:
+                error_msg = "Please enter your current password."
+            elif not request.user.check_password(current_pw):
+                error_msg = "Current password is incorrect."
+            elif not new_pw:
+                error_msg = "Please enter a new password."
+            elif len(new_pw) < 6:
+                error_msg = "New password must be at least 6 characters."
+            elif new_pw != confirm_pw:
+                error_msg = "New passwords do not match."
+            elif current_pw == new_pw:
+                error_msg = "New password cannot be the same as your current password."
+
+            if error_msg:
+                if is_ajax:
+                    return JsonResponse({"status": "error", "message": error_msg})
+                messages.error(request, error_msg, extra_tags="password")
+            else:
+                request.user.set_password(new_pw)
+                request.user.save()
+                update_session_auth_hash(request, request.user)
+                if is_ajax:
+                    return JsonResponse({"status": "success", "message": "Password changed successfully."})
+                messages.success(request, "Password changed successfully.", extra_tags="password")
+
+            return redirect(f"{reverse('dashboard')}?tab=settings")
+
         branch = Branch.objects.filter(user=request.user).first() or get_current_branch(request)
         if not branch:
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return JsonResponse({"status": "error", "message": "Branch not found"}, status=404)
             return redirect("dashboard")
-
-        action = request.POST.get("action", "")
 
         # ── 1. General Info / Identity Auto-Save ──────────────────────────
         if action == "save_general":
@@ -2580,7 +2582,7 @@ class DashboardView(View):
             role = request.POST.get("role", "manager").strip()
             manpower = None
 
-            if manpower_id:
+            if manpower_id and manpower_id.isdigit():
                 manpower = BranchManpower.objects.filter(pk=manpower_id, lab=branch).first()
 
             # If manpower not selected by ID, support adding new employee into BranchManpower
@@ -2630,9 +2632,10 @@ class DashboardView(View):
                 perm.can_manage_settings = request.POST.get("perm_settings") in ("1", "on", "true")
 
             perm.save()
-            messages.success(request, f"Assigned {perm.get_role_display()} repository permission to {manpower.get_full_name() or manpower.user.email}.")
+            msg = f"Assigned {perm.get_role_display()} repository permission to {manpower.get_full_name() or manpower.user.email}."
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
-                return JsonResponse({"status": "success", "member_id": str(perm.pk)})
+                return JsonResponse({"status": "success", "member_id": str(perm.pk), "message": msg})
+            messages.success(request, msg)
             return redirect(f"{reverse('dashboard')}?tab=settings")
 
         if action == "update_team_member":
@@ -2656,17 +2659,19 @@ class DashboardView(View):
                 perm.manpower.save(update_fields=["designation", "updated_at"])
 
             perm.save()
-            messages.success(request, f"Permissions updated for {perm.name}.")
+            msg = f"Permissions updated for {perm.name}."
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
-                return JsonResponse({"status": "success"})
+                return JsonResponse({"status": "success", "message": msg})
+            messages.success(request, msg)
             return redirect(f"{reverse('dashboard')}?tab=settings")
 
         if action == "remove_team_member":
             member_id = request.POST.get("member_id")
             BranchManpowerPermission.objects.filter(pk=member_id, branch=branch).delete()
-            messages.success(request, "Repository access removed. Employee remains active in BranchManpower.")
+            msg = "Repository access removed. Employee remains active in BranchManpower."
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
-                return JsonResponse({"status": "success"})
+                return JsonResponse({"status": "success", "message": msg})
+            messages.success(request, msg)
             return redirect(f"{reverse('dashboard')}?tab=settings")
 
         if action == "deactivate_profile":
@@ -2674,25 +2679,10 @@ class DashboardView(View):
             config.is_deactivated = not config.is_deactivated
             config.save(update_fields=["is_deactivated", "updated_at"])
             status_text = "deactivated" if config.is_deactivated else "reactivated"
-            messages.info(request, f"Lab profile has been {status_text}.")
+            msg = f"Lab profile has been {status_text}."
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
-                return JsonResponse({"status": "success", "is_deactivated": config.is_deactivated})
-            return redirect(f"{reverse('dashboard')}?tab=settings")
-
-        if action == "change_password":
-            current_pw = request.POST.get("current_password", "")
-            new_pw = request.POST.get("new_password", "")
-            confirm_pw = request.POST.get("confirm_password", "")
-            if not request.user.check_password(current_pw):
-                messages.error(request, "Current password is incorrect.")
-            elif new_pw != confirm_pw:
-                messages.error(request, "New passwords do not match.")
-            elif len(new_pw) < 6:
-                messages.error(request, "New password must be at least 6 characters.")
-            else:
-                request.user.set_password(new_pw)
-                request.user.save()
-                messages.success(request, "Password changed successfully.")
+                return JsonResponse({"status": "success", "is_deactivated": config.is_deactivated, "message": msg})
+            messages.info(request, msg)
             return redirect(f"{reverse('dashboard')}?tab=settings")
 
         return redirect("dashboard")
