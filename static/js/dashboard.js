@@ -12,6 +12,9 @@ function odTab(btn, pane) {
   var el = document.getElementById('pane-' + pane);
   if (el) { el.classList.add('active'); }
   if (pane === 'chat') { odScrollChatToBottom(); }
+  try {
+    btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  } catch (e) {}
 }
 
 /* ------------------------------------------------------------------ */
@@ -110,11 +113,35 @@ function odCheckActiveTab() {
 /*  ORDER DETAIL — DOMContentLoaded initialisation                      */
 /* ------------------------------------------------------------------ */
 document.addEventListener('DOMContentLoaded', function () {
-  /* Only run on pages that have order detail elements */
+  /* Auto-scroll active header navigation tab into view if present */
+  var activeHeaderTab = document.querySelector('.lp-tabs a.is-active');
+  if (activeHeaderTab) {
+    try {
+      activeHeaderTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    } catch (e) {}
+  }
+
+  /* Only run remaining initialisations on pages that have order detail elements */
   if (!document.querySelector('.od-wrap')) { return; }
 
   odScrollChatToBottom();
   odInitAttach();
   odInitFlash();
   odCheckActiveTab();
+
+  /* Auto-scroll active stepper step into view on mobile if overflowing */
+  var currentStep = document.querySelector('.od-step.current') || document.querySelector('.od-step.done:last-of-type');
+  if (currentStep) {
+    try {
+      currentStep.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    } catch (e) {}
+  }
+
+  /* Auto-scroll active tab into view on load */
+  var activeOdTab = document.querySelector('.od-tab.active');
+  if (activeOdTab) {
+    try {
+      activeOdTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    } catch (e) {}
+  }
 });

@@ -631,7 +631,6 @@ textarea.form-control {
 
 /* ---- Two-column grid ---- */
 .od-grid { display: grid; grid-template-columns: 1fr 320px; gap: 20px; align-items: start; }
-@media (max-width: 900px) { .od-grid { grid-template-columns: 1fr; } }
 
 /* ---- Tab Nav ---- */
 .od-tabs {
@@ -875,10 +874,27 @@ textarea.form-control {
     padding: 20px 16px 50px;
   }
   .od-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
   }
   .od-sidebar {
+    display: contents;
+  }
+  .od-side-card--next-action {
+    order: 1;
+    width: 100%;
+  }
+  .od-main-col {
+    order: 2;
+    width: 100%;
+  }
+  .od-side-card--customer {
+    order: 3;
+    width: 100%;
+  }
+  .od-side-card--payment {
+    order: 4;
     width: 100%;
   }
 }
@@ -904,50 +920,114 @@ textarea.form-control {
     width: 100%;
     justify-content: center;
   }
+  .od-stepper-wrap {
+    width: 100%;
+    position: relative;
+    margin-bottom: 16px;
+  }
   .od-stepper {
     padding: 16px 14px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
     scrollbar-width: none;
-    margin-bottom: 16px;
+    margin-bottom: 0;
   }
   .od-stepper::-webkit-scrollbar {
     display: none;
   }
   .od-steps {
-    min-width: 580px;
+    min-width: 520px;
   }
   .od-tabs {
     padding: 0 4px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+  }
+  .od-tabs::-webkit-scrollbar {
+    display: none;
   }
   .od-tab {
     padding: 12px 14px;
     font-size: 13.5px;
+    min-height: 44px;
   }
   .od-tab-content {
     padding: 18px 14px;
   }
+  .od-quick-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 10px 0 6px;
+  }
+  .od-quick-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .od-chip {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  .od-msg {
+    max-width: 86%;
+  }
 }
 
 @media (max-width: 640px) {
+  .od-steps {
+    min-width: 460px;
+  }
+  .od-step__icon {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+  .od-step + .od-step::before {
+    top: 15px;
+  }
+  .od-step__label {
+    font-size: 10.5px;
+    margin-top: 5px;
+  }
   .od-items-table {
-    min-width: 480px;
+    min-width: 440px;
+    font-size: 13px;
   }
   .od-subtotal-row,
   .od-total-row {
-    gap: 20px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 8px 6px;
+    gap: 12px;
+    box-sizing: border-box;
   }
   .od-completion-btns {
     flex-direction: column;
     gap: 8px;
+    width: 100%;
   }
+  .od-completion-btns form,
   .od-completion-btns .od-btn {
     width: 100%;
     justify-content: center;
+    min-height: 44px;
+  }
+  .od-mark-complete-wrap form,
+  .od-mark-complete-wrap .od-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
   }
   .od-qi-item {
     flex-wrap: wrap;
     gap: 10px;
+    padding: 12px 14px;
   }
   .od-qi-right {
     width: 100%;
@@ -962,46 +1042,162 @@ textarea.form-control {
   .od-doc-item {
     flex-wrap: wrap;
     gap: 10px;
+    padding: 12px 14px;
   }
   .od-doc-info {
     min-width: 0;
     max-width: calc(100% - 90px);
   }
   .od-doc-name {
-    word-break: break-all;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .od-doc-dl {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
   }
   .od-chat-input-row {
-    flex-direction: column;
-    align-items: stretch;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
     gap: 8px;
   }
   .od-chat-textarea {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
+    width: auto;
     box-sizing: border-box;
-    height: 60px;
+    height: 44px;
+    min-height: 44px;
+    max-height: 120px;
+    font-size: 15px;
+    padding: 10px 12px;
+    line-height: 1.4;
   }
-  .od-msg {
-    max-width: 88%;
+  .od-attach-btn {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+    background: #F9FAFB;
+    flex-shrink: 0;
+    cursor: pointer;
+    margin-bottom: 1px;
+  }
+  .od-btn--send {
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 8px;
+    flex-shrink: 0;
+    margin-bottom: 1px;
+    font-size: 13.5px;
   }
   .od-cust-actions {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .od-cust-btn {
+    min-height: 40px;
+    justify-content: center;
   }
   .od-cust-row {
     word-break: break-word;
   }
   .od-dispute-banner {
     padding: 14px 16px;
+    word-break: break-word;
   }
   .od-dispute-active {
     padding: 14px 16px;
+    word-break: break-word;
+  }
+  .od-dispute-form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
   .od-dispute-btn {
     width: 100%;
     justify-content: center;
+    min-height: 44px;
   }
   .od-next-action,
   .od-cust-card,
   .od-pay-card {
     padding: 16px;
+  }
+  .od-next-action-btn {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .od-wrap {
+    padding: 12px 10px 36px;
+  }
+  .od-stepper {
+    padding: 14px 10px;
+    border-radius: 8px;
+  }
+  .od-steps {
+    min-width: 420px;
+  }
+  .od-step__icon {
+    width: 28px;
+    height: 28px;
+    font-size: 11px;
+  }
+  .od-step + .od-step::before {
+    top: 14px;
+  }
+  .od-step__label {
+    font-size: 10px;
+    margin-top: 4px;
+  }
+  .od-tab {
+    padding: 10px 10px;
+    font-size: 13px;
+    gap: 4px;
+    min-height: 42px;
+  }
+  .od-tab-content {
+    padding: 16px 12px;
+  }
+  .od-msg {
+    max-width: 92%;
+  }
+  .od-msg__bubble {
+    font-size: 13px;
+    padding: 9px 12px;
+  }
+  .od-chat-textarea {
+    font-size: 14px;
+    padding: 8px 10px;
+    height: 40px;
+    min-height: 40px;
+  }
+  .od-attach-btn {
+    width: 38px;
+    height: 38px;
+  }
+  .od-btn--send {
+    height: 38px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .od-req-box {
+    padding: 12px;
+    font-size: 13px;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+  .od-next-action,
+  .od-cust-card,
+  .od-pay-card {
+    padding: 14px;
   }
 }

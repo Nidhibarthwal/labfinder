@@ -1,7 +1,27 @@
 /**
- * Lab portal — leads search + row/card navigation
+ * Lab portal — leads search + row/card navigation + responsive nav scroll
  */
 document.addEventListener('DOMContentLoaded', function () {
+  // Auto-scroll active header navigation tab into view on load
+  var activeNavTab = document.querySelector('.lp-tabs a.is-active');
+  if (activeNavTab) {
+    try {
+      activeNavTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    } catch (e) {
+      activeNavTab.scrollIntoView(false);
+    }
+  }
+
+  // Auto-scroll active order filter pill into view on load
+  var activeFilter = document.querySelector('.lp-filters--orders a.is-active');
+  if (activeFilter) {
+    try {
+      activeFilter.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    } catch (e) {
+      activeFilter.scrollIntoView(false);
+    }
+  }
+
   var q = document.getElementById('lp-lead-search');
 
   function filterLeads(value) {

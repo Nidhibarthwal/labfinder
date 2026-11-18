@@ -56,8 +56,9 @@
 
   {# ── PROGRESS STEPPER (6 steps) ── #}
   {% with s=order.status %}
-  <div class="od-stepper">
-    <div class="od-steps">
+  <div class="od-stepper-wrap" id="odStepperWrap">
+    <div class="od-stepper">
+      <div class="od-steps" id="odSteps">
 
       {# Step 1: Quote Sent #}
       {% if s == 'quote_sent' %}
@@ -155,13 +156,14 @@
 
     </div>
   </div>
+  </div>
   {% endwith %}
 
   {# ── MAIN TWO-COLUMN GRID ── #}
   <div class="od-grid">
 
     {# ── LEFT: TABS ── #}
-    <div>
+    <div class="od-main-col">
       <div class="od-main-card">
 
         {# Tab nav #}
@@ -583,13 +585,13 @@
       </div>
       {% endif %}
 
-    </div>{# /left column #}
+    </div>{# /od-main-col #}
 
     {# ── RIGHT SIDEBAR ── #}
     <div class="od-sidebar">
 
       {# NEXT ACTION card #}
-      <div class="od-side-card">
+      <div class="od-side-card od-side-card--next-action">
         <div class="od-next-action">
           <p class="label">NEXT ACTION</p>
           {% if order.status == 'quote_sent' %}
@@ -647,7 +649,7 @@
       </div>
 
       {# CUSTOMER card #}
-      <div class="od-side-card">
+      <div class="od-side-card od-side-card--customer">
         <div class="od-cust-card">
           <p class="od-cust-label">CUSTOMER</p>
           <div class="od-cust-top">
@@ -709,7 +711,7 @@
       {# PAYMENT card #}
       {% with q=order.lab_lead.quotation %}
       {% if q %}
-      <div class="od-side-card">
+      <div class="od-side-card od-side-card--payment">
         <div class="od-pay-card">
           <p class="od-pay-label">PAYMENT</p>
           <div class="od-pay-row">
