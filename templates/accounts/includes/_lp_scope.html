@@ -22,219 +22,153 @@
   </div>
 </div>
 
-<!-- Toolbar: Filter Pills, View Mode Switcher, and Search Input -->
-<div class="lp-scope-toolbar">
-  <div class="lp-scope-toolbar-top">
-    <!-- Filter Pills: All / Published / Unpublished -->
-    <div class="lp-scope-filter-pills" id="scopeFilterPills">
-      <button type="button" class="lp-scope-pill is-active" data-filter="all" onclick="filterByStatus('all', this)">
-        All {{ scope_count }}
-      </button>
-      <button type="button" class="lp-scope-pill" data-filter="published" onclick="filterByStatus('published', this)">
-        Published ({{ published_scope_count }})
-      </button>
-      <button type="button" class="lp-scope-pill" data-filter="unpublished" onclick="filterByStatus('unpublished', this)">
-        Unpublished ({{ unpublished_scope_count }})
-      </button>
+<!-- Filter Pills: All / Published / Unpublished -->
+<div class="lp-scope-filter-pills" id="scopeFilterPills" style="margin-top:16px; margin-bottom:14px;">
+  <button type="button" class="lp-scope-pill is-active" data-filter="all" onclick="filterByStatus('all', this)">
+    All {{ scope_count }}
+  </button>
+  <button type="button" class="lp-scope-pill" data-filter="published" onclick="filterByStatus('published', this)">
+    Published ({{ published_scope_count }})
+  </button>
+  <button type="button" class="lp-scope-pill" data-filter="unpublished" onclick="filterByStatus('unpublished', this)">
+    Unpublished ({{ unpublished_scope_count }})
+  </button>
+</div>
+
+<!-- ============================================================
+     SCOPE LISTING (Reference: review-details.html:L821-L939)
+     ============================================================ -->
+<div class="products-scope-main-wrapper" id="scopeCatalogContent">
+  <!-- Top Search & Toolbar -->
+  <div class="products-scope-toolbar" style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px;">
+    <div class="ps-search-box" style="position:relative; flex:1;">
+      <svg class="ps-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); pointer-events:none;">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input type="text" id="psSearchInput" class="ps-search-input" placeholder="Search by standard code, title or parameter..." autocomplete="off" oninput="filterScopeItems(this.value)" style="width:100%; height:44px; padding:0 16px 0 42px; background-color:#FFFFFF; border:1px solid #E2E8F0; border-radius:10px; font-size:14px; color:#0F172A; box-sizing:border-box; outline:none;" />
     </div>
 
-    <!-- View Mode Switch: Cards vs Table -->
-    <div class="lp-view-mode-toggle">
-      <button type="button" class="lp-view-mode-btn is-active" id="btnViewCards" title="Card View" onclick="switchScopeView('cards')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-      </button>
-      <button type="button" class="lp-view-mode-btn" id="btnViewTable" title="Table View" onclick="switchScopeView('table')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+    <div class="ps-toolbar-actions" style="display:flex; align-items:center; gap:10px;">
+      <button type="button" class="btn-ps-add-standard" id="btnAddStandard" onclick="openProductModal()" style="display:inline-flex; align-items:center; gap:8px; height:44px; padding:0 20px; background-color:#F59E0B; color:#0F172A; border:none; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Add Standard</span>
       </button>
     </div>
   </div>
 
-  <!-- Search Input Bar -->
-  <div class="lp-scope-search-box">
-    <svg class="lp-scope-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="11" cy="11" r="8"></circle>
-      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-    </svg>
-    <input type="text" id="lpScopeSearch" class="lp-scope-search-input" placeholder="Search for test and parameters" autocomplete="off" oninput="filterScopeItems(this.value)">
-  </div>
-</div>
-
-<!-- ============================================================
-     1. CARD GRID VIEW (Figma: Test & Scope.png)
-     ============================================================ -->
-<div class="lp-scope-cards-grid" id="scopeCardsView">
-  {% for scope in scopes_with_facilities %}
-    {% with dept_list=scope.test_type.all %}
-      <div class="lp-scope-card" data-scope-id="{{ scope.id }}" data-status="{% if scope.is_public and not scope.is_disable %}published{% else %}unpublished{% endif %}" data-search="{% if scope.is_number %}{{ scope.is_number|lower }}{% endif %} {% if scope.is_title %}{{ scope.is_title|lower }}{% endif %} {% for f in scope.facility_scope.all %}{{ f.parameter|lower }} {% endfor %}">
-        
-        <!-- Hidden JSON for edit modal -->
-        <script type="application/json" class="scope-parameters-json">
-        [
-          {% for facility in scope.facility_scope.all %}
-          {
-            "id": "{{ facility.id }}",
-            "name": "{{ facility.parameter|escapejs }}",
-            "method": "{% for m in facility.method_test.all %}{{ m.name|escapejs }}{% endfor %}",
-            "unit": "{{ facility.range_unit.name|default:''|escapejs }}"
-          }{% if not forloop.last %},{% endif %}
-          {% endfor %}
-        ]
-        </script>
-        <script type="application/json" class="scope-details-json">
-        {
-          "id": "{{ scope.id }}",
-          "name": "{{ scope.is_number|default:''|escapejs }}",
-          "title": "{{ scope.is_title|default:''|escapejs }}",
-          "notes": "{{ scope.description|default:''|escapejs }}",
-          "departments": [{% for dept in dept_list %}"{{ dept.name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]
-        }
-        </script>
-
-        <!-- Card Title -->
-        <h3 class="lp-scope-title" title="{% if scope.is_number %}{{ scope.is_number }}{% endif %} {% if scope.is_title and scope.is_title != scope.is_number %}- {{ scope.is_title }}{% endif %}">
-          {% if scope.is_number %}
-            {{ scope.is_number }}
-          {% else %}
-            {{ scope.is_title|default:"Standard / Method" }}
-          {% endif %}
-          {% if scope.is_title and scope.is_title != scope.is_number %}
-            - {{ scope.is_title }}
-          {% endif %}
-        </h3>
-
-        <!-- Badges & Status Toggle -->
-        <div class="lp-scope-meta">
-          <div class="lp-scope-badges">
-            {% for dept in dept_list %}
-              {% with dname=dept.name|lower %}
-                {% if "chem" in dname %}
-                  <span class="lp-dept-badge lp-dept-badge--chem" title="Chemical Testing">
-                    <svg viewBox="0 0 16 16" fill="none"><path d="M5.5 1.5H10.5M8 1.5V6L11.5 13C11.8 13.5 11.4 14.5 10.5 14.5H5.5C4.6 14.5 4.2 13.5 4.5 13L8 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                    Chemical
-                  </span>
-                {% elif "mech" in dname %}
-                  <span class="lp-dept-badge lp-dept-badge--mech" title="Mechanical Testing">
-                    <svg viewBox="0 0 16 16" fill="none"><path d="M3 13L7 9M9 7L13 3M11 1L15 5L13.5 6.5L9.5 2.5L11 1Z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-                    Mechanical
-                  </span>
-                {% elif "metal" in dname %}
-                  <span class="lp-dept-badge lp-dept-badge--metal" title="Metallurgical Testing">Metallurgical</span>
-                {% elif "elec" in dname %}
-                  <span class="lp-dept-badge lp-dept-badge--elec" title="Electrical Testing">Electrical</span>
-                {% else %}
-                  <span class="lp-dept-badge lp-dept-badge--other">{{ dept.name }}</span>
-                {% endif %}
-              {% endwith %}
-            {% empty %}
-              <span class="lp-dept-badge lp-dept-badge--other">General</span>
-            {% endfor %}
-          </div>
-
-          <!-- Active Toggle Switch -->
-          <label class="lp-toggle-switch" title="Toggle Published / Unpublished">
-            <input type="checkbox" class="scope-status-toggle" data-scope-id="{{ scope.id }}" {% if scope.is_public and not scope.is_disable %}checked{% endif %} onchange="toggleScopeStatus('{{ scope.id }}', this)">
-            <span class="lp-toggle-slider"></span>
-          </label>
-        </div>
-
-        <!-- Card Footer -->
-        <div class="lp-scope-card-footer">
-          <span class="lp-scope-param-count">
-            {{ scope.facility_scope.count }} Parameter{{ scope.facility_scope.count|pluralize }}
-          </span>
-          <button type="button" class="lp-scope-edit-btn" onclick="editScope('{{ scope.id }}')" title="Edit Scope & Parameters">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            <span>Edit</span>
-          </button>
-        </div>
-      </div>
-    {% endwith %}
-  {% empty %}
-    <div class="lp-scope-empty" style="grid-column: 1 / -1;">
-      <h3 style="font-size:16px; font-weight:700; color:#0F172A; margin:0 0 6px;">No tests added to scope yet</h3>
-      <p style="font-size:13px; color:#64748B; margin:0 0 16px;">Add testing standards and specific parameter capabilities to start receiving customer quotes.</p>
-      <button type="button" class="lp-btn" onclick="openProductModal()">+ Add Test to Catalog</button>
-    </div>
-  {% endfor %}
-</div>
-
-<!-- ============================================================
-     2. TABLE VIEW (matching lab-review-detail/)
-     ============================================================ -->
-<div id="scopeTableView" style="display:none; margin-top:16px; background:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; overflow:hidden;">
-  <table style="width:100%; border-collapse:collapse; text-align:left;">
-    <thead>
-      <tr style="background-color:#F8FAFC; border-bottom:1px solid #E2E8F0;">
-        <th style="padding:14px 18px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase;">STANDARD / SPECIFICATION</th>
-        <th style="padding:14px 18px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase; width:220px;">CATEGORY / DEPARTMENT</th>
-        <th style="padding:14px 18px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase; width:130px;">PARAMETERS</th>
-        <th style="padding:14px 18px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase; width:100px;">STATUS</th>
-        <th style="width:70px; padding:14px 18px;"></th>
-      </tr>
-    </thead>
-    <tbody id="scopeTableBody">
-      {% for scope in scopes_with_facilities %}
-        {% with dept_list=scope.test_type.all %}
-          <tr class="ps-table-row" data-scope-id="{{ scope.id }}" data-status="{% if scope.is_public and not scope.is_disable %}published{% else %}unpublished{% endif %}" data-search="{% if scope.is_number %}{{ scope.is_number|lower }}{% endif %} {% if scope.is_title %}{{ scope.is_title|lower }}{% endif %} {% for f in scope.facility_scope.all %}{{ f.parameter|lower }} {% endfor %}" style="border-bottom:1px solid #F1F5F9; vertical-align:top;">
-            
-            <td style="padding:16px 18px;">
-              <div style="font-size:14px; font-weight:700; color:#0F172A; margin-bottom:4px;">
-                {% if scope.is_number %}{{ scope.is_number }}{% else %}Untitled Standard{% endif %}
-              </div>
-              {% if scope.is_title and scope.is_title != scope.is_number %}
-                <div style="font-size:12.5px; line-height:1.45; color:#64748B;">
-                  {{ scope.is_title }}
-                </div>
-              {% endif %}
-            </td>
-
-            <td style="padding:16px 18px;">
-              <div style="display:flex; flex-wrap:wrap; gap:6px;">
-                {% for dept in dept_list %}
-                  {% with dname=dept.name|lower %}
-                    {% if "chem" in dname %}
-                      <span class="lp-dept-badge lp-dept-badge--chem">Chemical</span>
-                    {% elif "mech" in dname %}
-                      <span class="lp-dept-badge lp-dept-badge--mech">Mechanical</span>
-                    {% else %}
-                      <span class="lp-dept-badge lp-dept-badge--other">{{ dept.name }}</span>
-                    {% endif %}
-                  {% endwith %}
-                {% empty %}
-                  <span class="lp-dept-badge lp-dept-badge--other">General</span>
+  <!-- Standards Data Table Wrapper -->
+  <div class="ps-table-wrapper" style="background-color:#FFFFFF; border:1px solid #E2E8F0; border-radius:12px; overflow-x:auto; -webkit-overflow-scrolling:touch; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+    <table class="ps-data-table" style="width:100%; min-width:650px; border-collapse:collapse; text-align:left;">
+      <thead>
+        <tr style="background-color:#F8FAFC; border-bottom:1px solid #E2E8F0;">
+          <th style="width:40px; text-align:center; padding:14px 16px;"><input type="checkbox" id="selectAllStandards" class="ps-checkbox"></th>
+          <th style="padding:14px 16px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase;">STANDARD / SPECIFICATION</th>
+          <th style="padding:14px 16px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase; width:200px;">CATEGORY</th>
+          <th style="padding:14px 16px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase; width:120px;">PARAMETERS</th>
+          <th style="padding:14px 16px; font-size:11px; font-weight:700; color:#64748B; letter-spacing:0.04em; text-transform:uppercase; width:100px;">STATUS</th>
+          <th style="width:50px; padding:14px 16px;"></th>
+        </tr>
+      </thead>
+      <tbody id="psTableBody">
+        {% for scope in scopes_with_facilities %}
+          {% with dept_list=scope.test_type.all %}
+            <tr class="ps-table-row" data-scope-id="{{ scope.id }}" data-status="{% if scope.is_public and not scope.is_disable %}published{% else %}unpublished{% endif %}" data-search="{% if scope.is_number %}{{ scope.is_number|lower }}{% endif %} {% if scope.is_title %}{{ scope.is_title|lower }}{% endif %} {% for dept in dept_list %}{{ dept.name|lower }} {% endfor %} {% for f in scope.facility_scope.all %}{{ f.parameter|lower }} {% endfor %}" style="border-bottom:1px solid #F1F5F9; vertical-align:top;">
+              <!-- Hidden script containing JSON for scope parameter modal edit logic -->
+              <script type="application/json" class="scope-parameters-json">
+              [
+                {% for facility in scope.facility_scope.all %}
+                {
+                  "id": "{{ facility.id }}",
+                  "name": "{{ facility.parameter|escapejs }}",
+                  "method": "{% for m in facility.method_test.all %}{{ m.name|escapejs }}{% endfor %}",
+                  "unit": "{{ facility.range_unit.name|default:''|escapejs }}"
+                }{% if not forloop.last %},{% endif %}
                 {% endfor %}
-              </div>
-            </td>
+              ]
+              </script>
+              <script type="application/json" class="scope-details-json">
+              {
+                "id": "{{ scope.id }}",
+                "name": "{{ scope.is_number|default:''|escapejs }}",
+                "title": "{{ scope.is_title|default:''|escapejs }}",
+                "notes": "{{ scope.description|default:''|escapejs }}",
+                "departments": [{% for dept in dept_list %}"{{ dept.name|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}]
+              }
+              </script>
 
-            <td style="padding:16px 18px;">
-              <span style="font-size:13px; font-weight:600; color:#334155;">
-                {{ scope.facility_scope.count }} Params
-              </span>
-            </td>
-
-            <td style="padding:16px 18px;">
-              <label class="lp-toggle-switch" title="Toggle Published / Unpublished">
-                <input type="checkbox" class="scope-status-toggle" data-scope-id="{{ scope.id }}" {% if scope.is_public and not scope.is_disable %}checked{% endif %} onchange="toggleScopeStatus('{{ scope.id }}', this)">
-                <span class="lp-toggle-slider"></span>
-              </label>
-            </td>
-
-            <td style="padding:16px 18px; text-align:right;">
-              <button type="button" class="lp-scope-edit-btn" onclick="editScope('{{ scope.id }}')" title="Edit Scope & Parameters">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
+              <td style="text-align:center; padding:16px 8px 16px 16px;">
+                <input type="checkbox" class="ps-checkbox">
+              </td>
+              <td style="padding:16px;">
+                <div class="ps-standard-code" style="font-size:14px; font-weight:700; color:#0F172A; margin-bottom:4px;">
+                  {% if scope.is_number %}{{ scope.is_number }}{% else %}Untitled Standard{% endif %}
+                </div>
+                {% if scope.is_title and scope.is_title != scope.is_number %}
+                  <div class="ps-standard-desc" style="font-size:12.5px; line-height:1.45; color:#64748B;">
+                    {{ scope.is_title }}
+                  </div>
+                {% endif %}
+              </td>
+              <td style="padding:16px;">
+                <div class="ps-tag-wrap" style="display:flex; flex-direction:column; gap:6px; align-items:flex-start;">
+                  {% for dept in dept_list %}
+                    {% with dname=dept.name|lower %}
+                      {% if "chem" in dname %}
+                        <span class="ps-tag" style="display:inline-block; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:500; background-color:#ECFDF5; color:#047857;">Chemical</span>
+                      {% elif "mech" in dname %}
+                        <span class="ps-tag" style="display:inline-block; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:500; background-color:#F0F9FF; color:#0369A1;">Mechanical</span>
+                      {% elif "metal" in dname %}
+                        <span class="ps-tag" style="display:inline-block; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:500; background-color:#FEF2F2; color:#B91C1C;">Metallurgical</span>
+                      {% elif "elec" in dname %}
+                        <span class="ps-tag" style="display:inline-block; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:500; background-color:#FEF3C7; color:#B45309;">Electrical</span>
+                      {% else %}
+                        <span class="ps-tag" style="display:inline-block; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:500; background-color:#F1F5F9; color:#334155;">{{ dept.name }}</span>
+                      {% endif %}
+                    {% endwith %}
+                  {% empty %}
+                    <span class="ps-tag" style="display:inline-block; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:500; background-color:#F1F5F9; color:#334155;">General</span>
+                  {% endfor %}
+                </div>
+              </td>
+              <td style="padding:16px;">
+                <span class="ps-params-text" style="font-size:13px; font-weight:600; color:#334155;">
+                  {{ scope.facility_scope.count }} Params
+                </span>
+              </td>
+              <td style="padding:16px;">
+                <label class="lp-toggle-switch" title="Toggle Published / Unpublished">
+                  <input type="checkbox" class="scope-status-toggle" data-scope-id="{{ scope.id }}" {% if scope.is_public and not scope.is_disable %}checked{% endif %} onchange="toggleScopeStatus('{{ scope.id }}', this)">
+                  <span class="lp-toggle-slider"></span>
+                </label>
+              </td>
+              <td style="padding:16px; text-align:right;">
+                <button type="button" class="ps-btn-edit review-product-card__add-btn" data-scope-id="{{ scope.id }}" aria-label="Edit Scope" onclick="editScope('{{ scope.id }}')" style="background:transparent; border:none; cursor:pointer; padding:6px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F3D39" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+          {% endwith %}
+        {% empty %}
+          <tr class="lp-empty-row">
+            <td colspan="6" style="padding:48px 16px; text-align:center;">
+              <h3 style="font-size:16px; font-weight:700; color:#0F172A; margin:0 0 6px;">No tests added to scope yet</h3>
+              <p style="font-size:13px; color:#64748B; margin:0 0 16px;">Add testing standards and specific parameter capabilities to start receiving customer quotes.</p>
+              <button type="button" class="btn-ps-add-standard" onclick="openProductModal()" style="display:inline-flex; align-items:center; gap:8px; height:42px; padding:0 20px; background-color:#F59E0B; color:#0F172A; border:none; border-radius:8px; font-size:13.5px; font-weight:700; cursor:pointer;">
+                + Add Test to Catalog
               </button>
             </td>
           </tr>
-        {% endwith %}
-      {% endfor %}
-    </tbody>
-  </table>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- ============================================================
@@ -378,27 +312,17 @@
 (function() {
   const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
 
-  // 1. View Switcher (Cards vs Table)
-  window.switchScopeView = function(mode) {
-    const cards = document.getElementById('scopeCardsView');
-    const table = document.getElementById('scopeTableView');
-    const btnCards = document.getElementById('btnViewCards');
-    const btnTable = document.getElementById('btnViewTable');
+  // Select all checkbox handler
+  const selectAll = document.getElementById('selectAllStandards');
+  if (selectAll) {
+    selectAll.addEventListener('change', function() {
+      document.querySelectorAll('.ps-table-row .ps-checkbox').forEach(cb => {
+        cb.checked = selectAll.checked;
+      });
+    });
+  }
 
-    if (mode === 'table') {
-      if (cards) cards.style.display = 'none';
-      if (table) table.style.display = 'block';
-      btnCards?.classList.remove('is-active');
-      btnTable?.classList.add('is-active');
-    } else {
-      if (cards) cards.style.display = 'grid';
-      if (table) table.style.display = 'none';
-      btnTable?.classList.remove('is-active');
-      btnCards?.classList.add('is-active');
-    }
-  };
-
-  // 2. Filter Pills (All / Published / Unpublished)
+  // Filter Pills (All / Published / Unpublished)
   let currentFilter = 'all';
   window.filterByStatus = function(status, btn) {
     currentFilter = status;
@@ -407,7 +331,7 @@
     applyFilters();
   };
 
-  // 3. Search Filter
+  // Search Filter
   let currentSearch = '';
   window.filterScopeItems = function(query) {
     currentSearch = (query || '').toLowerCase().trim();
@@ -415,10 +339,10 @@
   };
 
   function applyFilters() {
-    const items = document.querySelectorAll('.lp-scope-card, .ps-table-row');
+    const items = document.querySelectorAll('.ps-table-row');
     items.forEach(el => {
       const status = el.getAttribute('data-status') || '';
-      const searchHay = el.getAttribute('data-search') || '';
+      const searchHay = (el.getAttribute('data-search') || '').toLowerCase();
 
       const matchesStatus = currentFilter === 'all' || status === currentFilter;
       const matchesSearch = !currentSearch || searchHay.includes(currentSearch);
