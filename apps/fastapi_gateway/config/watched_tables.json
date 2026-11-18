@@ -1,0 +1,8 @@
+{
+  "watched_tables": [
+    "samples_testrequest",
+    "inventory_inventory",
+    "notifications_inboxitem",
+    "vista_dms_vistadms"
+  ]
+}
