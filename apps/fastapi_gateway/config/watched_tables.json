@@ -1,8 +1,10 @@
 {
   "watched_tables": [
-    "samples_testrequest",
-    "inventory_inventory",
-    "notifications_inboxitem",
-    "vista_dms_vistadms"
+    "labs_branch",
+    "enquiries_labreview",
+    "labs_branchitem",
+    "labs_accreditation",
+    "labs_productservice",
+    "enquiries_ordermessage"
   ]
 }

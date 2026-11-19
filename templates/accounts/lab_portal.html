@@ -29,4 +29,14 @@
   </div>
 </div>
 <script src="{% static 'js/lab-portal.js' %}"></script>
+<script src="{% static 'js/lab_realtime.js' %}"></script>
+{% if current_branch.id %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.LabRealtime) {
+    window.LabRealtime.init({ branchId: '{{ current_branch.id }}' });
+  }
+});
+</script>
+{% endif %}
 {% endblock %}

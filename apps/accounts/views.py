@@ -2553,6 +2553,19 @@ class DashboardView(View):
 
             branch.save()
             messages.success(request, "Profile updated successfully.")
+            is_ajax = (
+                request.headers.get("x-requested-with") == "XMLHttpRequest"
+                or request.META.get("HTTP_X_REQUESTED_WITH") == "XMLHttpRequest"
+                or "application/json" in request.headers.get("accept", "")
+                or request.POST.get("ajax") == "1"
+            )
+            if is_ajax:
+                return JsonResponse({
+                    "status": "success",
+                    "message": "Profile updated successfully.",
+                    "redirect_url": f"{reverse('dashboard')}?tab=profile"
+                })
+
             return redirect(f"{reverse('dashboard')}?tab=profile")
 
         # ── 7. Settings Actions (figma-screens/lab/settings.png) ──────────

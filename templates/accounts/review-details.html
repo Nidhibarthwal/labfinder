@@ -1344,4 +1344,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
 {% block script %}
 <script src="{% static 'js/review-details.js' %}"></script>
+<script src="{% static 'js/lab_realtime.js' %}"></script>
+{% with b_id=branch.id%}
+{% if b_id %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.LabRealtime) {
+        window.LabRealtime.init({ branchId: '{{ b_id }}' });
+    }
+});
+</script>
+{% endif %}
+{% endwith %}
 {% endblock %}

@@ -1,7 +1,7 @@
 # app/sse.py
 """
-Per-tenant subscriber management, broadcast, and the background
-LISTEN task with reconnect/backoff.
+Subscriber management, broadcast routing, and the background
+PostgreSQL LISTEN task with reconnect and backoff.
 """
 
 import asyncio
@@ -12,38 +12,53 @@ import asyncpg
 
 from app.config import DATABASE_URL, NOTIFY_CHANNEL
 
-logger = logging.getLogger("inventory-realtime")
+logger = logging.getLogger("labfinder-realtime")
 
-# tenant_id -> set of subscriber queues. Per-tenant keys mean a NOTIFY for
-# tenant A can never leak into tenant B's stream.
+# channel_key (e.g. "lab:1", "order:42", "global") -> set of subscriber queues
 subscribers: dict[str, set[asyncio.Queue]] = {}
 
 
 async def broadcast(payload: dict):
-    tenant_id = payload.get("tenant_id")
-    if tenant_id is None:
-        logger.warning("Dropping NOTIFY payload with no tenant_id: %s", payload)
-        return
+    """
+    Broadcasts payload to relevant subscriber channels.
+    Target channels are resolved from branch_id, order_id, or global.
+    """
+    target_channels = set()
 
-    tenant_queues = subscribers.get(str(tenant_id))
-    if not tenant_queues:
-        return
+    branch_id = payload.get("branch_id")
+    if branch_id:
+        target_channels.add(f"lab:{branch_id}")
 
-    dead = []
-    for q in tenant_queues:
-        try:
-            q.put_nowait(payload)
-        except asyncio.QueueFull:
-            # Drop the oldest buffered message rather than disconnecting
-            # a slow consumer outright.
+    # Inspect data payload for other entity keys if available
+    data = payload.get("data")
+    if isinstance(data, dict):
+        order_id = data.get("order_id") or data.get("lims_order_id")
+        if order_id:
+            target_channels.add(f"order:{order_id}")
+
+    # Always broadcast to global channel for admin monitoring / activity feeds
+    target_channels.add("global")
+
+    for ch in target_channels:
+        channel_queues = subscribers.get(ch)
+        if not channel_queues:
+            continue
+
+        dead = []
+        for q in channel_queues:
             try:
-                q.get_nowait()
                 q.put_nowait(payload)
-            except asyncio.QueueEmpty:
-                dead.append(q)
+            except asyncio.QueueFull:
+                # Drop the oldest buffered message rather than disconnecting
+                # a slow consumer outright.
+                try:
+                    q.get_nowait()
+                    q.put_nowait(payload)
+                except asyncio.QueueEmpty:
+                    dead.append(q)
 
-    for q in dead:
-        tenant_queues.discard(q)
+        for q in dead:
+            channel_queues.discard(q)
 
 
 async def pg_listener():
@@ -56,20 +71,20 @@ async def pg_listener():
         conn = None
         try:
             conn = await asyncpg.connect(DATABASE_URL)
-            logger.info("Postgres connection established for LISTEN")
+            logger.info("Postgres connection established for LISTEN on '%s'", NOTIFY_CHANNEL)
 
-            def on_notify(connection, pid, channel, payload):
+            def on_notify(connection, pid, channel, payload_str):
                 try:
-                    data = json.loads(payload)
+                    data = json.loads(payload_str)
                 except json.JSONDecodeError:
-                    logger.error("Bad NOTIFY payload on '%s' (not valid JSON): %s", channel, payload)
+                    logger.error("Bad NOTIFY payload on '%s' (not valid JSON): %s", channel, payload_str)
                     return
                 logger.info(
-                    "NOTIFY received on '%s' -> table='%s' action='%s' tenant='%s' id='%s'",
+                    "NOTIFY on '%s' -> table='%s' action='%s' branch='%s' id='%s'",
                     channel,
                     data.get("table"),
                     data.get("action"),
-                    data.get("tenant_id"),
+                    data.get("branch_id"),
                     data.get("id"),
                 )
                 asyncio.create_task(broadcast(data))

@@ -44,7 +44,7 @@
     <div class="lp-reviews-items">
       {% if reviews %}
         {% for review in reviews %}
-          <div class="lp-review-item">
+          <div class="lp-review-item" data-review-id="{{ review.pk }}">
             <div class="lp-review-item__top">
               <span class="lp-review-author">
                 {% if review.is_anonymous %}
@@ -73,12 +73,12 @@
 
             <!-- Reply Section -->
             {% if review.lab_reply %}
-              <div class="lp-review-reply-callout">
+              <div class="lp-review-reply-callout" id="review-reply-callout-{{ review.pk }}">
                 <div class="lp-review-reply-label">Your Reply :</div>
-                <div class="lp-review-reply-text">{{ review.lab_reply }}</div>
+                <div class="lp-review-reply-text" id="review-reply-text-{{ review.pk }}">{{ review.lab_reply }}</div>
               </div>
             {% else %}
-              <div class="lp-review-reply-action">
+              <div class="lp-review-reply-action" id="review-reply-action-{{ review.pk }}">
                 <button type="button" class="lp-btn-reply-toggle" onclick="toggleReviewReplyForm('{{ review.pk }}')">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
                   Reply to this review

@@ -18,7 +18,7 @@
             <span class="lp-breadcrumb-dot">•</span>
             <span>{{ branch.lab_country.name|default:"INDIA"|upper }}</span>
             <span class="lp-breadcrumb-dot">•</span>
-            <span class="lp-breadcrumb-current">{{ branch.lab_name|default:""|upper }}</span>
+            <span class="lp-breadcrumb-current js-realtime-lab-name">{{ branch.lab_name|default:""|upper }}</span>
         </div>
 
         <!-- Hero Section -->
@@ -35,7 +35,7 @@
                     {% endif %}
 
                     <div class="lp-detail-hero__info">
-                        <h1 class="lp-detail-hero__title">{{ branch.lab_name }}</h1>
+                        <h1 class="lp-detail-hero__title js-realtime-lab-name">{{ branch.lab_name }}</h1>
                         
                         <div class="lp-detail-hero__rating-row">
                             <span class="lp-detail-hero__stars">{{ overall_avg|star_html }}</span>
@@ -45,7 +45,7 @@
 
                         <div class="lp-detail-hero__address-pill">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                            <span>{{ branch.lab_address|default:branch.lab_city|default:"" }}{% if branch.lab_city and branch.lab_address %}, {{ branch.lab_city }}{% endif %}{% if branch.lab_state %}, {{ branch.lab_state.name|default:branch.lab_state }}{% endif %}{% if branch.lab_pincode %}, {{ branch.lab_pincode }}{% endif %}</span>
+                            <span class="js-realtime-address">{{ branch.lab_address|default:branch.lab_city|default:"" }}{% if branch.lab_city and branch.lab_address %}, {{ branch.lab_city }}{% endif %}{% if branch.lab_state %}, {{ branch.lab_state.name|default:branch.lab_state }}{% endif %}{% if branch.lab_pincode %}, {{ branch.lab_pincode }}{% endif %}</span>
                             <span class="lp-detail-hero__address-caret">▾</span>
                         </div>
 
@@ -130,7 +130,7 @@
                 <!-- 1. OVERVIEW SECTION -->
                 <section id="sectionOverview" class="lp-detail-section">
                     <h2 class="lp-section-heading">Overview</h2>
-                    <p class="lp-overview-desc">
+                    <p class="lp-overview-desc js-realtime-description js-realtime-executive-summary">
                         {{ branch.description|default:branch.about_us|default:"" }}
                     </p>
 
@@ -214,13 +214,7 @@
                 <section id="sectionServices" class="lp-detail-section">
                     <h2 class="lp-section-heading">Services</h2>
 
-                    <!-- Filter pills -->
-                    <div class="lp-filter-pills" id="servicesFilterPills">
-                        <button type="button" class="lp-filter-pill is-active" data-filter="all">All</button>
-                        {% for discipline in branch.disciplines.all %}
-                            <button type="button" class="lp-filter-pill" data-filter="{{ discipline.name|lower }}">{{ discipline.name }}</button>
-                        {% endfor %}
-                    </div>
+                    
 
                     <!-- Search Input -->
                     <div class="lp-search-box">
@@ -234,51 +228,6 @@
                         <div class="lp-service-card" data-category="{% for discipline in service.disciplines.all %}{{ discipline.name|lower }},{% endfor %}" data-search="{{ service.name|lower }} {{ service.summary|lower }}">
                             <h3 class="lp-service-card__title">{{ service.name }}</h3>
                             <p class="lp-service-card__desc">{{ service.summary }}</p>
-                            
-                            <!-- Category Discipline Badges -->
-                            <div class="lp-service-card__tags">
-                                {% for discipline in service.disciplines.all %}
-                                    {% with dname=discipline.name|lower %}
-                                        {% if "mech" in dname %}
-                                            <span class="lp-discipline-pill lp-disc--mech">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
-                                                {{ discipline.name }}
-                                            </span>
-                                        {% elif "chem" in dname %}
-                                            <span class="lp-discipline-pill lp-disc--chem">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.31"></path><path d="M14 9.3V2"></path><path d="M8.5 2h7"></path><path d="M14 9.3a6.5 6.5 0 1 1-4 0"></path></svg>
-                                                {{ discipline.name }}
-                                            </span>
-                                        {% elif "metal" in dname %}
-                                            <span class="lp-discipline-pill lp-disc--metal">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"></circle><line x1="12" y1="22" x2="12" y2="8"></line><path d="M5 12H2a10 10 0 0 0 20 0h-3"></path></svg>
-                                                {{ discipline.name }}
-                                            </span>
-                                        {% elif "micro" in dname or "bio" in dname %}
-                                            <span class="lp-discipline-pill lp-disc--micro">
-                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"></path></svg>
-                                                {{ discipline.name }}
-                                            </span>
-                                        {% else %}
-                                            <span class="lp-discipline-pill lp-disc--default">
-                                                {{ discipline.name }}
-                                            </span>
-                                        {% endif %}
-                                    {% endwith %}
-                                {% endfor %}
-                            </div>
-
-                            <!-- Card Footer -->
-                            <div class="lp-service-card__footer">
-                                <div class="lp-service-card__meta">
-                                    <span class="lp-service-card__count">{% if service.test_count %}{{ service.test_count }}+ Tests{% else %}No Test{% endif %}</span>
-                                    <strong class="lp-service-card__price">{% if service.starting_price %}₹{{ service.starting_price|floatformat:0 }} Onwards{% endif %}</strong>
-                                </div>
-                                <a href="#sectionTestsPricing" class="lp-service-card__link">
-                                    <span>View details</span>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                                </a>
-                            </div>
                         </div>
                         {% empty %}
                         <div class="lp-table-empty">No services listed yet for this laboratory.</div>
@@ -691,8 +640,8 @@
                     <div class="lp-modal__logo-fallback">{{ branch.lab_name|slice:":2"|upper }}</div>
                 {% endif %}
             </div>
-            <h2 class="lp-modal__lab-name">{{ branch.lab_name }}</h2>
-            <p class="lp-modal__lab-location">{{ branch.lab_city|default:branch.registered_office_city|default:"" }}</p>
+            <h2 class="lp-modal__lab-name js-realtime-lab-name">{{ branch.lab_name }}</h2>
+            <p class="lp-modal__lab-location js-realtime-city">{{ branch.lab_city|default:branch.registered_office_city|default:"" }}</p>
             
             <h3 class="lp-modal__rating-title">How was your overall experience?</h3>
             <div class="lp-modal__stars" id="overallStarGroup">
@@ -747,6 +696,7 @@
         </form>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <!-- Dual Client-side Filters & Interactions -->
@@ -883,5 +833,14 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 <script src="{% static 'js/lab-portal.js' %}"></script>
 <script src="{% static 'js/submit-review.js' %}"></script>
-{% endblock %}
+<script src="{% static 'js/lab_realtime.js' %}"></script>
+{% if branch.id %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.LabRealtime) {
+        window.LabRealtime.init({ branchId: '{{ branch.id }}' });
+    }
+});
+</script>
+{% endif %}
 {% endblock %}

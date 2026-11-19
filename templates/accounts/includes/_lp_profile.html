@@ -8,7 +8,7 @@
   </div>
   <div style="display:flex; gap:10px; align-items:center;">
     {% if edit_mode %}
-      <button type="submit" form="profileForm" class="lp-btn" id="btnSaveProfile">Save Changes</button>
+      <button type="button" class="lp-btn" id="btnSaveProfile" onclick="handleProfileFormSubmit(event)">Save Changes</button>
       <a class="lp-btn lp-btn--ghost" href="?tab=profile">Done</a>
     {% else %}
       <a class="lp-btn" href="?tab=profile&edit=1">Edit Profile</a>
@@ -29,11 +29,11 @@
     </div>
     <div>
       <div class="lp-name" style="font-size:18px; font-weight:700; color:#0F172A; display:flex; align-items:center; gap:8px;">
-        {{ branch.lab_name }}
+        <span class="js-realtime-lab-name">{{ branch.lab_name }}</span>
         <span class="lp-chip done" style="font-size:11px; padding:2px 8px; border-radius:12px; font-weight:600;">✓ Verified</span>
       </div>
       <div class="lp-sub" style="font-size:13px; color:#64748B; margin-top:2px;">
-        {{ branch.lab_city|default:"Vadodara" }} (HQ) · Member since {{ branch.establishment_year|default:"2011" }}
+        <span class="js-realtime-city">{{ branch.lab_city|default:"Vadodara" }}</span> (HQ) · Member since {{ branch.establishment_year|default:"2011" }}
       </div>
     </div>
   </div>
@@ -57,7 +57,7 @@
 <!-- ============================================================
      EDIT MODE (Figma: My Profile_Edit.png)
      ============================================================ -->
-<form id="profileForm" method="post" enctype="multipart/form-data" action="?tab=profile&edit=1">
+<form id="profileForm" method="post" enctype="multipart/form-data" action="?tab=profile&edit=1" onsubmit="handleProfileFormSubmit(event); return false;">
   {% csrf_token %}
   <input type="hidden" name="action" value="update_profile">
 
@@ -193,7 +193,7 @@
     <!-- Executive Summary -->
     <div class="lp-field-card" style="min-height:auto; padding:12px 14px; margin-bottom:16px;">
       <label class="lp-field-card-label">Executive Summary</label>
-      <textarea name="executive_summary" class="lp-textarea" rows="4" style="border:none; padding:4px 0; outline:none; resize:vertical;" placeholder="Meridian Analytical Labs is a premier material testing facility...">{{ branch.description|default:'' }}</textarea>
+      <textarea name="executive_summary" class="lp-textarea js-realtime-input-executive-summary" rows="4" style="border:none; padding:4px 0; outline:none; resize:vertical;" placeholder="Meridian Analytical Labs is a premier material testing facility...">{{ branch.description|default:'' }}</textarea>
     </div>
 
     <!-- 1. Test Disciplines -->
@@ -415,7 +415,7 @@
 
   <!-- Bottom Actions -->
   <div style="margin-top:20px; display:flex; gap:12px;">
-    <button type="submit" class="lp-btn" style="padding:10px 24px;">Save Profile</button>
+    <button type="button" class="lp-btn" style="padding:10px 24px;" onclick="handleProfileFormSubmit(event)">Save Profile</button>
     <a class="lp-btn lp-btn--ghost" href="?tab=profile">Cancel</a>
   </div>
 </form>
@@ -440,26 +440,26 @@
     </div>
     <div style="flex:1;">
       <div class="lp-field-card-label">Legal Lab Name</div>
-      <div style="font-size:15px; font-weight:700; color:#0F172A;">{{ branch.lab_name }}</div>
+      <div class="js-realtime-lab-name" style="font-size:15px; font-weight:700; color:#0F172A;">{{ branch.lab_name }}</div>
     </div>
   </div>
 
   <div class="lp-grid-2" style="margin-bottom:16px;">
     <div>
       <div class="lp-field-card-label">Phone Number</div>
-      <div style="font-size:14px; font-weight:600; color:#0F172A;">
+      <div class="js-realtime-contact-mobile" style="font-size:14px; font-weight:600; color:#0F172A;">
         {% if branch.contact_mobile %}+91-{{ branch.contact_mobile }}{% else %}—{% endif %}
       </div>
     </div>
     <div>
       <div class="lp-field-card-label">Contact Email</div>
-      <div style="font-size:14px; font-weight:600; color:#0F172A;">{{ branch.contact_email|default:"—" }}</div>
+      <div class="js-realtime-contact-email" style="font-size:14px; font-weight:600; color:#0F172A;">{{ branch.contact_email|default:"—" }}</div>
     </div>
   </div>
 
   <div style="margin-bottom:16px;">
     <div class="lp-field-card-label">Primary Facility Address</div>
-    <div style="font-size:14px; font-weight:500; color:#0F172A;">{{ branch.lab_address|default:"—" }}</div>
+    <div class="js-realtime-lab-address" style="font-size:14px; font-weight:500; color:#0F172A;">{{ branch.lab_address|default:"—" }}</div>
   </div>
 
   <div class="lp-grid-3" style="margin-bottom:16px;">
@@ -473,7 +473,7 @@
     </div>
     <div>
       <div class="lp-field-card-label">Postal Code</div>
-      <div style="font-size:14px; font-weight:600; color:#0F172A;">{{ branch.lab_pincode|default:"390016" }}</div>
+      <div class="js-realtime-lab-pincode" style="font-size:14px; font-weight:600; color:#0F172A;">{{ branch.lab_pincode|default:"390016" }}</div>
     </div>
   </div>
 
@@ -498,7 +498,7 @@
 
   <div style="margin-bottom:18px;">
     <div class="lp-field-card-label">Executive Summary</div>
-    <p style="font-size:14px; color:#334155; line-height:1.6; margin:4px 0 0;">
+    <p class="lp-overview-desc js-realtime-description js-realtime-executive-summary" style="font-size:14px; color:#334155; line-height:1.6; margin:4px 0 0;">
       {{ branch.description|default:"Add an executive summary so buyers understand your facility." }}
     </p>
   </div>
@@ -657,6 +657,7 @@
           'X-Requested-With': 'XMLHttpRequest'
         }
       });
+      console.log('AJAX Response:', res);
       return await res.json();
     } catch(err) {
       console.error('AJAX Error:', err);
@@ -866,10 +867,13 @@
 
     // Append to list
     const wrap = document.getElementById('servicesListWrap');
+    wrap.appendChild(document.createElement('div')); // Placeholder to ensure wrap exists
+    wrap.append('nidhi')
     if (wrap) {
       const card = document.createElement('div');
       card.className = 'lp-service-card-edit';
       if (res?.service_id) card.setAttribute('data-id', res.service_id);
+      console.log('Service Save card data:', escapeHtml(name), escapeHtml(desc));
       card.innerHTML = `
         <button type="button" class="lp-dismiss-btn" title="Remove Service" onclick="removeServiceCard(this, '${res?.service_id || ''}')">
           <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -1008,6 +1012,98 @@
     }
     row?.remove();
   };
+
+  // Handle Main Profile Form submission via AJAX to prevent 302 redirect
+  window.handleProfileFormSubmit = async function(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const form = document.getElementById('profileForm');
+    if (!form) return false;
+
+    const btnTop = document.getElementById('btnSaveProfile');
+    const btnBottom = form.querySelector('button[onclick*="handleProfileFormSubmit"]');
+    const btns = [btnTop, btnBottom].filter(Boolean);
+
+    btns.forEach(b => {
+      b.disabled = true;
+      if (!b.getAttribute('data-original-text')) {
+        b.setAttribute('data-original-text', b.textContent);
+      }
+      b.textContent = 'Saving...';
+    });
+
+    const fd = new FormData(form);
+    if (!fd.has('action')) fd.append('action', 'update_profile');
+    fd.append('ajax', '1');
+
+    const token = form.querySelector('[name=csrfmiddlewaretoken]')?.value || csrfToken;
+
+    try {
+      const targetUrl = (typeof form.getAttribute === 'function' ? form.getAttribute('action') : null) || window.location.href;
+      const res = await fetch(targetUrl, {
+        method: 'POST',
+        body: fd,
+        headers: {
+          'X-CSRFToken': token,
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        }
+      });
+
+      btns.forEach(b => {
+        b.disabled = false;
+        b.textContent = b.getAttribute('data-original-text') || 'Save Changes';
+      });
+
+      let data = null;
+      console.log('Response status:', res.status, res.statusText);
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        try {
+          data = JSON.parse(text);
+        } catch (_) {
+          if (res.ok) {
+            data = { status: 'success', message: 'Profile updated successfully.' };
+          } else {
+            data = { status: 'error', message: 'Error saving profile. Server returned status ' + res.status };
+          }
+        }
+      }
+
+      if (data && data.status === 'success') {
+        if (typeof window.showSiteToast === 'function') {
+          window.showSiteToast(data.message || 'Profile updated successfully.', 'success');
+        }
+        // Transition back to profile view mode (?tab=profile) removing ?edit=1
+        setTimeout(function() {
+          window.location.href = data.redirect_url || '?tab=profile';
+        }, 500);
+      } else {
+        alert((data && data.message) || 'Error saving profile.');
+      }
+    } catch (err) {
+      console.error('Error saving profileForm:', err);
+      btns.forEach(b => {
+        b.disabled = false;
+        b.textContent = b.getAttribute('data-original-text') || 'Save Changes';
+      });
+      alert('Network error while saving profile. Please check connection.');
+    }
+    return false;
+  };
+
+  const profileForm = document.getElementById('profileForm');
+  if (profileForm) {
+    profileForm.addEventListener('submit', function(e) {
+      if (e) e.preventDefault();
+      window.handleProfileFormSubmit(e);
+    });
+  }
 
 })();
 </script>

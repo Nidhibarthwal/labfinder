@@ -18,24 +18,26 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 WATCHED_TABLES_PATH = BASE_DIR / "config" / "watched_tables.json"
 
 # --- Database ---
-DB_USER = os.environ["DB_USER"]
-DB_PASSWORD = quote(os.environ["DB_PASSWORD"], safe="")
-DB_HOST = os.environ["DB_HOST"]
+# Default to LabFinder database settings (from settings_local.py) if not set in environment
+DB_USER = os.environ.get("DB_USER", "postgres")
+DB_PASSWORD = quote(os.environ.get("DB_PASSWORD", "proot"), safe="")
+DB_HOST = os.environ.get("DB_HOST", "localhost")
 DB_PORT = os.environ.get("DB_PORT", "5432")
-DB_NAME = os.environ["DB_NAME"]
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DB_NAME = os.environ.get("DB_NAME", "labfinder")
+
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+)
 
 # --- CORS ---
-_raw_origins = os.environ.get("FRONTEND_ORIGINS", "http://localhost:3000")
+_default_origins = "http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000,http://127.0.0.1:3000,https://labfinder.stagemyapp.com"
+_raw_origins = os.environ.get("FRONTEND_ORIGINS", _default_origins)
 FRONTEND_ORIGINS = [origin.strip() for origin in _raw_origins.split(",") if origin.strip()]
 
 # --- SSE / subscriber tuning ---
-# NOTIFY_CHANNEL is the single Postgres channel every watched table's
-# trigger publishes to (and the one FastAPI LISTENs on). Renamed to
-# 'realtime_channel' since it now covers multiple tables, not just
-# inventory. Override via .env if you want a different name.
-NOTIFY_CHANNEL = os.environ.get("NOTIFY_CHANNEL", "realtime_channel")
-MAX_SUBSCRIBERS_PER_TENANT = int(os.environ.get("MAX_SUBSCRIBERS_PER_TENANT", "2000"))
+NOTIFY_CHANNEL = os.environ.get("NOTIFY_CHANNEL", "labfinder_realtime")
+MAX_SUBSCRIBERS_PER_ROOM = int(os.environ.get("MAX_SUBSCRIBERS_PER_ROOM", "5000"))
 QUEUE_MAXSIZE = int(os.environ.get("QUEUE_MAXSIZE", "100"))
 HEARTBEAT_SECONDS = int(os.environ.get("HEARTBEAT_SECONDS", "15"))
 TOKEN_CACHE_TTL_SECONDS = int(os.environ.get("TOKEN_CACHE_TTL_SECONDS", "60"))
