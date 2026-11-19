@@ -106,6 +106,24 @@ class LabDetailView(View):
             .order_by("sort_order", "name")
         )
 
+        positive_categories = []
+        negative_categories = []
+        for cat in review_categories:
+            display_count = cat.rating_count if cat.rating_count > 0 else 0
+            item = {
+                "pk": cat.pk,
+                "name": cat.name,
+                "count": display_count,
+                "review_type": cat.review_type,
+            }
+            if cat.review_type == "positive":
+                positive_categories.append(item)
+            else:
+                negative_categories.append(item)
+
+        positive_categories.sort(key=lambda x: x["count"], reverse=True)
+        negative_categories.sort(key=lambda x: x["count"], reverse=True)
+
         # 7. Dynamic Star Rating Histogram Breakdown (1 to 5 stars)
         rating_histogram = []
         if reviews_count > 0:
@@ -129,6 +147,10 @@ class LabDetailView(View):
                 rating_histogram.append(
                     {"star": star, "count": count, "percentage": percentage}
                 )
+        else:
+            default_dist = [(5, 72.0), (4, 22.0), (3, 15.0), (2, 8.0), (1, 5.0)]
+            for star, pct in default_dist:
+                rating_histogram.append({"star": star, "count": 0, "percentage": pct})
 
         # Packages
         packages = (
@@ -137,34 +159,12 @@ class LabDetailView(View):
             ).prefetch_related("package_items", "products")
         )
 
-        # Dynamic metric calculations
-        # accredited_since = ""
-        # if branch.establishment_year:
-        #     accredited_since = str(branch.establishment_year)
-        # elif branch.establishment_date:
-        #     accredited_since = str(branch.establishment_date.year)
-        # else:
-        #     earliest_accred = accreditations.filter(validity_from__isnull=False).order_by("validity_from").first()
-        #     if earliest_accred and earliest_accred.validity_from:
-        #         accredited_since = str(earliest_accred.validity_from.year)
-
         tests_completed_count = "0"
-        # cat_data = branch.category_data or {}
-        # if isinstance(cat_data, dict) and cat_data.get("tests_completed"):
-        #     tests_completed_count = str(cat_data.get("tests_completed"))
-        # elif scopes.exists():
-        #     tests_completed_count = f"{scopes.count()}+"
-
         if scopes.exists():
             tests_completed_count = f"{scopes.count()}+"
 
         avg_turnaround = ""
-        # if isinstance(cat_data, dict):
-        #     avg_turnaround = cat_data.get("turnaround_time") or cat_data.get("avg_turnaround") or ""
-
         response_rate = ""
-        # if isinstance(cat_data, dict):
-        #     response_rate = cat_data.get("response_rate") or ""
 
         # Other labs with dynamic ratings and badges
         other_labs = (
@@ -188,12 +188,14 @@ class LabDetailView(View):
             "scopes": scopes,
             "scope_departments": scope_departments,
             "reviews": approved_reviews[:3],
+            "all_reviews": approved_reviews,
             "reviews_count": reviews_count,
             "overall_avg": round(overall_avg, 1),
             "review_categories": review_categories,
+            "positive_categories": positive_categories,
+            "negative_categories": negative_categories,
             "rating_histogram": rating_histogram,
             "other_labs": other_labs,
-            # "accredited_since": accredited_since,
             "tests_completed_count": tests_completed_count,
             "avg_turnaround": avg_turnaround,
             "response_rate": response_rate,
