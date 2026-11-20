@@ -12,5 +12,6 @@ urlpatterns = [
     path("order/<int:order_id>/", views.order_detail, name="order_detail"),
     path("submit-lab-review/<uuid:lab_id>/", views.SubmitLabReviewView.as_view(), name="submit_lab_review"),
     path("review/reply/", views.ReplyLabReviewView.as_view(), name="reply_lab_review"),
+    path("review/toggle-hide/", views.ToggleHideLabReviewView.as_view(), name="toggle_hide_lab_review"),
     path("review/<int:review_id>/update/", views.UpdateCustomerReviewView.as_view(), name="update_customer_review"),
 ]

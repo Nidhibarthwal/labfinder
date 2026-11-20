@@ -11,7 +11,9 @@ from django_json_widget.widgets import JSONEditorWidget
 from .models import (
     BranchImage, BranchItem, BranchManpower, LabCategory, LabCategoryField, LabSocialLink, LabWebPage, LegalIdProofDocType, LabAddressProofDocType, Branch,
     Accreditation, ManpowerRoleDepartment, ManpowerRoles, ProductService, TestingPackage, TestingScopeFacility,
-    LabConfiguration, BranchManpowerPermission
+    LabConfiguration, BranchManpowerPermission,
+    PromotionalPlan, PromotionalPlanFeature, PlanFeatureValue, PromotionalAddon,
+    LabPlanSubscription, LabPromotionBanner, LabAddonPurchase
 )
 
 
@@ -343,3 +345,158 @@ class BranchManpowerPermissionAdmin(admin.ModelAdmin):
     def get_member_designation(self, obj):
         return obj.designation
     get_member_designation.short_description = "Company Designation"
+
+
+# ==============================================================================
+# PROMOTIONAL PLANS & ADD-ONS ADMIN (figma-screens/promotional-packages.png & promotional-addon.png)
+# ==============================================================================
+
+class PlanFeatureValueInline(admin.TabularInline):
+    """
+    Allows superusers to add more features and customize values per plan.
+    Matches: Packages features can be add by add more from admin panel from super user
+    """
+    model = PlanFeatureValue
+    extra = 1
+    fields = ('feature', 'value_text', 'is_included', 'sort_order')
+    ordering = ('sort_order', 'feature__sort_order')
+    autocomplete_fields = ('feature',)
+
+
+@admin.register(PromotionalPlan)
+class PromotionalPlanAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'slug', 'base_price', 'billing_period_days',
+        'search_ranking_priority', 'trust_badge_type', 'banner_type',
+        'is_active', 'sort_order'
+    )
+    list_editable = ('is_active', 'sort_order', 'base_price')
+    list_filter = ('search_ranking_priority', 'trust_badge_type', 'banner_type', 'is_active')
+    search_fields = ('name', 'slug', 'tagline')
+    inlines = [PlanFeatureValueInline]
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('name', 'slug', 'tagline', 'base_price', 'billing_period_days', 'is_active', 'is_featured', 'sort_order')
+        }),
+        ('Search Ranking & Badge', {
+            'fields': (
+                'search_ranking_priority', 'priority_tier_level',
+                'trust_badge_type', 'badge_label', 'requires_gst_license', 'requires_nabl_iso'
+            )
+        }),
+        ('Promotional Banners & Video', {
+            'fields': ('banner_type', 'max_header_banners', 'allow_video_banner')
+        }),
+        ('Direct Lead CTA Channels (Customer End)', {
+            'fields': ('direct_cta_type', 'allow_direct_phone', 'allow_whatsapp', 'allow_instant_rfq')
+        }),
+        ('Visibility & Privacy Controls', {
+            'fields': ('can_hide_reviews', 'hide_competitor_ads', 'monthly_shared_enquiries', 'is_unlimited_enquiries', 'home_page_listing')
+        }),
+    )
+
+
+@admin.register(PromotionalPlanFeature)
+class PromotionalPlanFeatureAdmin(admin.ModelAdmin):
+    list_display = ('name', 'code', 'sort_order', 'is_active')
+    list_editable = ('sort_order', 'is_active')
+    search_fields = ('name', 'code', 'description')
+    prepopulated_fields = {'code': ('name',)}
+
+
+@admin.register(PlanFeatureValue)
+class PlanFeatureValueAdmin(admin.ModelAdmin):
+    list_display = ('plan', 'feature', 'value_text', 'is_included', 'sort_order')
+    list_filter = ('plan', 'is_included')
+    search_fields = ('plan__name', 'feature__name', 'value_text')
+    list_editable = ('value_text', 'is_included', 'sort_order')
+
+
+@admin.register(PromotionalAddon)
+class PromotionalAddonAdmin(admin.ModelAdmin):
+    list_display = (
+        'name', 'code', 'tagging', 'base_price', 'max_price',
+        'duration_days', 'max_inventory_slots', 'is_active', 'sort_order'
+    )
+    list_editable = ('is_active', 'base_price')
+    list_filter = ('tagging', 'is_active')
+    search_fields = ('name', 'code', 'placement', 'pricing_factor')
+    prepopulated_fields = {'code': ('name',)}
+
+
+class LabPromotionBannerInline(admin.TabularInline):
+    model = LabPromotionBanner
+    extra = 1
+    fields = ('sort_order', 'image', 'title', 'subtitle', 'target_url', 'is_active')
+
+
+@admin.register(LabPlanSubscription)
+class LabPlanSubscriptionAdmin(admin.ModelAdmin):
+    list_display = (
+        'lab', 'plan', 'status', 'verification_status', 'payment_status',
+        'amount', 'is_current', 'starts_at', 'expires_at'
+    )
+    list_filter = ('status', 'verification_status', 'payment_status', 'plan', 'is_current')
+    search_fields = (
+        'lab__lab_name', 'gst_number', 'license_number',
+        'nabl_accreditation_number', 'iso_certification_number', 'payment_reference'
+    )
+    raw_id_fields = ('lab', 'verified_by')
+    inlines = [LabPromotionBannerInline]
+    actions = ['approve_verification', 'reject_verification', 'activate_subscription_action']
+
+    fieldsets = (
+        ('Subscription Overview', {
+            'fields': ('lab', 'plan', 'status', 'is_current', 'amount', 'payment_status', 'payment_reference', 'paid_at', 'starts_at', 'expires_at')
+        }),
+        ('Growth Plan Verification (GST / License)', {
+            'fields': ('gst_number', 'license_number', 'gst_license_document')
+        }),
+        ('Pro Plan Verification (NABL / ISO)', {
+            'fields': ('nabl_accreditation_number', 'nabl_document', 'iso_certification_number', 'iso_document')
+        }),
+        ('Verification Audit & Remarks', {
+            'fields': ('verification_status', 'verification_remarks', 'verified_by', 'verified_at')
+        }),
+        ('Growth Plan Banner', {
+            'fields': ('static_header_banner', 'static_banner_link')
+        }),
+        ('Pro Plan Media & Lead CTAs', {
+            'fields': ('promotional_video_url', 'direct_phone', 'whatsapp_number', 'enable_instant_rfq', 'hide_reviews')
+        }),
+    )
+
+    @admin.action(description="Approve verification for selected subscriptions")
+    def approve_verification(self, request, queryset):
+        queryset.update(
+            verification_status='approved',
+            verified_by=request.user,
+            verified_at=timezone.now(),
+            status='verified'
+        )
+
+    @admin.action(description="Reject verification for selected subscriptions")
+    def reject_verification(self, request, queryset):
+        queryset.update(
+            verification_status='rejected',
+            verified_by=request.user,
+            verified_at=timezone.now(),
+            status='rejected'
+        )
+
+    @admin.action(description="Activate selected subscriptions (Mark Paid & Active)")
+    def activate_subscription_action(self, request, queryset):
+        for sub in queryset:
+            sub.activate_subscription()
+
+
+@admin.register(LabAddonPurchase)
+class LabAddonPurchaseAdmin(admin.ModelAdmin):
+    list_display = (
+        'lab', 'addon', 'target_category', 'price_paid',
+        'status', 'starts_at', 'expires_at'
+    )
+    list_filter = ('addon', 'status')
+    search_fields = ('lab__lab_name', 'payment_reference', 'banner_headline')
+    raw_id_fields = ('lab', 'target_category', 'target_competitor_lab', 'target_country', 'target_state')
+

@@ -493,6 +493,63 @@ class Branch(Trackable):
         """Self + branch labs, for the organization's superadmin-style dashboard scope."""
         return Branch.objects.filter(models.Q(pk=self.pk) | models.Q(parent_id=self.pk))
 
+    @property
+    def active_promotional_subscription(self):
+        """Returns the currently active promotional subscription if valid, else None."""
+        now = timezone.now()
+        return self.promotional_subscriptions.filter(
+            status='active',
+            is_current=True,
+            starts_at__lte=now,
+            expires_at__gte=now
+        ).select_related('plan').first()
+
+    @property
+    def promotional_tier(self):
+        sub = self.active_promotional_subscription
+        if sub and sub.plan:
+            return sub.plan.slug  # 'growth' or 'pro'
+        return 'basic'
+
+    @property
+    def priority_tier_level(self):
+        """1 for Pro (Top Organic), 2 for Growth (Above Free), 3 for Basic/Free (Standard Algorithmic)."""
+        sub = self.active_promotional_subscription
+        if sub and sub.plan:
+            return sub.plan.priority_tier_level
+        return 3
+
+    @property
+    def is_verified_growth(self):
+        return self.promotional_tier == 'growth'
+
+    @property
+    def is_trusted_partner_pro(self):
+        return self.promotional_tier == 'pro'
+
+    @property
+    def can_hide_reviews(self):
+        if self.is_trusted_partner_pro:
+            return True
+        sub = self.active_promotional_subscription
+        if sub and sub.plan and getattr(sub.plan, 'can_hide_reviews', False):
+            return True
+        return False
+
+    @property
+    def should_hide_reviews(self):
+        sub = self.active_promotional_subscription
+        if sub and sub.plan and sub.plan.can_hide_reviews and getattr(sub, 'hide_reviews', False):
+            return True
+        return False
+
+    @property
+    def has_ad_free_profile(self):
+        sub = self.active_promotional_subscription
+        if sub and sub.plan and sub.plan.hide_competitor_ads:
+            return True
+        return False
+
     def clean(self):
         super().clean()
         if getattr(self, "lab_category_id", None) and self.category_data:
@@ -1689,3 +1746,398 @@ class BranchManpowerPermission(Trackable):
 
 # Backward compatibility alias
 LabTeamMember = BranchManpowerPermission
+
+
+# ==============================================================================
+# PROMOTIONAL PLANS & ADD-ONS
+# ==============================================================================
+
+class PromotionalPlan(Trackable):
+    """
+    3 Promotional Plans for laboratories to purchase for promotion:
+    1. Basic (Free) - Base price ₹0 / 30 Days
+    2. Verified Lab (Growth) - Base price ₹4,999 / 30 Days
+    3. Trusted Partner (Pro) - Base price ₹14,999 / 30 Days
+    """
+    PLAN_TIER_CHOICES = (
+        ('basic', 'Basic (Free)'),
+        ('growth', 'Verified Lab (Growth)'),
+        ('pro', 'Trusted Partner (Pro)'),
+    )
+
+    SEARCH_RANKING_CHOICES = (
+        ('standard', 'Standard (Algorithmic)'),
+        ('tier_2', 'Priority Tier 2 (Above Free)'),
+        ('tier_1', 'Priority Tier 1 (Top Organic)'),
+    )
+
+    TRUST_BADGE_CHOICES = (
+        ('basic', 'Basic Listed'),
+        ('verified_lab', 'Verified Lab Badge (GST/License)'),
+        ('trusted_partner', 'NABL / ISO Verified Highlight Badge'),
+    )
+
+    BANNER_TYPE_CHOICES = (
+        ('none', 'No Banner'),
+        ('static_header', '1 Static Header Banner'),
+        ('carousel_video', 'Carousel Banner (Up to 3) + Video'),
+    )
+
+    DIRECT_CTA_CHOICES = (
+        ('request_quote', 'Request Quote'),
+        ('send_enquiry', 'Send Enquiry'),
+        ('all_channels', 'Send Enquiry, Direct Phone, WhatsApp & Instant RFQ'),
+    )
+
+    HOME_PAGE_LISTING_CHOICES = (
+        ('random', 'Random'),
+        ('high_priority', 'High Priority Listing'),
+    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100, unique=True, help_text='Plan Name, e.g. Basic (Free), Verified Lab (Growth), Trusted Partner (Pro)')
+    slug = models.SlugField(max_length=120, unique=True, choices=PLAN_TIER_CHOICES)
+    tagline = models.CharField(max_length=255, blank=True, help_text='Short description or promotional subtitle')
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text='Base Price (30 Days INR)')
+    billing_period_days = models.PositiveIntegerField(default=30, help_text='Duration in days, defaults to 30')
+
+    # Search Ranking Priority
+    search_ranking_priority = models.CharField(max_length=50, choices=SEARCH_RANKING_CHOICES, default='standard')
+    priority_tier_level = models.PositiveSmallIntegerField(
+        default=3,
+        help_text='1 = Priority Tier 1 (Top Organic), 2 = Priority Tier 2 (Above Free), 3 = Standard (Algorithmic)'
+    )
+
+    # Trust & Compliance Badge
+    trust_badge_type = models.CharField(max_length=50, choices=TRUST_BADGE_CHOICES, default='basic')
+    badge_label = models.CharField(max_length=100, default='Basic Listed', help_text='Badge label text shown on lab cards')
+    requires_gst_license = models.BooleanField(default=False, help_text='Requires filling GST / License details (Growth plan)')
+    requires_nabl_iso = models.BooleanField(default=False, help_text='Requires verifying NABL / ISO details (Pro plan)')
+
+    # Profile Promotional Banner
+    banner_type = models.CharField(max_length=50, choices=BANNER_TYPE_CHOICES, default='none')
+    max_header_banners = models.PositiveSmallIntegerField(default=0, help_text='0 = None, 1 = Static Header Banner, 3 = Carousel Banners')
+    allow_video_banner = models.BooleanField(default=False, help_text='Allows embedding promotional video (Pro plan)')
+
+    # Direct Lead CTA Buttons (Customer End)
+    direct_cta_type = models.CharField(max_length=50, choices=DIRECT_CTA_CHOICES, default='request_quote')
+    allow_direct_phone = models.BooleanField(default=False, help_text='Direct Phone CTA button visible at customer end')
+    allow_whatsapp = models.BooleanField(default=False, help_text='WhatsApp CTA button visible at customer end')
+    allow_instant_rfq = models.BooleanField(default=False, help_text='Instant RFQ CTA button visible at customer end')
+
+    # Review & Competitor Visibility Controls
+    can_hide_reviews = models.BooleanField(default=False, help_text='Lab can hide reviews with this plan (Trusted Partner / Pro)')
+    hide_competitor_ads = models.BooleanField(default=False, help_text='Competitor ads hidden (Ad-free profile for Pro plan)')
+
+    # Enquiries & Home Page Priority
+    monthly_shared_enquiries = models.IntegerField(default=2, help_text='Shared enquiries per month: 2 for Basic, 10 for Growth, -1 for Unlimited')
+    is_unlimited_enquiries = models.BooleanField(default=False, help_text='Unlimited shared enquiries')
+    home_page_listing = models.CharField(max_length=50, choices=HOME_PAGE_LISTING_CHOICES, default='random')
+
+    # Administrative Controls
+    is_active = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False, help_text='Highlight as Recommended / Most Popular')
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Promotional Plan'
+        verbose_name_plural = 'Promotional Plans'
+        ordering = ['sort_order', 'base_price']
+
+    def __str__(self):
+        return f"{self.name} (₹{self.base_price:.0f})"
+
+
+class PromotionalPlanFeature(Trackable):
+    """
+    Extensible feature definitions that superusers can add / modify from Django Admin.
+    Allows dynamic feature comparison tables and custom feature offerings.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=150, unique=True, help_text='e.g. Search Ranking Priority, Manage Reviews')
+    code = models.SlugField(max_length=150, unique=True, help_text='Unique slug, e.g. search_ranking, manage_reviews')
+    description = models.TextField(blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Promotional Plan Feature'
+        verbose_name_plural = 'Promotional Plan Features'
+        ordering = ['sort_order', 'name']
+
+    def __str__(self):
+        return self.name
+
+
+class PlanFeatureValue(Trackable):
+    """
+    Mapping between PromotionalPlan and PromotionalPlanFeature with customizable value text.
+    Managed via TabularInline in PromotionalPlanAdmin for superusers to add more features.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    plan = models.ForeignKey(PromotionalPlan, on_delete=models.CASCADE, related_name='feature_values')
+    feature = models.ForeignKey(PromotionalPlanFeature, on_delete=models.CASCADE, related_name='plan_values')
+    value_text = models.CharField(
+        max_length=255,
+        help_text='Display text, e.g. "Priority Tier 2 (Above Free)", "1 Static Header Banner", "Can hide reviews"'
+    )
+    is_included = models.BooleanField(default=True, help_text='Whether this feature is included in the plan (checkmark vs cross)')
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Plan Feature Value'
+        verbose_name_plural = 'Plan Feature Values'
+        ordering = ['sort_order', 'feature__sort_order']
+        unique_together = ('plan', 'feature')
+
+    def __str__(self):
+        return f"{self.plan.name} -> {self.feature.name}: {self.value_text}"
+
+
+class PromotionalAddon(Trackable):
+    """
+    Promotional Add-on products from figma-screens/promotional-addon.png:
+    - Category Featured Lab Pin (Top 3 search results per category/country, Sponsored, Max 3 slots, ₹2999 - ₹7999)
+    - Competitor Targeting (Top banner on other labs profile, Promoted/Ad, 3 rotating slots, ₹4,999)
+    - Home Page Listing (Listing on home page for particular category, Sponsored, 1 per category)
+    """
+    ADDON_CODE_CHOICES = (
+        ('category_featured_pin', 'Category Featured Lab Pin'),
+        ('competitor_targeting', 'Competitor Targeting'),
+        ('home_page_listing', 'Home Page Listing'),
+    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=150, unique=True)
+    code = models.SlugField(max_length=150, unique=True, choices=ADDON_CODE_CHOICES)
+    placement = models.CharField(max_length=255, help_text='Placement description, e.g. Top 3 search results per category/country')
+    tagging = models.CharField(max_length=100, default='Sponsored', help_text='Tagging label, e.g. Sponsored or Promoted / Ad')
+    inventory_cap_text = models.CharField(max_length=150, help_text='e.g. Max 3 slots per category/country, 3 rotating slots')
+    max_inventory_slots = models.PositiveSmallIntegerField(default=3, help_text='Numeric cap for slots per category/region')
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text='Base Price (30 Days INR)')
+    max_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text='Upper range for dynamic pricing, e.g. 7999')
+    pricing_factor = models.CharField(max_length=255, blank=True, help_text='e.g. Category & city search demand, Category traffic volume')
+    duration_days = models.PositiveIntegerField(default=30)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Promotional Add-on'
+        verbose_name_plural = 'Promotional Add-ons'
+        ordering = ['sort_order', 'name']
+
+    def __str__(self):
+        price_display = f"₹{self.base_price:.0f}"
+        if self.max_price:
+            price_display = f"₹{self.base_price:.0f} - ₹{self.max_price:.0f}"
+        return f"{self.name} ({price_display} / {self.duration_days} Days)"
+
+
+class LabPlanSubscription(Trackable):
+    """
+    Represents a Lab's application / subscription to a PromotionalPlan.
+    Handles verification form data (GST/License for Growth, NABL/ISO for Pro),
+    banner uploads, direct contact channels (Phone/WhatsApp/RFQ), and approval workflow.
+    """
+    STATUS_CHOICES = (
+        ('draft', 'Draft (Form In Progress)'),
+        ('submitted', 'Submitted (Pending Verification)'),
+        ('verified', 'Verified (Awaiting Payment)'),
+        ('active', 'Active (Paid & Published)'),
+        ('rejected', 'Verification Rejected'),
+        ('expired', 'Expired'),
+        ('cancelled', 'Cancelled'),
+    )
+
+    PAYMENT_STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('paid', 'Paid'),
+        ('failed', 'Failed'),
+        ('waived', 'Waived / Free'),
+    )
+
+    VERIFICATION_STATUS_CHOICES = (
+        ('not_required', 'Not Required'),
+        ('pending', 'Pending Verification'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    lab = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='promotional_subscriptions')
+    plan = models.ForeignKey(PromotionalPlan, on_delete=models.PROTECT, related_name='subscriptions')
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='draft', db_index=True)
+    is_current = models.BooleanField(default=False, db_index=True, help_text='Flags this as the actively applying/active plan for the lab')
+
+    # Pricing & Payment (Price displayed & paid in the last step)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text='Price in INR to pay in last step')
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    payment_reference = models.CharField(max_length=150, blank=True, null=True, help_text='Payment transaction ID / Razorpay / Stripe ID')
+    paid_at = models.DateTimeField(null=True, blank=True)
+    starts_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    # Growth Plan Verification: GST / License
+    gst_number = models.CharField(max_length=50, blank=True, null=True, help_text='Required for Verified Lab Badge (Growth plan)')
+    license_number = models.CharField(max_length=100, blank=True, null=True, help_text='Drug/Trade/Operating License Number')
+    gst_license_document = models.FileField(
+        upload_to='labs/promotions/verification/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])],
+        help_text='Upload GST Certificate or Trade License'
+    )
+
+    # Pro Plan Verification: NABL / ISO Details
+    nabl_accreditation_number = models.CharField(max_length=100, blank=True, null=True, help_text='NABL Certificate / Accreditation No.')
+    nabl_document = models.FileField(
+        upload_to='labs/promotions/verification/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])],
+        help_text='Upload NABL Certificate'
+    )
+    iso_certification_number = models.CharField(max_length=100, blank=True, null=True, help_text='ISO Standard Certification No. (e.g. ISO 9001 / ISO 17025)')
+    iso_document = models.FileField(
+        upload_to='labs/promotions/verification/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'jpg', 'jpeg', 'png'])],
+        help_text='Upload ISO Certificate'
+    )
+
+    # Admin Verification Workflow
+    verification_status = models.CharField(max_length=30, choices=VERIFICATION_STATUS_CHOICES, default='pending')
+    verification_remarks = models.TextField(blank=True, null=True, help_text='Internal notes or rejection reason')
+    verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='verified_lab_subscriptions')
+    verified_at = models.DateTimeField(null=True, blank=True)
+
+    # Growth Plan Banner: 1 Static Header Banner
+    static_header_banner = models.ImageField(
+        upload_to='labs/promotions/banners/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])],
+        help_text='1 Static Header Banner for Verified Lab (Growth) plan'
+    )
+    static_banner_link = models.URLField(blank=True, null=True, help_text='Optional destination link when clicking the banner')
+
+    # Pro Plan Media: Video
+    promotional_video_url = models.URLField(
+        blank=True,
+        null=True,
+        help_text='Promotional video link (YouTube / Vimeo / Direct MP4) for Trusted Partner (Pro) plan'
+    )
+
+    # Pro Plan CTAs & Direct Contact Channels (Customer end)
+    direct_phone = models.CharField(max_length=25, blank=True, null=True, help_text='Direct Phone number for Instant Call CTA')
+    whatsapp_number = models.CharField(max_length=25, blank=True, null=True, help_text='WhatsApp Number (with country code)')
+    enable_instant_rfq = models.BooleanField(default=True, help_text='Enable Instant RFQ button on profile')
+
+    # Pro Plan Privacy & Competitor controls
+    hide_reviews = models.BooleanField(default=False, help_text='Trusted Partner labs can hide reviews on customer page')
+
+    class Meta:
+        verbose_name = 'Lab Plan Subscription'
+        verbose_name_plural = 'Lab Plan Subscriptions'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.lab.lab_name} - {self.plan.name} ({self.get_status_display()})"
+
+    def activate_subscription(self):
+        """Activates subscription upon payment/approval, expiring previous active subscriptions."""
+        LabPlanSubscription.objects.filter(lab=self.lab, is_current=True).exclude(pk=self.pk).update(is_current=False)
+        self.status = 'active'
+        self.payment_status = 'paid'
+        self.is_current = True
+        self.starts_at = timezone.now()
+        self.expires_at = timezone.now() + timezone.timedelta(days=self.plan.billing_period_days)
+        self.save()
+
+
+class LabPromotionBanner(Trackable):
+    """
+    Carousel Banners (Up to 3) for Trusted Partner (Pro) plan.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    subscription = models.ForeignKey(LabPlanSubscription, on_delete=models.CASCADE, related_name='carousel_banners')
+    image = models.ImageField(
+        upload_to='labs/promotions/carousel/',
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])]
+    )
+    title = models.CharField(max_length=150, blank=True)
+    subtitle = models.CharField(max_length=255, blank=True)
+    target_url = models.URLField(blank=True, null=True)
+    sort_order = models.PositiveSmallIntegerField(default=1, help_text='Sort sequence: 1, 2, or 3')
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Lab Carousel Banner'
+        verbose_name_plural = 'Lab Carousel Banners'
+        ordering = ['sort_order', 'id']
+
+    def __str__(self):
+        return f"Banner #{self.sort_order} for {self.subscription.lab.lab_name}"
+
+
+class LabAddonPurchase(Trackable):
+    """
+    Lab purchase of an add-on product (Category Featured Pin, Competitor Targeting, Home Page Listing).
+    """
+    STATUS_CHOICES = (
+        ('pending', 'Pending Payment / Verification'),
+        ('active', 'Active'),
+        ('expired', 'Expired'),
+        ('cancelled', 'Cancelled'),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    lab = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='addon_purchases')
+    addon = models.ForeignKey(PromotionalAddon, on_delete=models.PROTECT, related_name='purchases')
+    
+    # Targeting specifications
+    target_category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='targeted_addon_promotions',
+        help_text='Target sample/test category for Category Featured Lab Pin or Competitor Targeting'
+    )
+    target_country = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True, blank=True)
+    target_state = models.ForeignKey(State, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Competitor Targeting
+    target_competitor_lab = models.ForeignKey(
+        Branch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='targeted_by_competitor_ads',
+        help_text='Target competitor lab profile to display top banner on'
+    )
+
+    # Banner / Ad Creative
+    banner_image = models.ImageField(
+        upload_to='labs/promotions/addons/',
+        blank=True,
+        null=True,
+        validators=[FileExtensionValidator(allowed_extensions=['jpg', 'jpeg', 'png', 'webp'])],
+        help_text='Ad Banner creative'
+    )
+    banner_headline = models.CharField(max_length=200, blank=True)
+    banner_link = models.URLField(blank=True, null=True)
+
+    # Pricing & Duration
+    price_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    starts_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    payment_reference = models.CharField(max_length=150, blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Lab Add-on Purchase'
+        verbose_name_plural = 'Lab Add-on Purchases'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.lab.lab_name} - {self.addon.name} ({self.status})"

@@ -534,6 +534,9 @@ class LabReview(models.Model):
     lab_reply = models.TextField(blank=True, null=True)
     replied_at = models.DateTimeField(blank=True, null=True)
     is_approved = models.BooleanField(default=True)
+    is_hidden_by_lab = models.BooleanField(
+        default=False, db_index=True, help_text="Hidden by lab from public profile"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

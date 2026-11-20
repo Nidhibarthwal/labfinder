@@ -37,6 +37,10 @@ def _format_lab_card_product(b, tests=None):
         "tests": formatted_tests[:4],
         "lab_type": "connected" if ((b.source == "vista") or bool(b.VISTA_code)) else "partner",
         "url": f"/lab-detail/{b.pk}/",
+        "promotional_tier": getattr(b, "promotional_tier", "basic"),
+        "priority_tier_level": getattr(b, "priority_tier_level", 3),
+        "is_verified_growth": getattr(b, "is_verified_growth", False),
+        "is_trusted_partner_pro": getattr(b, "is_trusted_partner_pro", False),
     }
 
 
@@ -67,6 +71,10 @@ def _format_lab_card_lab(b):
         "url": f"/lab-detail/{b.pk}/",
         "country": str(b.lab_country.name) if b.lab_country else "India",
         "lab_type": "connected" if ((b.source == "vista") or bool(b.VISTA_code)) else "partner",
+        "promotional_tier": getattr(b, "promotional_tier", "basic"),
+        "priority_tier_level": getattr(b, "priority_tier_level", 3),
+        "is_verified_growth": getattr(b, "is_verified_growth", False),
+        "is_trusted_partner_pro": getattr(b, "is_trusted_partner_pro", False),
     }
 
 
@@ -256,7 +264,9 @@ def search_labs_by_product(query, limit=None):
         autocomplete_items = autocomplete_items[:limit]
 
     labs = []
-    for _lab_id, data in lab_map.items():
+    # Sort lab_map entries by promotional ranking priority (Priority Tier 1 Pro, Priority Tier 2 Growth, Priority Tier 3 Basic)
+    sorted_lab_entries = sorted(lab_map.values(), key=lambda d: getattr(d["lab"], "priority_tier_level", 3))
+    for data in sorted_lab_entries:
         labs.append(_format_lab_card_product(data["lab"], tests=data["tests"]))
 
     return labs, autocomplete_items
@@ -340,9 +350,15 @@ def search_labs_by_name(query, limit=None, subcategory_id=None, category_id=None
     else:
         branches = branches[:24]
 
+    # Prioritize results by Promotional Priority Tier (Tier 1 Pro Top Organic, Tier 2 Growth, Tier 3 Basic)
+    sorted_branches = sorted(
+        list(branches),
+        key=lambda b: (getattr(b, "priority_tier_level", 3), getattr(b, "search_priority", 8))
+    )
+
     labs = []
     autocomplete_items = []
-    for b in branches:
+    for b in sorted_branches:
         card = _format_lab_card_lab(b)
         labs.append(card)
         autocomplete_items.append({

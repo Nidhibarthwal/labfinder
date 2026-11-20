@@ -1001,6 +1001,18 @@ def get_reviews_dashboard_context(request, current_branch):
                 "count": counts[s],
                 "pct": pct,
             })
+    # else:
+    #     # Default placeholder breakdown matching figma-screens/lab/Reviews.png
+    #     default_dist = [(5, 72), (4, 19), (3, 6), (2, 2), (1, 1)]
+    #     for s, pct in default_dist:
+    #         star_breakdown.append({
+    #             "stars": s,
+    #             "label": f"{s}★",
+    #             "count": 0,
+    #             "pct": pct,
+    #         })
+
+    can_hide_reviews = current_branch.can_hide_reviews if current_branch else False
 
     context = {
         "reviews": reviews,
@@ -1010,6 +1022,7 @@ def get_reviews_dashboard_context(request, current_branch):
         "category_averages": category_averages,
         "active_categories": active_categories,
         "star_breakdown": star_breakdown,
+        "can_hide_reviews": can_hide_reviews,
     }
 
     rendered_html = render_to_string(
@@ -1110,6 +1123,49 @@ class ReplyLabReviewView(View):
         if is_ajax:
             return JsonResponse({"status": "success", "reply": reply_message, "message": "Your reply has been published."})
         return redirect(f"{reverse('dashboard')}?tab=reviews")
+
+
+class ToggleHideLabReviewView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        review_id = request.POST.get("review_id")
+        if not review_id:
+            return JsonResponse({"status": "error", "message": "Missing review ID."}, status=400)
+
+        review = get_object_or_404(LabReview, pk=review_id)
+        lab = review.lab
+
+        user = request.user
+        is_authorized = (
+            user.is_staff
+            or user.is_superuser
+            or lab.user == user
+            or getattr(user, "branch", None) == lab
+            or getattr(user, "user_type", None) == "lab"
+        )
+        if not is_authorized:
+            return JsonResponse(
+                {"status": "error", "message": "Unauthorized to manage reviews for this laboratory."},
+                status=403,
+            )
+
+        if not lab.can_hide_reviews:
+            return JsonResponse(
+                {
+                    "status": "upgrade_required",
+                    "message": "Hiding reviews from your public profile is a Trusted Partner (Pro) feature. Upgrade your promotional package to unlock this feature.",
+                },
+                status=403,
+            )
+
+        review.is_hidden_by_lab = not review.is_hidden_by_lab
+        review.save(update_fields=["is_hidden_by_lab", "updated_at"])
+
+        status_text = "hidden from" if review.is_hidden_by_lab else "made visible on"
+        return JsonResponse({
+            "status": "success",
+            "is_hidden": review.is_hidden_by_lab,
+            "message": f"Review has been {status_text} your public profile.",
+        })
 
 
 class UpdateCustomerReviewView(LoginRequiredMixin, View):

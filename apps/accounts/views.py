@@ -25,7 +25,8 @@ User = get_user_model()
 from apps.labs.models import (
     Branch, BranchImage, LabCategory, LabSocialLink, ProductService, TestingPackage, TestingPackageItem, User,
     Accreditation, BranchItem, TestingScopeFacility, BranchManpower, LabConfiguration,
-    BranchManpowerPermission
+    BranchManpowerPermission, PromotionalPlan, PromotionalPlanFeature, PlanFeatureValue,
+    PromotionalAddon, LabPlanSubscription
 )
 from django.contrib.auth.models import User, Group
 from django.middleware.csrf import get_token
@@ -2171,6 +2172,16 @@ class DashboardView(View):
                 unpublished_scope_count = 0
                 total_scope_count = scope_count
 
+            promotional_plans = list(
+                PromotionalPlan.objects.filter(is_active=True)
+                .prefetch_related("feature_values__feature")
+                .order_by("sort_order", "base_price")
+            )
+            plans_by_slug = {p.slug: p for p in promotional_plans}
+            promotional_addons = list(
+                PromotionalAddon.objects.filter(is_active=True).order_by("sort_order", "base_price")
+            )
+
             context = {
                 "email": email,
                 "branch": current_branch,
@@ -2191,6 +2202,7 @@ class DashboardView(View):
                 "display_count": reviews_ctx.get("display_count") or reviews_ctx.get("total_count"),
                 "category_averages": reviews_ctx.get("category_averages"),
                 "star_breakdown": reviews_ctx.get("star_breakdown") or [],
+                "can_hide_reviews": reviews_ctx.get("can_hide_reviews", False) or (current_branch.can_hide_reviews if current_branch else False),
                 "accreditation": (
                     Accreditation.objects.filter(lab=current_branch, active=True)
                     .select_related("accred")
@@ -2224,6 +2236,13 @@ class DashboardView(View):
                 "team_members": team_members,
                 "branch_manpower_list": branch_manpower_list,
                 "available_manpower": available_manpower,
+                "promotional_plans": promotional_plans,
+                "plans_by_slug": plans_by_slug,
+                "growth_plan": plans_by_slug.get("growth"),
+                "pro_plan": plans_by_slug.get("pro"),
+                "basic_plan": plans_by_slug.get("basic"),
+                "promotional_addons": promotional_addons,
+                "active_subscription": current_branch.active_promotional_subscription if current_branch else None,
             }
             return render(request, "accounts/lab_portal.html", context)
 

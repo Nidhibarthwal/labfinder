@@ -11,14 +11,45 @@
 
   <!-- 1. Plan & Billing Banner Card -->
   <div class="lp-card lp-settings-card" style="padding: 24px;">
-    <h3 class="lp-settings-section-title">Plan & billing</h3>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+      <h3 class="lp-settings-section-title" style="margin: 0;">Plan & billing</h3>
+      {% if branch.promotional_tier == 'pro' %}
+        <span class="lp-badge--trusted-pro" style="display: inline-flex; align-items: center; gap: 6px; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#047857"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          Trusted Partner (Pro)
+        </span>
+      {% elif branch.promotional_tier == 'growth' %}
+        <span class="lp-badge--verified-growth" style="display: inline-flex; align-items: center; gap: 6px; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#1d4ed8"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          Verified Lab (Growth)
+        </span>
+      {% else %}
+        <span style="display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;">
+          Basic (Free)
+        </span>
+      {% endif %}
+    </div>
+
     <div class="lp-billing-banner">
       <div class="lp-billing-banner__info">
-        <div class="lp-billing-banner__title">Verified Partner Lab</div>
-        <div class="lp-billing-banner__sub">Free plan • Upgrade to Vista LIMS for real-time sync</div>
+        {% if branch.promotional_tier == 'pro' %}
+          <div class="lp-billing-banner__title">{{ pro_plan.name|default:"Trusted Partner (Pro) Plan" }} — Active</div>
+          <div class="lp-billing-banner__sub">₹{{ pro_plan.base_price|floatformat:0 }} / {{ pro_plan.billing_period_days|default:30 }} Days • {{ pro_plan.get_search_ranking_priority_display|default:"Priority Tier 1 (Top Organic)" }} • {{ pro_plan.badge_label|default:"Verified Highlight Badge" }} • Ad-Free Profile • {% if active_subscription.expires_at %}Renews / Expires: {{ active_subscription.expires_at|date:"d M Y" }}{% else %}Active 30 Days{% endif %}</div>
+        {% elif branch.promotional_tier == 'growth' %}
+          <div class="lp-billing-banner__title">{{ growth_plan.name|default:"Verified Lab (Growth) Plan" }} — Active</div>
+          <div class="lp-billing-banner__sub">₹{{ growth_plan.base_price|floatformat:0 }} / {{ growth_plan.billing_period_days|default:30 }} Days • {{ growth_plan.get_search_ranking_priority_display|default:"Priority Tier 2" }} • {{ growth_plan.badge_label|default:"Verified Lab Badge" }} • 1 Static Header Banner • {% if active_subscription.expires_at %}Renews / Expires: {{ active_subscription.expires_at|date:"d M Y" }}{% else %}Active 30 Days{% endif %}</div>
+        {% else %}
+          <div class="lp-billing-banner__title">{{ basic_plan.name|default:"Basic (Free) Plan" }}</div>
+          <div class="lp-billing-banner__sub">Standard Search Ranking • Upgrade to {{ growth_plan.name|default:"Verified Lab (Growth)" }} or {{ pro_plan.name|default:"Trusted Partner (Pro)" }} for Top Organic Ranking &amp; Verified Badges</div>
+        {% endif %}
       </div>
-      <div class="lp-billing-banner__action">
-        <button type="button" class="lp-btn-upgrade-plan" onclick="alert('Upgrade to Vista LIMS integration coming soon! Contact support for early access.')">Upgrade Plan</button>
+      <div class="lp-billing-banner__action" style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button type="button" class="lp-btn-upgrade-plan" onclick="openPromotionalPlansModal()">
+          {% if branch.promotional_tier == 'basic' %}Upgrade Plan{% else %}Change / Compare Plans{% endif %}
+        </button>
+        <button type="button" class="lp-btn-addon-plans" onclick="openAddonsModal()" style="background: rgba(255,255,255,0.15); color: #fff; border: 1px solid rgba(255,255,255,0.25); border-radius: 6px; padding: 9px 16px; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.15s ease;">
+          Promotional Add-ons
+        </button>
       </div>
     </div>
   </div>
@@ -660,4 +691,571 @@ function confirmDeleteBranch() {
     alert('Branch deletion requires superadmin clearance. A request has been logged.');
   }
 }
+
+// ==============================================================================
+// PROMOTIONAL PLANS & ADDONS WORKFLOW MODALS
+// ==============================================================================
+
+function openPromotionalPlansModal() {
+  var m = document.getElementById('promotionalPlansModal');
+  if (m) m.removeAttribute('hidden');
+}
+function closePromotionalPlansModal() {
+  var m = document.getElementById('promotionalPlansModal');
+  if (m) m.setAttribute('hidden', 'true');
+}
+
+function openGrowthPurchaseModal() {
+  closePromotionalPlansModal();
+  var m = document.getElementById('growthPurchaseModal');
+  if (m) m.removeAttribute('hidden');
+}
+function closeGrowthPurchaseModal() {
+  var m = document.getElementById('growthPurchaseModal');
+  if (m) m.setAttribute('hidden', 'true');
+}
+
+function openProPurchaseModal() {
+  closePromotionalPlansModal();
+  var m = document.getElementById('proPurchaseModal');
+  if (m) m.removeAttribute('hidden');
+}
+function closeProPurchaseModal() {
+  var m = document.getElementById('proPurchaseModal');
+  if (m) m.setAttribute('hidden', 'true');
+}
+
+function openAddonsModal() {
+  var m = document.getElementById('promotionalAddonsModal');
+  if (m) m.removeAttribute('hidden');
+}
+function closeAddonsModal() {
+  var m = document.getElementById('promotionalAddonsModal');
+  if (m) m.setAttribute('hidden', 'true');
+}
+
+function openAddonPurchaseForm(addonCode, addonName, price) {
+  closeAddonsModal();
+  document.getElementById('addon_form_code').value = addonCode;
+  document.getElementById('addon_form_title').textContent = addonName;
+  document.getElementById('addon_form_price_display').textContent = '₹' + Math.round(price);
+  
+  // Show / hide targeting fields based on addon type
+  var catGroup = document.getElementById('addonTargetCategoryGroup');
+  var compGroup = document.getElementById('addonTargetCompetitorGroup');
+  if (addonCode === 'competitor_targeting') {
+    if (catGroup) catGroup.style.display = 'block';
+    if (compGroup) compGroup.style.display = 'block';
+  } else {
+    if (catGroup) catGroup.style.display = 'block';
+    if (compGroup) compGroup.style.display = 'none';
+  }
+
+  var m = document.getElementById('addonPurchaseModal');
+  if (m) m.removeAttribute('hidden');
+}
+function closeAddonPurchaseModal() {
+  var m = document.getElementById('addonPurchaseModal');
+  if (m) m.setAttribute('hidden', 'true');
+}
+
+// Plan purchase form submissions
+document.addEventListener('DOMContentLoaded', function() {
+  ['growthPurchaseForm', 'proPurchaseForm'].forEach(function(formId) {
+    var form = document.getElementById(formId);
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var submitBtn = form.querySelector('button[type="submit"]');
+      var originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Processing Application & Payment...';
+
+      var formData = new FormData(form);
+      fetch("{% url 'purchase-promotional-plan' %}", {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        if (data.status === 'success') {
+          alert('✓ ' + data.message);
+          window.location.reload();
+        } else {
+          alert('Error: ' + (data.message || 'Could not complete application.'));
+        }
+      })
+      .catch(function(err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        alert('Network error while processing application. Please try again.');
+      });
+    });
+  });
+
+  var addonForm = document.getElementById('addonPurchaseForm');
+  if (addonForm) {
+    addonForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var submitBtn = addonForm.querySelector('button[type="submit"]');
+      var originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Activating Add-on...';
+
+      var formData = new FormData(addonForm);
+      fetch("{% url 'purchase-promotional-addon' %}", {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      })
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        if (data.status === 'success') {
+          alert('✓ ' + data.message);
+          window.location.reload();
+        } else {
+          alert('Error: ' + (data.message || 'Could not purchase add-on.'));
+        }
+      })
+      .catch(function(err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+        alert('Network error while processing add-on. Please try again.');
+      });
+    });
+  }
+});
 </script>
+
+<!-- ============================================================================== -->
+<!-- 1. PROMOTIONAL PACKAGES COMPARISON MODAL (Fully Dynamic from PromotionalPlan & Features) -->
+<!-- ============================================================================== -->
+<div class="lp-modal" id="promotionalPlansModal" hidden>
+  <div class="lp-modal__backdrop" onclick="closePromotionalPlansModal()"></div>
+  <div class="lp-modal__dialog" style="max-width: 980px; width: 95%; max-height: 90vh; overflow-y: auto; padding: 32px 36px; border-radius: 16px; background: #ffffff;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+      <div>
+        <h2 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">Promotional Packages for Laboratories</h2>
+        <p style="font-size: 14px; color: #64748b; margin: 0;">Boost your laboratory's organic search visibility, acquire high-intent B2B leads, and display verified trust badges.</p>
+      </div>
+      <button type="button" class="lp-modal__close" onclick="closePromotionalPlansModal()" style="font-size: 24px; color: #94a3b8; background: none; border: none; cursor: pointer;">✕</button>
+    </div>
+
+    <!-- Dynamic 3 Tier Pricing Cards Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 32px;">
+      {% for p in promotional_plans %}
+      <div style="border: {% if p.slug == 'pro' %}2px solid #059669{% elif p.slug == 'growth' %}2px solid #3b82f6{% else %}1px solid #e2e8f0{% endif %}; border-radius: 12px; padding: 24px; display: flex; flex-direction: column; background: {% if p.slug == 'pro' %}#ecfdf5{% elif p.slug == 'growth' %}#f0f7ff{% else %}#ffffff{% endif %}; position: relative;">
+        
+        {% if p.slug == 'pro' %}
+        <div style="position: absolute; top: -12px; right: 20px; background: #059669; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; text-transform: uppercase;">
+          Top Placement
+        </div>
+        {% endif %}
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 13px; font-weight: 700; color: {% if p.slug == 'pro' %}#047857{% elif p.slug == 'growth' %}#1d4ed8{% else %}#64748b{% endif %}; text-transform: uppercase; letter-spacing: 0.5px;">
+            {{ p.name }}
+          </span>
+          <span style="background: {% if p.slug == 'pro' %}#a7f3d0; color: #065f46;{% elif p.slug == 'growth' %}#dbeafe; color: #1e40af;{% else %}#f1f5f9; color: #475569;{% endif %} font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px;">
+            {{ p.get_search_ranking_priority_display|default:p.search_ranking_priority }}
+          </span>
+        </div>
+
+        <div style="display: flex; align-items: baseline; gap: 4px; margin-bottom: 6px;">
+          <span style="font-size: 30px; font-weight: 800; color: #0f172a;">
+            {% if p.base_price > 0 %}₹{{ p.base_price|floatformat:0 }}{% else %}Free{% endif %}
+          </span>
+          <span style="font-size: 14px; color: #64748b;">/ {{ p.billing_period_days }} Days</span>
+        </div>
+        <p style="font-size: 13px; color: #475569; margin: 0 0 18px 0; min-height: 38px;">{{ p.tagline }}</p>
+
+        <!-- Dynamic Plan Features from Database (Managed in Django Admin) -->
+        <div style="padding-top: 14px; border-top: 1px solid {% if p.slug == 'pro' %}#a7f3d0{% elif p.slug == 'growth' %}#bfdbfe{% else %}#f1f5f9{% endif %}; margin-bottom: 20px; flex: 1;">
+          <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: #1e293b; display: flex; flex-direction: column; gap: 10px;">
+            {% for fv in p.feature_values.all %}
+            <li style="display: flex; align-items: center; gap: 8px;">
+              {% if fv.is_included %}
+                <span style="color: {% if p.slug == 'pro' %}#059669{% elif p.slug == 'growth' %}#2563eb{% else %}#10b981{% endif %}; font-weight: 700;">✓</span>
+                <span style="color: #1e293b;">{{ fv.value_text }}</span>
+              {% else %}
+                <span style="color: #ef4444; font-weight: 700;">✕</span>
+                <span style="color: #94a3b8; text-decoration: line-through;">{{ fv.value_text }}</span>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <!-- Dynamic CTA Buttons -->
+        {% if branch.promotional_tier == p.slug %}
+          <button type="button" disabled style="width: 100%; padding: 11px 0; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #64748b; font-weight: 700; font-size: 14px; cursor: default;">
+            Current Active Plan
+          </button>
+        {% elif p.slug == 'growth' %}
+          <button type="button" onclick="openGrowthPurchaseModal()" style="width: 100%; padding: 11px 0; border: none; border-radius: 8px; background: #2563eb; color: #ffffff; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 2px 4px rgba(37,99,235,0.2);">
+            Upgrade to {{ p.name }}
+          </button>
+        {% elif p.slug == 'pro' %}
+          <button type="button" onclick="openProPurchaseModal()" style="width: 100%; padding: 11px 0; border: none; border-radius: 8px; background: #059669; color: #ffffff; font-weight: 700; font-size: 14px; cursor: pointer; box-shadow: 0 2px 4px rgba(5,150,105,0.2);">
+            Upgrade to {{ p.name }}
+          </button>
+        {% else %}
+          <button type="button" disabled style="width: 100%; padding: 11px 0; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; color: #94a3b8; font-weight: 600; font-size: 14px; cursor: default;">
+            Default Free Plan
+          </button>
+        {% endif %}
+
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Promotional Add-ons Shortcut Link -->
+    <div style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <strong style="color: #0f172a; font-size: 14px;">Looking for Targeted Placement &amp; Category Pins?</strong>
+        <p style="color: #64748b; font-size: 13px; margin: 2px 0 0 0;">Explore Category Featured Pin, Competitor Targeting, and Homepage Listing add-ons.</p>
+      </div>
+      <button type="button" onclick="closePromotionalPlansModal(); openAddonsModal();" style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 16px; font-size: 13px; font-weight: 700; color: #0f172a; cursor: pointer;">
+        View Add-ons →
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================================== -->
+<!-- 2. GROWTH PLAN PURCHASE & VERIFICATION FORM (Verified Lab Badge) -->
+<!-- ============================================================================== -->
+<div class="lp-modal" id="growthPurchaseModal" hidden>
+  <div class="lp-modal__backdrop" onclick="closeGrowthPurchaseModal()"></div>
+  <div class="lp-modal__dialog" style="max-width: 640px; width: 95%; max-height: 90vh; overflow-y: auto; padding: 28px 32px; border-radius: 14px; background: #ffffff;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+      <div>
+        <div style="display: inline-flex; align-items: center; gap: 6px; background: #eff6ff; color: #1d4ed8; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-bottom: 6px;">
+          {{ growth_plan.get_search_ranking_priority_display|default:"Priority Tier 2 (Boosted Above Basic)" }}
+        </div>
+        <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">{{ growth_plan.name|default:"Verified Lab (Growth)" }} Application</h2>
+        <p style="font-size: 13px; color: #64748b; margin: 0;">Fill GST / License details to earn the {{ growth_plan.badge_label|default:"Verified Lab Badge" }} and upload 1 static header banner.</p>
+      </div>
+      <button type="button" class="lp-modal__close" onclick="closeGrowthPurchaseModal()" style="font-size: 22px; color: #94a3b8; background: none; border: none; cursor: pointer;">✕</button>
+    </div>
+
+    <form id="growthPurchaseForm" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="plan_slug" value="growth">
+
+      <!-- Section: Verified Lab Badge Verification -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
+        <div style="font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#2563eb"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+          {{ growth_plan.badge_label|default:"Verified Lab Badge" }} Verification (GST / License)
+        </div>
+        <p style="font-size: 12px; color: #64748b; margin: 0 0 14px 0;">Required to display the official Verified Lab Badge on your lab card &amp; profile page.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">GST NUMBER *</label>
+            <input type="text" name="gst_number" required placeholder="e.g. 07AAAAA0000A1Z5" value="{{ active_subscription.gst_number|default:'' }}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">LICENSE NUMBER</label>
+            <input type="text" name="license_number" placeholder="Trade / Drug / Operating Lic." value="{{ active_subscription.license_number|default:'' }}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">UPLOAD GST / LICENSE CERTIFICATE (PDF or Image)</label>
+          <input type="file" name="gst_license_document" accept=".pdf,.jpg,.jpeg,.png" style="width: 100%; font-size: 12px; color: #475569;">
+        </div>
+      </div>
+
+      <!-- Section: 1 Static Header Banner -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 24px;">
+        <div style="font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px;">1 Static Header Banner</div>
+        <p style="font-size: 12px; color: #64748b; margin: 0 0 12px 0;">Displays as a branded hero banner across the top of your lab profile.</p>
+
+        <div style="margin-bottom: 12px;">
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">UPLOAD HEADER BANNER (1200x300 recommended)</label>
+          <input type="file" name="static_header_banner" accept="image/*" style="width: 100%; font-size: 12px; color: #475569;">
+        </div>
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">BANNER DESTINATION URL (Optional)</label>
+          <input type="url" name="static_banner_link" placeholder="https://..." value="{{ active_subscription.static_banner_link|default:'' }}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <!-- Price & Final Payment Box (Dynamic from DB) -->
+      <div style="background: #f1f5f9; border-radius: 8px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <div style="font-size: 14px; font-weight: 700; color: #0f172a;">Total Payable ({{ growth_plan.billing_period_days|default:30 }} Days)</div>
+          <div style="font-size: 12px; color: #64748b;">Includes {{ growth_plan.get_search_ranking_priority_display }} &amp; {{ growth_plan.badge_label }}</div>
+        </div>
+        <div style="font-size: 24px; font-weight: 800; color: #1e40af;">₹{{ growth_plan.base_price|floatformat:0 }}</div>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button type="button" onclick="closeGrowthPurchaseModal()" style="flex: 1; padding: 12px 0; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #475569; font-weight: 700; cursor: pointer;">
+          Cancel
+        </button>
+        <button type="submit" style="flex: 2; padding: 12px 0; border: none; border-radius: 8px; background: #2563eb; color: #ffffff; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 2px 4px rgba(37,99,235,0.25);">
+          Pay ₹{{ growth_plan.base_price|floatformat:0 }} &amp; Activate {{ growth_plan.name|default:"Growth Plan" }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ============================================================================== -->
+<!-- 3. PRO PLAN PURCHASE & VERIFICATION FORM (Trusted Partner / Priority Tier 1) -->
+<!-- ============================================================================== -->
+<div class="lp-modal" id="proPurchaseModal" hidden>
+  <div class="lp-modal__backdrop" onclick="closeProPurchaseModal()"></div>
+  <div class="lp-modal__dialog" style="max-width: 680px; width: 95%; max-height: 90vh; overflow-y: auto; padding: 28px 32px; border-radius: 14px; background: #ffffff;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+      <div>
+        <div style="display: inline-flex; align-items: center; gap: 6px; background: #ecfdf5; color: #047857; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-bottom: 6px;">
+          {{ pro_plan.get_search_ranking_priority_display|default:"Priority Tier 1 (Top Organic in Search)" }}
+        </div>
+        <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">{{ pro_plan.name|default:"Trusted Partner (Pro)" }} Application</h2>
+        <p style="font-size: 13px; color: #64748b; margin: 0;">{{ pro_plan.badge_label|default:"Verified Highlight Badge" }} with lab name/logo, Carousel Banners + Video, Direct Phone, WhatsApp &amp; RFQ.</p>
+      </div>
+      <button type="button" class="lp-modal__close" onclick="closeProPurchaseModal()" style="font-size: 22px; color: #94a3b8; background: none; border: none; cursor: pointer;">✕</button>
+    </div>
+
+    <form id="proPurchaseForm" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="plan_slug" value="pro">
+
+      <!-- Section: Verified Highlight Badge (NABL / ISO Verification) -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
+        <div style="font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#059669"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          {{ pro_plan.badge_label|default:"Verified Highlight Badge" }} (NABL / ISO Details)
+        </div>
+        <p style="font-size: 12px; color: #64748b; margin: 0 0 14px 0;">Unlocks the prestigious Verified Highlight Badge alongside your lab logo.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">NABL CERTIFICATE / ACCREDITATION NO. *</label>
+            <input type="text" name="nabl_accreditation_number" required placeholder="e.g. TC-1234" value="{{ active_subscription.nabl_accreditation_number|default:'' }}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">UPLOAD NABL CERTIFICATE</label>
+            <input type="file" name="nabl_document" accept=".pdf,.jpg,.jpeg,.png" style="width: 100%; font-size: 12px; color: #475569;">
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">ISO CERTIFICATION NUMBER</label>
+            <input type="text" name="iso_certification_number" placeholder="e.g. ISO/IEC 17025:2017" value="{{ active_subscription.iso_certification_number|default:'' }}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">UPLOAD ISO CERTIFICATE</label>
+            <input type="file" name="iso_document" accept=".pdf,.jpg,.jpeg,.png" style="width: 100%; font-size: 12px; color: #475569;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Section: Carousel Banners (Up to 3) + Video -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
+        <div style="font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px;">Carousel Banners (Up to 3) + Video</div>
+        <p style="font-size: 12px; color: #64748b; margin: 0 0 12px 0;">Showcase high-resolution laboratory equipment and promotional video walkthrough.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">CAROUSEL #1</label>
+            <input type="file" name="carousel_banner_1" accept="image/*" style="width: 100%; font-size: 11px; color: #475569;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">CAROUSEL #2</label>
+            <input type="file" name="carousel_banner_2" accept="image/*" style="width: 100%; font-size: 11px; color: #475569;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 11px; font-weight: 700; color: #475569; margin-bottom: 4px;">CAROUSEL #3</label>
+            <input type="file" name="carousel_banner_3" accept="image/*" style="width: 100%; font-size: 11px; color: #475569;">
+          </div>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">PROMOTIONAL VIDEO URL (YouTube or Vimeo)</label>
+          <input type="url" name="promotional_video_url" placeholder="https://www.youtube.com/watch?v=..." value="{{ active_subscription.promotional_video_url|default:'' }}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; font-size: 13px; box-sizing: border-box;">
+        </div>
+      </div>
+
+      <!-- Section: Direct Lead Channels (Customer End) -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 20px;">
+        <div style="font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px;">Direct Customer Lead Channels</div>
+        <p style="font-size: 12px; color: #64748b; margin: 0 0 12px 0;">Buttons will be shown directly on your public lab page for buyers to contact instantly.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">DIRECT PHONE (Instant Call CTA)</label>
+            <input type="tel" name="direct_phone" placeholder="+91 98765 43210" value="{{ active_subscription.direct_phone|default:branch.contact_mobile|default:'' }}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+          </div>
+          <div>
+            <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">WHATSAPP NUMBER</label>
+            <input type="tel" name="whatsapp_number" placeholder="+91 98765 43210" value="{{ active_subscription.whatsapp_number|default:'' }}" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+          <input type="checkbox" id="pro_instant_rfq" name="enable_instant_rfq" {% if active_subscription.enable_instant_rfq != False %}checked{% endif %}>
+          <label for="pro_instant_rfq" style="font-size: 13px; color: #1e293b; font-weight: 600; cursor: pointer;">Enable Instant RFQ button on public lab page</label>
+        </div>
+      </div>
+
+      <!-- Section: Privacy & Ad-Free Controls -->
+      <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px; margin-bottom: 24px;">
+        <div style="font-weight: 700; font-size: 14px; color: #1e293b; margin-bottom: 4px;">Privacy &amp; Profile Controls</div>
+        
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <input type="checkbox" id="pro_hide_reviews" name="hide_reviews" {% if active_subscription.hide_reviews %}checked{% endif %}>
+          <label for="pro_hide_reviews" style="font-size: 13px; color: #1e293b; font-weight: 600; cursor: pointer;">
+            Hide Reviews on public lab page (Pro tier exclusive)
+          </label>
+        </div>
+
+        <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 10px 14px; font-size: 12px; color: #065f46; display: flex; align-items: center; gap: 8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#059669"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+          <span><strong>Ad-free profile included:</strong> Competitor lab ads and suggestions are automatically hidden from your profile.</span>
+        </div>
+      </div>
+
+      <!-- Price & Final Payment Box (Dynamic from DB) -->
+      <div style="background: #f1f5f9; border-radius: 8px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <div style="font-size: 14px; font-weight: 700; color: #0f172a;">Total Payable ({{ pro_plan.billing_period_days|default:30 }} Days)</div>
+          <div style="font-size: 12px; color: #64748b;">Includes {{ pro_plan.get_search_ranking_priority_display }} &amp; {{ pro_plan.badge_label }}</div>
+        </div>
+        <div style="font-size: 24px; font-weight: 800; color: #047857;">₹{{ pro_plan.base_price|floatformat:0 }}</div>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button type="button" onclick="closeProPurchaseModal()" style="flex: 1; padding: 12px 0; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #475569; font-weight: 700; cursor: pointer;">
+          Cancel
+        </button>
+        <button type="submit" style="flex: 2; padding: 12px 0; border: none; border-radius: 8px; background: #059669; color: #ffffff; font-weight: 700; font-size: 15px; cursor: pointer; box-shadow: 0 2px 4px rgba(5,150,105,0.25);">
+          Pay ₹{{ pro_plan.base_price|floatformat:0 }} &amp; Activate {{ pro_plan.name|default:"Pro Plan" }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- ============================================================================== -->
+<!-- 4. PROMOTIONAL ADD-ONS CATALOG MODAL (Dynamic from PromotionalAddon DB) -->
+<!-- ============================================================================== -->
+<div class="lp-modal" id="promotionalAddonsModal" hidden>
+  <div class="lp-modal__backdrop" onclick="closeAddonsModal()"></div>
+  <div class="lp-modal__dialog" style="max-width: 900px; width: 95%; max-height: 90vh; overflow-y: auto; padding: 32px 36px; border-radius: 16px; background: #ffffff;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+      <div>
+        <h2 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0;">Promotional Add-on Placements</h2>
+        <p style="font-size: 14px; color: #64748b; margin: 0;">Targeted high-conversion ad placements to dominate your testing niche and competitor traffic.</p>
+      </div>
+      <button type="button" class="lp-modal__close" onclick="closeAddonsModal()" style="font-size: 24px; color: #94a3b8; background: none; border: none; cursor: pointer;">✕</button>
+    </div>
+
+    <!-- Dynamic Add-ons Grid from Database -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-bottom: 24px;">
+      {% for addon in promotional_addons %}
+      <div style="border: 1px solid #e2e8f0; border-radius: 12px; padding: 22px; display: flex; flex-direction: column; background: #ffffff;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px;">{{ addon.tagging }}</span>
+          <span style="font-size: 11px; color: #64748b;">{{ addon.inventory_cap_text }}</span>
+        </div>
+        <h3 style="font-size: 17px; font-weight: 700; color: #0f172a; margin: 0 0 6px 0;">{{ addon.name }}</h3>
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0; min-height: 38px;">{{ addon.placement }}</p>
+        
+        <div style="margin-bottom: 18px; flex: 1;">
+          <div style="font-size: 22px; font-weight: 800; color: #0f172a;">
+            ₹{{ addon.base_price|floatformat:0 }}{% if addon.max_price %} - ₹{{ addon.max_price|floatformat:0 }}{% endif %}
+          </div>
+          <div style="font-size: 12px; color: #64748b;">{{ addon.duration_days }} Days • {{ addon.pricing_factor }}</div>
+        </div>
+
+        <button type="button" onclick="openAddonPurchaseForm('{{ addon.code }}', '{{ addon.name|escapejs }}', {{ addon.base_price }})" style="width: 100%; padding: 10px 0; border: none; border-radius: 8px; background: #0f172a; color: #ffffff; font-weight: 700; font-size: 13px; cursor: pointer;">
+          Book Slot
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================================== -->
+<!-- 5. ADD-ON PURCHASE APPLICATION FORM MODAL -->
+<!-- ============================================================================== -->
+<div class="lp-modal" id="addonPurchaseModal" hidden>
+  <div class="lp-modal__backdrop" onclick="closeAddonPurchaseModal()"></div>
+  <div class="lp-modal__dialog" style="max-width: 540px; width: 95%; max-height: 90vh; overflow-y: auto; padding: 28px 32px; border-radius: 14px; background: #ffffff;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+      <div>
+        <h2 id="addon_form_title" style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 4px 0;">Purchase Add-on</h2>
+        <p style="font-size: 13px; color: #64748b; margin: 0;">Configure your targeting and creative details for this promotion.</p>
+      </div>
+      <button type="button" class="lp-modal__close" onclick="closeAddonPurchaseModal()" style="font-size: 22px; color: #94a3b8; background: none; border: none; cursor: pointer;">✕</button>
+    </div>
+
+    <form id="addonPurchaseForm" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="addon_code" id="addon_form_code" value="">
+
+      <div id="addonTargetCategoryGroup" style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">TARGET CATEGORY *</label>
+        <select name="target_category_id" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+          {% for cat in all_categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div id="addonTargetCompetitorGroup" style="margin-bottom: 14px; display: none;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">TARGET COMPETITOR LAB (Optional)</label>
+        <input type="text" name="target_competitor_name" placeholder="Leave empty for broad category targeting" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">HEADLINE / CALL TO ACTION</label>
+        <input type="text" name="banner_headline" placeholder="e.g. Fastest NABL Turnaround in Delhi NCR" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">BANNER CREATIVE IMAGE (Optional)</label>
+        <input type="file" name="banner_image" accept="image/*" style="width: 100%; font-size: 12px; color: #475569;">
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">DESTINATION LINK (Optional)</label>
+        <input type="url" name="banner_link" placeholder="https://..." style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+      </div>
+
+      <div style="background: #f1f5f9; border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <span style="font-size: 14px; font-weight: 700; color: #0f172a;">Payable Amount:</span>
+        <span id="addon_form_price_display" style="font-size: 22px; font-weight: 800; color: #0f172a;">₹4,999</span>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button type="button" onclick="closeAddonPurchaseModal()" style="flex: 1; padding: 11px 0; border: 1px solid #cbd5e1; border-radius: 8px; background: #ffffff; color: #475569; font-weight: 700; cursor: pointer;">
+          Cancel
+        </button>
+        <button type="submit" style="flex: 2; padding: 11px 0; border: none; border-radius: 8px; background: #0f172a; color: #ffffff; font-weight: 700; font-size: 14px; cursor: pointer;">
+          Confirm &amp; Activate Add-on
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
