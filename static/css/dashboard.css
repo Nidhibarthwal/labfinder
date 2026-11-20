@@ -1,3 +1,7 @@
+.static_data{
+  color: red !important;
+}
+
 /*  Inline Lead Tab Styles to match screenshot exactly */
 .leads-page-header {
   display: flex;
