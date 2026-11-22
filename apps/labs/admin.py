@@ -421,7 +421,6 @@ class PromotionalAddonAdmin(admin.ModelAdmin):
     list_editable = ('is_active', 'base_price')
     list_filter = ('tagging', 'is_active')
     search_fields = ('name', 'code', 'placement', 'pricing_factor')
-    prepopulated_fields = {'code': ('name',)}
 
 
 class LabPromotionBannerInline(admin.TabularInline):
@@ -493,10 +492,10 @@ class LabPlanSubscriptionAdmin(admin.ModelAdmin):
 @admin.register(LabAddonPurchase)
 class LabAddonPurchaseAdmin(admin.ModelAdmin):
     list_display = (
-        'lab', 'addon', 'target_category', 'price_paid',
+        'lab', 'addon', 'target_category', 'target_country', 'price_paid',
         'status', 'starts_at', 'expires_at'
     )
-    list_filter = ('addon', 'status')
+    list_filter = ('addon', 'status', 'target_country')
     search_fields = ('lab__lab_name', 'payment_reference', 'banner_headline')
     raw_id_fields = ('lab', 'target_category', 'target_competitor_lab', 'target_country', 'target_state')
 

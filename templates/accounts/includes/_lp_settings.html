@@ -742,13 +742,13 @@ function openAddonPurchaseForm(addonCode, addonName, price) {
   
   // Show / hide targeting fields based on addon type
   var catGroup = document.getElementById('addonTargetCategoryGroup');
-  var compGroup = document.getElementById('addonTargetCompetitorGroup');
+  var compNotice = document.getElementById('addonCompetitorNotice');
   if (addonCode === 'competitor_targeting') {
     if (catGroup) catGroup.style.display = 'block';
-    if (compGroup) compGroup.style.display = 'block';
+    if (compNotice) compNotice.style.display = 'block';
   } else {
     if (catGroup) catGroup.style.display = 'block';
-    if (compGroup) compGroup.style.display = 'none';
+    if (compNotice) compNotice.style.display = 'none';
   }
 
   var m = document.getElementById('addonPurchaseModal');
@@ -1223,9 +1223,13 @@ document.addEventListener('DOMContentLoaded', function() {
         </select>
       </div>
 
-      <div id="addonTargetCompetitorGroup" style="margin-bottom: 14px; display: none;">
-        <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">TARGET COMPETITOR LAB (Optional)</label>
-        <input type="text" name="target_competitor_name" placeholder="Leave empty for broad category targeting" style="width: 100%; border: 1px solid #cbd5e1; border-radius: 6px; padding: 9px 12px; font-size: 13px; box-sizing: border-box;">
+      <div id="addonCompetitorNotice" style="margin-bottom: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 14px; display: none;">
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <span style="font-size: 16px;">🎯</span>
+          <div style="font-size: 12.5px; color: #166534; line-height: 1.45;">
+            <strong>Competitor Targeting:</strong> Your promotional banner will appear at the top of other lab profiles belonging to the same country (<strong>{{ current_branch.effective_country.name|default:"India" }}</strong>) and your selected target category above.
+          </div>
+        </div>
       </div>
 
       <div style="margin-bottom: 14px;">

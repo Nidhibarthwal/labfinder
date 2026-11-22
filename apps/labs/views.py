@@ -11,6 +11,7 @@ from django.views import View
 from django.db.models import Q, Avg, Count
 from apps.enquiries.models import LabReview, ReviewCategory
 from apps.utility.models import AccreditationMaster
+from django.urls import reverse
 
 
 class LabNavigationMenuAPIView(ListAPIView):
@@ -190,6 +191,39 @@ class LabDetailView(View):
                 .order_by("-avg_rating", "lab_name")[:4]
             )
 
+        # Competitor Targeting Banner (Add-on 2: "Top banner on other labs profile, belonging to targeted category/country")
+        competitor_banner = None
+        if not branch.has_ad_free_profile:
+            now = timezone.now()
+            branch_country = branch.effective_country
+            branch_category_ids = branch.get_category_ids()
+
+            comp_qs = (
+                LabAddonPurchase.objects.filter(
+                    addon__code="competitor_targeting",
+                    status="active",
+                    starts_at__lte=now,
+                    expires_at__gte=now,
+                )
+                .exclude(lab=branch)
+                .select_related("lab", "target_category", "target_country")
+            )
+
+            if branch_country:
+                comp_qs = comp_qs.filter(
+                    Q(target_country=branch_country)
+                    | Q(target_country__isnull=True, lab__lab_country=branch_country)
+                )
+
+            if branch_category_ids:
+                comp_qs = comp_qs.filter(
+                    Q(target_category_id__in=branch_category_ids)
+                    | Q(target_category__isnull=True)
+                )
+
+            # Up to 3 rotating slots per category, pick randomly
+            competitor_banner = comp_qs.order_by("?").first()
+
         # Active promotional subscription & promotional assets
         active_sub = branch.active_promotional_subscription
         carousel_banners = list(active_sub.carousel_banners.filter(is_active=True).order_by('sort_order')) if active_sub else []
@@ -197,6 +231,7 @@ class LabDetailView(View):
         context = {
             "branch": branch,
             "active_sub": active_sub,
+            "competitor_banner": competitor_banner,
             "carousel_banners": carousel_banners,
             "accreditations": accreditations,
             "product_services": product_services,
@@ -352,7 +387,7 @@ class PurchasePromotionalAddonView(View):
             return JsonResponse({"status": "error", "message": "Please log in to purchase add-ons."}, status=401)
 
         from apps.accounts.views import get_current_branch
-        from apps.utility.models import Category
+        from apps.samples_configurations.models import Category
         lab = get_current_branch(request) or Branch.objects.filter(user=request.user).first()
         if not lab:
             return JsonResponse({"status": "error", "message": "Laboratory profile not found."}, status=404)
@@ -363,17 +398,17 @@ class PurchasePromotionalAddonView(View):
         target_cat_id = request.POST.get("target_category_id")
         target_category = Category.objects.filter(pk=target_cat_id).first() if target_cat_id else None
 
-        target_comp_id = request.POST.get("target_competitor_lab_id")
-        target_competitor = Branch.objects.filter(pk=target_comp_id).first() if target_comp_id else None
+        # Country targeting: defaults to the purchasing lab's country
+        target_country = lab.effective_country
 
         now = timezone.now()
         purchase = LabAddonPurchase.objects.create(
             lab=lab,
             addon=addon,
             target_category=target_category,
-            target_competitor_lab=target_competitor,
-            banner_headline=request.POST.get("banner_headline", ""),
-            banner_link=request.POST.get("banner_link", ""),
+            target_country=target_country,
+            banner_headline=request.POST.get("banner_headline", "").strip(),
+            banner_link=request.POST.get("banner_link", "").strip() or reverse("lab-detail", kwargs={"pk": lab.pk}),
             price_paid=addon.base_price,
             status='active',
             starts_at=now,
@@ -381,7 +416,7 @@ class PurchasePromotionalAddonView(View):
         )
         if 'banner_image' in request.FILES:
             purchase.banner_image = request.FILES['banner_image']
-            purchase.save()
+            purchase.save(update_fields=['banner_image'])
 
         return JsonResponse({
             "status": "success",

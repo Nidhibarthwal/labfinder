@@ -545,10 +545,27 @@ class Branch(Trackable):
 
     @property
     def has_ad_free_profile(self):
+        if self.is_trusted_partner_pro:
+            return True
         sub = self.active_promotional_subscription
-        if sub and sub.plan and sub.plan.hide_competitor_ads:
+        if sub and sub.plan and getattr(sub.plan, 'hide_competitor_ads', False):
             return True
         return False
+
+    @property
+    def effective_country(self):
+        if self.lab_country:
+            return self.lab_country
+        if self.lab_state and hasattr(self.lab_state, 'country') and self.lab_state.country:
+            return self.lab_state.country
+        from apps.utility.models import Country
+        return Country.objects.filter(name__iexact='India').first()
+
+    def get_category_ids(self):
+        cat_ids = set(self.categories.values_list('id', flat=True))
+        item_cat_ids = self.lab_scope.filter(category__isnull=False).values_list('category__id', flat=True)
+        cat_ids.update(item_cat_ids)
+        return list(cat_ids)
 
     def clean(self):
         super().clean()

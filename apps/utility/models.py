@@ -301,28 +301,28 @@ class Department(MPTTModel):
         )
 
 
-class Category(Trackable):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=180, unique=True)
-    code = models.CharField(max_length=30, blank=True, null=True)
-    department = models.ForeignKey(
-        'Department',
-        on_delete=models.SET_NULL, null=True, blank=True,
-        related_name='categories',
-    )
-    order = models.PositiveIntegerField(blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-    description = models.TextField(blank=True)
+# class Category(Trackable):
+#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+#     name = models.CharField(max_length=255)
+#     slug = models.SlugField(max_length=180, unique=True)
+#     code = models.CharField(max_length=30, blank=True, null=True)
+#     department = models.ForeignKey(
+#         'Department',
+#         on_delete=models.SET_NULL, null=True, blank=True,
+#         related_name='categories',
+#     )
+#     order = models.PositiveIntegerField(blank=True, null=True)
+#     is_active = models.BooleanField(default=True)
+#     description = models.TextField(blank=True)
 
-    class Meta:
-        ordering = ['order', 'name']
-        unique_together = ('department', 'name')
+#     class Meta:
+#         ordering = ['order', 'name']
+#         unique_together = ('department', 'name')
 
-    def __str__(self):
-        if self.department:
-            return f'{self.name} ({self.department.name})'
-        return self.name
+#     def __str__(self):
+#         if self.department:
+#             return f'{self.name} ({self.department.name})'
+#         return self.name
 class Profile(models.Model):
     """
     Same shape as Vista's Profile. `hasattr` checks in __str__ point at whichever
