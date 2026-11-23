@@ -2186,7 +2186,7 @@ class DashboardView(View):
                 "email": email,
                 "branch": current_branch,
                 "active_tab": tab,
-                "edit_mode": request.GET.get("edit") == "1" and tab == "profile",
+                "edit_mode": tab == "profile",
                 "active_status": leads_ctx.get("active_status", "all"),
                 "counts": counts,
                 "lead_rows": lead_rows,

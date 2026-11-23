@@ -7,12 +7,10 @@
     <p class="lp-muted">This is what customers see on your public listing.</p>
   </div>
   <div style="display:flex; gap:10px; align-items:center;">
-    {% if edit_mode %}
-      <button type="button" class="lp-btn" id="btnSaveProfile" onclick="handleProfileFormSubmit(event)">Save Changes</button>
-      <a class="lp-btn lp-btn--ghost" href="?tab=profile">Done</a>
-    {% else %}
-      <a class="lp-btn" href="?tab=profile&edit=1">Edit Profile</a>
-    {% endif %}
+    <span id="lpAutoSaveStatus" style="font-size:13px; color:#10B981; display:none; align-items:center; gap:5px;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      Saved
+    </span>
   </div>
 </div>
 
@@ -57,7 +55,7 @@
 <!-- ============================================================
      EDIT MODE (Figma: My Profile_Edit.png)
      ============================================================ -->
-<form id="profileForm" method="post" enctype="multipart/form-data" action="?tab=profile&edit=1" onsubmit="handleProfileFormSubmit(event); return false;">
+<form id="profileForm" method="post" enctype="multipart/form-data" action="?tab=profile" onsubmit="handleProfileFormSubmit(event); return false;">
   {% csrf_token %}
   <input type="hidden" name="action" value="update_profile">
 
@@ -320,8 +318,10 @@
           <button type="button" class="lp-dismiss-btn" title="Remove Service" onclick="removeServiceCard(this, '{{ s.id }}')">
             <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           </button>
-          <h4>{{ s.name }}</h4>
-          <p>{{ s.summary }}</p>
+          <div style="padding-right: 32px;">
+            <input type="text" name="service_title" class="lp-svc-title-input" value="{{ s.name }}" placeholder="Service Title (e.g. Hardware Reliability Testing)" style="width:100%; font-size:14px; font-weight:700; color:#0F172A; border:none; background:transparent; outline:none; margin:0 0 6px 0; padding:0; display:block;" onchange="autoSaveServiceCard(this.closest('.lp-service-card-edit'))">
+            <textarea name="service_summary" class="lp-svc-desc-input lp-textarea" rows="2" placeholder="Service description..." style="width:100%; font-size:13px; color:#475569; line-height:1.45; border:none; background:transparent; outline:none; padding:0; resize:vertical; margin:0; display:block;" onchange="autoSaveServiceCard(this.closest('.lp-service-card-edit'))">{{ s.summary }}</textarea>
+          </div>
         </div>
       {% endfor %}
     </div>
@@ -377,7 +377,12 @@
 
     <div id="accreditationsList">
       {% for acc in accreditation %}
-        <div class="lp-accred-row" data-id="{{ acc.id }}">
+        <div class="lp-accred-row review-accreditation-row" data-id="{{ acc.id }}">
+          <button type="button" class="review-dismiss-btn" title="Remove Certificate" aria-label="Remove Certificate" onclick="removeAccredRow(this, '{{ acc.id }}')">
+            <svg width="8" height="8" viewBox="3.4 3.4 6.8 6.8" fill="none" aria-hidden="true">
+              <path d="M4.35478 10.2004L3.40039 9.246L5.85453 6.79187L3.40039 4.35478L4.35478 3.40039L6.80891 5.85453L9.246 3.40039L10.2004 4.35478L7.74626 6.79187L10.2004 9.246L9.246 10.2004L6.80891 7.74626L4.35478 10.2004Z" fill="#4F576D" />
+            </svg>
+          </button>
           <label class="lp-accred-logo-box" title="Click to upload/change logo">
             {% if acc.logo %}
               <img src="{{ acc.logo.url }}" alt="{{ acc.name }}">
@@ -398,9 +403,6 @@
             <label class="lp-accred-field-label">Validity</label>
             <input type="date" name="validity_date" class="lp-accred-input" value="{{ acc.validity_to|date:'Y-m-d' }}" onchange="autoSaveAccredRow(this.closest('.lp-accred-row'))">
           </div>
-          <button type="button" class="lp-dismiss-btn" title="Remove Certificate" onclick="removeAccredRow(this, '{{ acc.id }}')">
-            <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          </button>
         </div>
       {% endfor %}
     </div>
@@ -413,251 +415,31 @@
     </div>
   </section>
 
-  <!-- Bottom Actions -->
-  <div style="margin-top:20px; display:flex; gap:12px;">
-    <button type="button" class="lp-btn" style="padding:10px 24px;" onclick="handleProfileFormSubmit(event)">Save Profile</button>
-    <a class="lp-btn lp-btn--ghost" href="?tab=profile">Cancel</a>
-  </div>
+  <!-- Bottom Actions removed — changes auto-save on field blur -->
 </form>
 
-{% else %}
 <!-- ============================================================
-     VIEW MODE (Figma: My Profile.png)
+     Interactive Scripts (Always active — profile is always in edit mode)
      ============================================================ -->
 
-<!-- Section 1: Identity & Contact -->
-<section class="lp-profile-card">
-  <h3>Identity & Contact</h3>
-  <p class="lp-muted">Core details — edit anything AI got wrong before it goes live.</p>
-
-  <div class="lp-identity-row" style="margin-bottom:18px;">
-    <div class="lp-avatar" style="width:52px; height:52px; font-size:18px; border-radius:10px; overflow:hidden;">
-      {% if branch.lab_logo %}
-        <img src="{% if branch.lab_logo.url %}{{ branch.lab_logo.url }}{% else %}/media/{{ branch.lab_logo }}{% endif %}" alt="{{ branch.lab_name }}" style="width:100%;height:100%;object-fit:cover;">
-      {% else %}
-        {{ branch.lab_name|slice:":2"|upper }}
-      {% endif %}
-    </div>
-    <div style="flex:1;">
-      <div class="lp-field-card-label">Legal Lab Name</div>
-      <div class="js-realtime-lab-name" style="font-size:15px; font-weight:700; color:#0F172A;">{{ branch.lab_name }}</div>
-    </div>
-  </div>
-
-  <div class="lp-grid-2" style="margin-bottom:16px;">
-    <div>
-      <div class="lp-field-card-label">Phone Number</div>
-      <div class="js-realtime-contact-mobile" style="font-size:14px; font-weight:600; color:#0F172A;">
-        {% if branch.contact_mobile %}+91-{{ branch.contact_mobile }}{% else %}—{% endif %}
-      </div>
-    </div>
-    <div>
-      <div class="lp-field-card-label">Contact Email</div>
-      <div class="js-realtime-contact-email" style="font-size:14px; font-weight:600; color:#0F172A;">{{ branch.contact_email|default:"—" }}</div>
-    </div>
-  </div>
-
-  <div style="margin-bottom:16px;">
-    <div class="lp-field-card-label">Primary Facility Address</div>
-    <div class="js-realtime-lab-address" style="font-size:14px; font-weight:500; color:#0F172A;">{{ branch.lab_address|default:"—" }}</div>
-  </div>
-
-  <div class="lp-grid-3" style="margin-bottom:16px;">
-    <div>
-      <div class="lp-field-card-label">State</div>
-      <div style="font-size:14px; font-weight:600; color:#0F172A;">{{ branch.lab_state.name|default:"Gujarat" }}</div>
-    </div>
-    <div>
-      <div class="lp-field-card-label">Country</div>
-      <div style="font-size:14px; font-weight:600; color:#0F172A;">{{ branch.lab_country.name|default:"India" }}</div>
-    </div>
-    <div>
-      <div class="lp-field-card-label">Postal Code</div>
-      <div class="js-realtime-lab-pincode" style="font-size:14px; font-weight:600; color:#0F172A;">{{ branch.lab_pincode|default:"390016" }}</div>
-    </div>
-  </div>
-
-  <div class="lp-social-section">
-    <div class="lp-field-card-label">Social Media Links</div>
-    <div class="lp-social-icons-row">
-      {% for social in social_media_links %}
-        <a href="{{ social.url }}" target="_blank" rel="noopener noreferrer" class="lp-social-icon-btn" title="{{ social.platform|title }}">
-          <img src="{% static 'images/social_'|add:social.platform|add:'.svg' %}" alt="{{ social.platform }}">
-        </a>
-      {% empty %}
-        <p style="font-size:13px; color:#94A3B8; margin:0;">No social media links connected.</p>
-      {% endfor %}
-    </div>
-  </div>
-</section>
-
-<!-- Section 2: Lab Overview -->
-<section class="lp-profile-card">
-  <h3>Lab Overview</h3>
-  <p class="lp-muted">Primary disciplines and testing types — shown as filters when buyers search.</p>
-
-  <div style="margin-bottom:18px;">
-    <div class="lp-field-card-label">Executive Summary</div>
-    <p class="lp-overview-desc js-realtime-description js-realtime-executive-summary" style="font-size:14px; color:#334155; line-height:1.6; margin:4px 0 0;">
-      {{ branch.description|default:"Add an executive summary so buyers understand your facility." }}
-    </p>
-  </div>
-
-  <!-- Disciplines View -->
-  <div style="margin-bottom:16px;">
-    <div class="lp-field-card-label">Test Disciplines</div>
-    <div class="lp-tags-wrap" style="margin-top:6px;">
-      {% for d in branch.disciplines.all %}
-        <span class="lp-pill-view">{{ d.name }}</span>
-      {% empty %}
-        <span style="font-size:13px; color:#94A3B8;">No disciplines selected.</span>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- Departments View -->
-  <div style="margin-bottom:16px;">
-    <div class="lp-field-card-label">Type of Testing</div>
-    <div class="lp-tags-wrap" style="margin-top:6px;">
-      {% for d in branch.departments.all %}
-        <span class="lp-pill-view">{{ d.name }}</span>
-      {% empty %}
-        <span style="font-size:13px; color:#94A3B8;">No testing types selected.</span>
-      {% endfor %}
-    </div>
-  </div>
-
-  <!-- Categories View -->
-  {% if branch.categories.exists %}
-    <div style="margin-bottom:16px;">
-      <div class="lp-field-card-label">Categories</div>
-      <div class="lp-tags-wrap" style="margin-top:6px;">
-        {% for c in branch.categories.all %}
-          <span class="lp-pill-view">{{ c.name }}</span>
-        {% endfor %}
-      </div>
-    </div>
-  {% endif %}
-
-  <!-- Subcategories View -->
-  {% if branch.subcategories.exists %}
-    <div style="margin-bottom:8px;">
-      <div class="lp-field-card-label">Subcategories</div>
-      <div class="lp-tags-wrap" style="margin-top:6px;">
-        {% for s in branch.subcategories.all %}
-          <span class="lp-pill-view">{{ s.name }}</span>
-        {% endfor %}
-      </div>
-    </div>
-  {% endif %}
-</section>
-
-<!-- Section 3: Service Offerings -->
-<section class="lp-profile-card">
-  <h3>Service Offerings</h3>
-  <p class="lp-muted">Specific services customers can request from this lab.</p>
-
-  <div class="lp-services-view-grid">
-    {% for s in product_services %}
-      <div class="lp-service-card-view">
-        <h4>{{ s.name }}</h4>
-        <p>{{ s.summary }}</p>
-      </div>
-    {% empty %}
-      {% for s in scopes_with_facilities|slice:":9" %}
-        <div class="lp-service-card-view">
-          <h4>{{ s.is_number|default:s.is_title|default:"Service" }}</h4>
-          <p>{{ s.is_title|truncatechars:120 }}</p>
-        </div>
-      {% empty %}
-        <p style="font-size:13px; color:#94A3B8; margin:0;">No services published yet.</p>
-      {% endfor %}
-    {% endfor %}
-  </div>
-</section>
-
-<!-- Section 4: Facility Photos -->
-<section class="lp-profile-card">
-  <h3>Facility Photos</h3>
-  <p class="lp-muted">Real photos of your lab, equipment and exterior build buyer trust.</p>
-
-  <div class="lp-photos-view-row">
-    {% for img in facility_images|slice:":5" %}
-      <div class="lp-photo-view-thumb">
-        <img src="{{ img.image.url }}" alt="Facility Photo">
-        {% if forloop.counter == 5 and facility_images|length > 5 %}
-          <div class="lp-photo-view-overlay">+{{ facility_images|length|add:"-4" }}</div>
-        {% endif %}
-      </div>
-    {% empty %}
-      {% if branch.cover_picture %}
-        <div class="lp-photo-view-thumb">
-          <img src="{{ branch.cover_picture.url }}" alt="Facility Photo">
-        </div>
-      {% else %}
-        <p style="font-size:13px; color:#94A3B8; margin:0;">No facility photos uploaded yet.</p>
-      {% endif %}
-    {% endfor %}
-  </div>
-</section>
-
-<!-- Section 5: Accreditations -->
-<section class="lp-profile-card">
-  <h3>Accreditations</h3>
-  <p class="lp-muted">Certifications establish trust. We verify these against public registries where possible.</p>
-
-  <div>
-    {% for acc in accreditation %}
-      <div class="lp-accred-card-view">
-        <div class="lp-accred-logo-box">
-          {% if acc.logo %}
-            <img src="{{ acc.logo.url }}" alt="{{ acc.name }}">
-          {% else %}
-            <img src="{% static 'images/workspace_premium.svg' %}" alt="Badge">
-          {% endif %}
-        </div>
-        <div>
-          <div class="lp-accred-field-label">Body / Standard</div>
-          <div class="lp-accred-view-title">{{ acc.name|default:"NABL" }}</div>
-        </div>
-        <div>
-          <div class="lp-accred-field-label">Certificate No.</div>
-          <div class="lp-accred-view-sub">{{ acc.certificate_no|default:"—" }}</div>
-        </div>
-        <div>
-          <div class="lp-accred-field-label">Validity</div>
-          <div class="lp-accred-view-sub">{{ acc.validity_to|date:"d/m/Y"|default:"—" }}</div>
-        </div>
-      </div>
-    {% empty %}
-      <p style="font-size:13px; color:#94A3B8; margin:0;">No accreditations on file.</p>
-    {% endfor %}
-  </div>
-</section>
-
-{% endif %}
-
-<!-- ============================================================
-     Interactive Scripts (Edit Mode Only)
-     ============================================================ -->
-{% if edit_mode %}
 <script>
 (function() {
-  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+  function getCsrfToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+  }
+  let _saveTimer = null;
 
+  /* ── Core AJAX helper ── */
   async function postAction(action, formData) {
+    const token = getCsrfToken();
     formData.append('action', action);
-    formData.append('csrfmiddlewaretoken', csrfToken);
+    formData.append('csrfmiddlewaretoken', token);
     try {
       const res = await fetch(window.location.href, {
         method: 'POST',
         body: formData,
-        headers: {
-          'X-CSRFToken': csrfToken,
-          'X-Requested-With': 'XMLHttpRequest'
-        }
+        headers: { 'X-CSRFToken': token, 'X-Requested-With': 'XMLHttpRequest' }
       });
-      console.log('AJAX Response:', res);
       return await res.json();
     } catch(err) {
       console.error('AJAX Error:', err);
@@ -665,7 +447,116 @@
     }
   }
 
-  // 1. Logo Preview
+  /* ── Show "Saved ✓" indicator ── */
+  function showSavedStatus(isError) {
+    const el = document.getElementById('lpAutoSaveStatus');
+    if (!el) return;
+    if (isError) {
+      el.innerHTML = '<svg width="14" height="14" fill="none" stroke="#EF4444" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Error saving';
+      el.style.color = '#EF4444';
+    } else {
+      el.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Saved';
+      el.style.color = '#10B981';
+    }
+    el.style.display = 'flex';
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => { el.style.display = 'none'; }, 2500);
+  }
+
+  /* ── Auto-save main profile form (debounced 800ms) ── */
+  function scheduleProfileAutoSave() {
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(autoSaveProfileNow, 800);
+  }
+
+  async function autoSaveProfileNow() {
+    const form = document.getElementById('profileForm');
+    if (!form) return;
+    const token = getCsrfToken();
+    const fd = new FormData(form);
+    fd.append('ajax', '1');
+    if (!fd.has('action')) fd.append('action', 'update_profile');
+    try {
+      const res = await fetch('?tab=profile', {
+        method: 'POST',
+        body: fd,
+        headers: { 'X-CSRFToken': token, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+      });
+      const data = await res.json().catch(() => (res.ok ? { status:'success' } : { status:'error' }));
+      showSavedStatus(data.status !== 'success');
+    } catch(e) {
+      showSavedStatus(true);
+    }
+  }
+
+  /* ── Wire auto-save to general form inputs on change/blur ── */
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('profileForm');
+    if (!form) return;
+    // Exclude service and accreditation inputs which have dedicated auto-save handlers
+    form.querySelectorAll('input:not([type=file]):not([type=hidden]):not([type=checkbox]):not(.lp-svc-title-input):not(.lp-accred-input), textarea:not(.lp-svc-desc-input)').forEach(el => {
+      el.addEventListener('blur', scheduleProfileAutoSave);
+    });
+    form.querySelectorAll('select').forEach(el => {
+      el.addEventListener('change', scheduleProfileAutoSave);
+    });
+  });
+
+  /* ── Global Dismiss / Delete Event Delegation (Accreditations, Services, Photos) ── */
+  document.addEventListener('click', async function(e) {
+    const dismissBtn = e.target.closest('.review-dismiss-btn, .lp-dismiss-btn');
+    if (!dismissBtn) return;
+
+    // A. Accreditation removal
+    const accredRow = dismissBtn.closest('.lp-accred-row, .review-accreditation-row');
+    if (accredRow) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = accredRow.getAttribute('data-id');
+      if (id) {
+        const fd = new FormData();
+        fd.append('accred_id', id);
+        await postAction('delete_accreditation', fd);
+      }
+      accredRow.remove();
+      showSavedStatus(false);
+      return;
+    }
+
+    // B. Service removal
+    const serviceCard = dismissBtn.closest('.lp-service-card-edit');
+    if (serviceCard && !dismissBtn.closest('#newServiceCard')) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = serviceCard.getAttribute('data-id');
+      if (id) {
+        const fd = new FormData();
+        fd.append('service_id', id);
+        await postAction('delete_service', fd);
+      }
+      serviceCard.remove();
+      showSavedStatus(false);
+      return;
+    }
+
+    // C. Photo removal
+    const photoSlot = dismissBtn.closest('.lp-photo-slot');
+    if (photoSlot) {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = photoSlot.getAttribute('data-id');
+      if (id) {
+        const fd = new FormData();
+        fd.append('photo_id', id);
+        await postAction('delete_photo', fd);
+      }
+      photoSlot.remove();
+      showSavedStatus(false);
+      return;
+    }
+  });
+
+  /* ── 1. Logo Preview ── */
   window.previewLogo = function(input) {
     if (input.files && input.files[0]) {
       const reader = new FileReader();
@@ -684,14 +575,13 @@
     }
   };
 
-  // 2. State & Country Custom Select
+  /* ── 2. State & Country Custom Select ── */
   window.toggleSelectDropdown = function(wrapId) {
     const wrap = document.getElementById(wrapId);
     if (!wrap) return;
     const dd = wrap.querySelector('.lp-select-dropdown');
     const isOpen = wrap.classList.contains('is-open');
 
-    // Close all others
     document.querySelectorAll('.lp-select-wrap').forEach(w => {
       w.classList.remove('is-open');
       const d = w.querySelector('.lp-select-dropdown');
@@ -717,6 +607,7 @@
       const dd = wrap.querySelector('.lp-select-dropdown');
       if (dd) dd.style.display = 'none';
     }
+    scheduleProfileAutoSave();
   };
 
   window.filterSelectOptions = function(searchInput, optionsContainerId) {
@@ -729,7 +620,6 @@
     });
   };
 
-  // Close dropdowns on outside click
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.lp-select-wrap')) {
       document.querySelectorAll('.lp-select-wrap').forEach(w => {
@@ -740,14 +630,14 @@
     }
   });
 
-  // 3. Social Media Drawer Toggle
+  /* ── 3. Social Media Drawer Toggle ── */
   window.toggleSocialDrawer = function() {
     const drawer = document.getElementById('socialEditDrawer');
     if (!drawer) return;
     drawer.style.display = drawer.style.display === 'none' ? 'block' : 'none';
   };
 
-  // 4. Tag Pill Management (Disciplines, Departments, Categories, Subcategories)
+  /* ── 4. Tag Pill Management ── */
   window.toggleTagSuggestions = function(panelId) {
     const panel = document.getElementById(panelId);
     if (!panel) return;
@@ -768,7 +658,6 @@
     const wrap = document.getElementById(wrapId);
     if (!wrap) return;
 
-    // Check if already selected
     const existing = wrap.querySelector(`input[value="${CSS.escape(name)}"]`);
     if (existing) return;
 
@@ -783,7 +672,6 @@
       <input type="hidden" name="${fieldName}" value="${escapeHtml(name)}">
     `;
 
-    // Insert before the "+ Add" button
     const addBtn = wrap.querySelector('.lp-pill-add');
     if (addBtn) {
       wrap.insertBefore(btn, addBtn);
@@ -791,10 +679,7 @@
       wrap.appendChild(btn);
     }
 
-    // Hide suggestion
     if (suggestionBtn) suggestionBtn.style.display = 'none';
-
-    // Auto-save tag change
     autoSaveTags(type);
   };
 
@@ -802,7 +687,6 @@
     const name = btn.getAttribute('data-tag');
     btn.remove();
 
-    // Re-show suggestion if available
     const panelId = type === 'discipline' ? 'disciplinesSuggestionsList' :
                     type === 'department' ? 'departmentsSuggestionsList' :
                     type === 'category' ? 'categoriesSuggestionsList' : 'subcategoriesSuggestionsList';
@@ -829,7 +713,8 @@
     wrap.querySelectorAll('input[type=hidden]').forEach(inp => {
       fd.append(inp.name, inp.value);
     });
-    await postAction(action, fd);
+    const res = await postAction(action, fd);
+    showSavedStatus(res?.status !== 'success');
   }
 
   function escapeHtml(str) {
@@ -841,7 +726,27 @@
       .replace(/"/g, '&quot;');
   }
 
-  // 5. Service Offerings
+  /* ── 5. Service Offerings (Direct Inline Editing like Executive Summary) ── */
+  window.autoSaveServiceCard = async function(card) {
+    if (!card) return;
+    const serviceId = card.getAttribute('data-id');
+    const titleInput = card.querySelector('.lp-svc-title-input');
+    const descInput = card.querySelector('.lp-svc-desc-input');
+    const name = (titleInput?.value || '').trim();
+    const desc = (descInput?.value || '').trim();
+    if (!serviceId && !name) return;
+
+    const fd = new FormData();
+    if (serviceId) fd.append('service_id', serviceId);
+    fd.append('name', name);
+    fd.append('service_description', desc);
+    const res = await postAction('save_services', fd);
+    if (res?.service_id && !serviceId) {
+      card.setAttribute('data-id', res.service_id);
+    }
+    showSavedStatus(res?.status !== 'success');
+  };
+
   window.openNewServiceForm = function() {
     const card = document.getElementById('newServiceCard');
     if (!card) return;
@@ -865,42 +770,43 @@
     fd.append('service_description', desc);
     const res = await postAction('save_services', fd);
 
-    // Append to list
     const wrap = document.getElementById('servicesListWrap');
-    wrap.appendChild(document.createElement('div')); // Placeholder to ensure wrap exists
     if (wrap) {
       const card = document.createElement('div');
       card.className = 'lp-service-card-edit';
       if (res?.service_id) card.setAttribute('data-id', res.service_id);
-      console.log('Service Save card data:', escapeHtml(name), escapeHtml(desc));
       card.innerHTML = `
         <button type="button" class="lp-dismiss-btn" title="Remove Service" onclick="removeServiceCard(this, '${res?.service_id || ''}')">
           <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         </button>
-        <h4>${escapeHtml(name)}</h4>
-        <p>${escapeHtml(desc)}</p>
+        <div style="padding-right: 32px;">
+          <input type="text" name="service_title" class="lp-svc-title-input" value="${escapeHtml(name)}" placeholder="Service Title (e.g. Hardware Reliability Testing)" style="width:100%; font-size:14px; font-weight:700; color:#0F172A; border:none; background:transparent; outline:none; margin:0 0 6px 0; padding:0; display:block;" onchange="autoSaveServiceCard(this.closest('.lp-service-card-edit'))">
+          <textarea name="service_summary" class="lp-svc-desc-input lp-textarea" rows="2" placeholder="Service description..." style="width:100%; font-size:13px; color:#475569; line-height:1.45; border:none; background:transparent; outline:none; padding:0; resize:vertical; margin:0; display:block;" onchange="autoSaveServiceCard(this.closest('.lp-service-card-edit'))">${escapeHtml(desc)}</textarea>
+        </div>
       `;
       wrap.appendChild(card);
     }
 
-    // Reset inputs
     if (nameInp) nameInp.value = '';
     if (descInp) descInp.value = '';
     const formCard = document.getElementById('newServiceCard');
     if (formCard) formCard.style.display = 'none';
+    showSavedStatus(false);
   };
 
   window.removeServiceCard = async function(btn, serviceId) {
     const card = btn.closest('.lp-service-card-edit');
-    if (serviceId) {
+    const id = serviceId || card?.getAttribute('data-id');
+    if (id) {
       const fd = new FormData();
-      fd.append('service_id', serviceId);
+      fd.append('service_id', id);
       await postAction('delete_service', fd);
     }
     card?.remove();
+    showSavedStatus(false);
   };
 
-  // 6. Facility Photos
+  /* ── 6. Facility Photos ── */
   window.uploadFacilityPhotos = async function(input) {
     if (!input.files || input.files.length === 0) return;
     const fd = new FormData();
@@ -924,25 +830,33 @@
       });
     }
     input.value = '';
+    showSavedStatus(res?.status !== 'success');
   };
 
   window.removeFacilityPhoto = async function(btn, photoId) {
     const slot = btn.closest('.lp-photo-slot');
-    if (photoId) {
+    const id = photoId || slot?.getAttribute('data-id');
+    if (id) {
       const fd = new FormData();
-      fd.append('photo_id', photoId);
+      fd.append('photo_id', id);
       await postAction('delete_photo', fd);
     }
     slot?.remove();
+    showSavedStatus(false);
   };
 
-  // 7. Accreditations
+  /* ── 7. Accreditations ── */
   window.addNewAccredRow = function() {
     const list = document.getElementById('accreditationsList');
     if (!list) return;
     const row = document.createElement('div');
-    row.className = 'lp-accred-row';
+    row.className = 'lp-accred-row review-accreditation-row';
     row.innerHTML = `
+      <button type="button" class="review-dismiss-btn" title="Remove Certificate" aria-label="Remove Certificate" onclick="removeAccredRow(this, '')">
+        <svg width="8" height="8" viewBox="3.4 3.4 6.8 6.8" fill="none" aria-hidden="true">
+          <path d="M4.35478 10.2004L3.40039 9.246L5.85453 6.79187L3.40039 4.35478L4.35478 3.40039L6.80891 5.85453L9.246 3.40039L10.2004 4.35478L7.74626 6.79187L10.2004 9.246L9.246 10.2004L6.80891 7.74626L4.35478 10.2004Z" fill="#4F576D" />
+        </svg>
+      </button>
       <label class="lp-accred-logo-box" title="Click to upload logo">
         <img src="{% static 'images/workspace_premium.svg' %}" alt="Badge">
         <input type="file" name="accreditation_logo" class="lp-hidden-file" onchange="previewAccredLogo(this, '')">
@@ -959,9 +873,6 @@
         <label class="lp-accred-field-label">Validity</label>
         <input type="date" name="validity_date" class="lp-accred-input" onchange="autoSaveAccredRow(this.closest('.lp-accred-row'))">
       </div>
-      <button type="button" class="lp-dismiss-btn" title="Remove Certificate" onclick="removeAccredRow(this, '')">
-        <svg width="10" height="10" viewBox="0 0 14 14" fill="none"><path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
     `;
     list.appendChild(row);
     row.querySelector('.lp-accred-input')?.focus();
@@ -999,10 +910,11 @@
     if (res?.accred_id) {
       row.setAttribute('data-id', res.accred_id);
     }
+    showSavedStatus(res?.status !== 'success');
   };
 
   window.removeAccredRow = async function(btn, accredId) {
-    const row = btn.closest('.lp-accred-row');
+    const row = btn.closest('.lp-accred-row, .review-accreditation-row');
     const id = accredId || row?.getAttribute('data-id');
     if (id) {
       const fd = new FormData();
@@ -1010,89 +922,13 @@
       await postAction('delete_accreditation', fd);
     }
     row?.remove();
+    showSavedStatus(false);
   };
 
-  // Handle Main Profile Form submission via AJAX to prevent 302 redirect
+  /* ── 8. Form submit handler ── */
   window.handleProfileFormSubmit = async function(e) {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    const form = document.getElementById('profileForm');
-    if (!form) return false;
-
-    const btnTop = document.getElementById('btnSaveProfile');
-    const btnBottom = form.querySelector('button[onclick*="handleProfileFormSubmit"]');
-    const btns = [btnTop, btnBottom].filter(Boolean);
-
-    btns.forEach(b => {
-      b.disabled = true;
-      if (!b.getAttribute('data-original-text')) {
-        b.setAttribute('data-original-text', b.textContent);
-      }
-      b.textContent = 'Saving...';
-    });
-
-    const fd = new FormData(form);
-    if (!fd.has('action')) fd.append('action', 'update_profile');
-    fd.append('ajax', '1');
-
-    const token = form.querySelector('[name=csrfmiddlewaretoken]')?.value || csrfToken;
-
-    try {
-      const targetUrl = (typeof form.getAttribute === 'function' ? form.getAttribute('action') : null) || window.location.href;
-      const res = await fetch(targetUrl, {
-        method: 'POST',
-        body: fd,
-        headers: {
-          'X-CSRFToken': token,
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept': 'application/json'
-        }
-      });
-
-      btns.forEach(b => {
-        b.disabled = false;
-        b.textContent = b.getAttribute('data-original-text') || 'Save Changes';
-      });
-
-      let data = null;
-      console.log('Response status:', res.status, res.statusText);
-      const contentType = res.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        data = await res.json();
-      } else {
-        const text = await res.text();
-        try {
-          data = JSON.parse(text);
-        } catch (_) {
-          if (res.ok) {
-            data = { status: 'success', message: 'Profile updated successfully.' };
-          } else {
-            data = { status: 'error', message: 'Error saving profile. Server returned status ' + res.status };
-          }
-        }
-      }
-
-      if (data && data.status === 'success') {
-        if (typeof window.showSiteToast === 'function') {
-          window.showSiteToast(data.message || 'Profile updated successfully.', 'success');
-        }
-        // Transition back to profile view mode (?tab=profile) removing ?edit=1
-        setTimeout(function() {
-          window.location.href = data.redirect_url || '?tab=profile';
-        }, 500);
-      } else {
-        alert((data && data.message) || 'Error saving profile.');
-      }
-    } catch (err) {
-      console.error('Error saving profileForm:', err);
-      btns.forEach(b => {
-        b.disabled = false;
-        b.textContent = b.getAttribute('data-original-text') || 'Save Changes';
-      });
-      alert('Network error while saving profile. Please check connection.');
-    }
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    await autoSaveProfileNow();
     return false;
   };
 
