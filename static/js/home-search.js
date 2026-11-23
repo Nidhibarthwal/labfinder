@@ -187,8 +187,12 @@
       dropdown: document.getElementById('heroLabDropdown'),
       url: LAB_URL,
       onPick: function (item) {
-        var query = item.title || item.lab_name || '';
-        window.location.href = '/search/lab/?q=' + encodeURIComponent(query);
+        if (item.url) {
+          window.location.href = item.url;
+        } else {
+          var query = item.title || item.lab_name || '';
+          window.location.href = '/search/lab/?q=' + encodeURIComponent(query);
+        }
       },
     });
 

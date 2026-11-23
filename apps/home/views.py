@@ -1,3 +1,5 @@
+import functools
+import operator
 from urllib.parse import unquote
 from django.db.models import Q, Count, Prefetch, Case, When, Value, IntegerField
 from django.http import JsonResponse
@@ -281,6 +283,7 @@ def search_labs_by_name(query, limit=None, subcategory_id=None, category_id=None
     Common search function for Lab Search.
     Searches the Branch table by lab name, hindi name, org name, city,
     as well as category / subcategory relations and exact name matches.
+    Prioritizes matches on Lab Name first before matching on location or other fields.
     """
     q = (query or "").strip()
     branches = Branch.objects.filter(is_active=True, is_public=True)
@@ -294,6 +297,11 @@ def search_labs_by_name(query, limit=None, subcategory_id=None, category_id=None
         filter_q |= Q(categories__id=category_id)
 
     # 2. Text Search logic
+    q_words = [w for w in q.split() if len(w) > 1] if q else []
+    words_name_q = None
+    if len(q_words) > 1:
+        words_name_q = functools.reduce(operator.and_, [Q(lab_name__icontains=w) for w in q_words])
+
     if q:
         # Check if query matches Category or SubCategory names directly
         matching_subcats = SubCategory.objects.filter(name__iexact=q, active=True)
@@ -305,6 +313,8 @@ def search_labs_by_name(query, limit=None, subcategory_id=None, category_id=None
             | Q(org_name__icontains=q)
             | Q(lab_city__icontains=q)
         )
+        if words_name_q is not None:
+            text_q |= words_name_q
 
         if matching_subcats.exists():
             # Correct field on Branch is 'subcategories'
@@ -329,32 +339,55 @@ def search_labs_by_name(query, limit=None, subcategory_id=None, category_id=None
         "lab_scope__facility_scope__certificate__accred"
     )
 
+    fetch_limit = limit or 24
+
     if q:
+        when_clauses = [
+            When(lab_name__iexact=q, then=Value(1)),
+            When(lab_name__istartswith=q, then=Value(2)),
+            When(lab_name__icontains=q, then=Value(3)),
+        ]
+        if words_name_q is not None:
+            when_clauses.append(When(words_name_q, then=Value(4)))
+
+        when_clauses.extend([
+            When(lab_name_hindi__icontains=q, then=Value(5)),
+            When(org_name__istartswith=q, then=Value(6)),
+            When(org_name__icontains=q, then=Value(7)),
+            When(lab_city__iexact=q, then=Value(8)),
+            When(lab_city__istartswith=q, then=Value(9)),
+            When(lab_city__icontains=q, then=Value(10)),
+        ])
+
         branches = branches.annotate(
             search_priority=Case(
-                When(lab_city__iexact=q, then=Value(1)),
-                When(lab_city__istartswith=q, then=Value(2)),
-                When(lab_city__icontains=q, then=Value(3)),
-                When(lab_name__iexact=q, then=Value(4)),
-                When(lab_name__istartswith=q, then=Value(5)),
-                When(lab_name__icontains=q, then=Value(6)),
-                When(org_name__icontains=q, then=Value(7)),
-                default=Value(8),
+                *when_clauses,
+                default=Value(11),
                 output_field=IntegerField(),
             )
         ).order_by("search_priority", "lab_name")
+
+        candidate_pool = max(fetch_limit * 3, 60)
+        candidate_branches = list(branches[:candidate_pool])
     else:
         branches = branches.order_by("lab_name")
-    if limit:
-        branches = branches[:limit]
-    else:
-        branches = branches[:24]
+        candidate_branches = list(branches[:fetch_limit])
 
-    # Prioritize results by Promotional Priority Tier (Tier 1 Pro Top Organic, Tier 2 Growth, Tier 3 Basic)
-    sorted_branches = sorted(
-        list(branches),
-        key=lambda b: (getattr(b, "priority_tier_level", 3), getattr(b, "search_priority", 8))
-    )
+    # Rank lab-name matches first, then org name, then city/location, then others
+    def get_sort_key(b):
+        p = getattr(b, "search_priority", 11)
+        if p <= 5:
+            match_group = 0  # Direct lab name match
+        elif p <= 7:
+            match_group = 1  # Organization name match
+        elif p <= 10:
+            match_group = 2  # City / Location match
+        else:
+            match_group = 3  # Other matches (categories/subcategories)
+        tier = getattr(b, "priority_tier_level", 3)
+        return (match_group, tier, p, b.lab_name or "")
+
+    sorted_branches = sorted(candidate_branches, key=get_sort_key)[:fetch_limit]
 
     labs = []
     autocomplete_items = []
