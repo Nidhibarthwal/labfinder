@@ -356,7 +356,8 @@
 .sidebar-checkbox-item input[type="checkbox"] {
   position: absolute;
   opacity: 0;
-  pointer-events: none;
+  width: 0;
+  height: 0;
 }
 
 .sidebar-checkbox-item input[type="checkbox"]:checked ~ .sidebar-checkbox-left .sidebar-checkbox-custom {

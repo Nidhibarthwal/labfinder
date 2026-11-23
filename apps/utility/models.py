@@ -140,6 +140,7 @@ class EquipmentType(models.Model):
 
 class AccreditationMaster(models.Model):
     name = models.CharField(max_length=150, unique=True)   # e.g. NABL, BIS, SATRA
+    country = models.ForeignKey(Country, on_delete=models.SET_NULL, blank=True, null=True, related_name='accreditation_masters')
     vista_id = models.CharField(max_length=255, blank=True, null=True)
     short_code = models.CharField(max_length=20, blank=True, null=True)
     order = models.PositiveIntegerField(default=0)

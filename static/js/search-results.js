@@ -174,6 +174,29 @@
         }
       });
 
+      // Filter Accreditation options dynamically based strictly on selected country
+      var accredItems = document.querySelectorAll('.sidebar-checkbox-item[data-accred-item]');
+      accredItems.forEach(function (item) {
+        var accredCountry = (item.getAttribute('data-country') || '').toLowerCase().trim();
+        // If active countries selected, only show accreditations belonging strictly to those countries
+        var isVisible =
+          !activeCountries.length ||
+          activeCountries.indexOf(accredCountry) !== -1;
+        if (isVisible) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+          var cb = item.querySelector('input[type="checkbox"]');
+          if (cb && cb.checked) {
+            cb.checked = false;
+            var valIdx = activeAccreds.indexOf((cb.value || '').toLowerCase());
+            if (valIdx !== -1) {
+              activeAccreds.splice(valIdx, 1);
+            }
+          }
+        }
+      });
+
       var visibleCount = 0;
 
       cardsList.forEach(function (card) {
@@ -233,6 +256,16 @@
       cb.addEventListener('change', applyFilters);
     });
 
+    var sidebar = document.querySelector('.search-sidebar');
+    if (sidebar) {
+      sidebar.addEventListener('change', applyFilters);
+      sidebar.addEventListener('click', function (e) {
+        if (e.target.closest('.sidebar-checkbox-item')) {
+          setTimeout(applyFilters, 10);
+        }
+      });
+    }
+
     if (resetFiltersBtn) {
       resetFiltersBtn.addEventListener('click', function (e) {
         e.preventDefault();
@@ -245,7 +278,26 @@
           .forEach(function (item) {
             item.style.display = 'flex';
           });
+        document
+          .querySelectorAll('.sidebar-checkbox-item[data-accred-item]')
+          .forEach(function (item) {
+            item.style.display = 'flex';
+          });
         applyFilters();
+      });
+    }
+
+    // Auto-select country if present in query parameters (e.g. ?country=india)
+    var urlParams = new URLSearchParams(window.location.search);
+    var urlCountry = (urlParams.get('country') || '').toLowerCase().trim();
+    if (urlCountry) {
+      checkboxes.forEach(function (cb) {
+        if (
+          cb.getAttribute('data-filter-type') === 'country' &&
+          (cb.value || '').toLowerCase() === urlCountry
+        ) {
+          cb.checked = true;
+        }
       });
     }
 

@@ -174,7 +174,9 @@ class ProductServiceAdmin(admin.ModelAdmin):
 
 @admin.register(AccreditationMaster)
 class AccreditationMasterAdmin(admin.ModelAdmin):
-    list_display = ('id','name','short_code','order')
+    list_display = ('id', 'name', 'country', 'short_code', 'order', 'active')
+    list_filter = ('country', 'active')
+    search_fields = ('name', 'short_code')
 
 @admin.register(Accreditation)
 class AccreditationAdmin(admin.ModelAdmin):

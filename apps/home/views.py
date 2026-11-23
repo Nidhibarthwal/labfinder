@@ -8,6 +8,7 @@ from django.views import View
 
 from apps.labs.models import Branch, BranchItem, ProductService
 from apps.samples_configurations.models import Category, SubCategory
+from apps.utility.models import Country, AccreditationMaster
 # ==============================================================================
 # Common Helper Formatters
 # ==============================================================================
@@ -80,21 +81,73 @@ def _format_lab_card_lab(b):
     }
 
 
-def _compute_filter_counts(labs):
-    """Compute facet counts directly from the matching lab cards."""
-    india_cnt = sum(1 for l in labs if (l.get("country") or "").lower() == "india")
-    usa_cnt = sum(1 for l in labs if (l.get("country") or "").lower() in ["united states", "usa"])
-    germany_cnt = sum(1 for l in labs if (l.get("country") or "").lower() == "germany")
+def _compute_filter_facets(labs):
+    """
+    Compute dynamic filter facets (countries, accreditations, categories, lab types)
+    based on database models and current matching lab cards.
+    """
+    # 1. Database-driven active countries
+    active_countries = Country.objects.filter(status=True).order_by("name")
+    country_filters = []
+    country_counts = {}
+    for c in active_countries:
+        c_name_lower = c.name.strip().lower()
+        c_code_lower = (c.code or "").strip().lower()
+        # Count matching labs in current results
+        cnt = sum(
+            1 for l in labs
+            if (l.get("country") or "").strip().lower() in [c_name_lower, c_code_lower]
+            or (c_name_lower == "united states" and (l.get("country") or "").strip().lower() == "usa")
+        )
+        country_counts[c_name_lower] = cnt
+        country_filters.append({
+            "id": c.id,
+            "name": c.name,
+            "code": c.code,
+            "value": c_name_lower,
+            "count": cnt,
+        })
+
+    # 2. Database-driven active accreditations linked to countries
+    active_accreds = (
+        AccreditationMaster.objects.filter(active=True)
+        .select_related("country")
+        .order_by("order", "name")
+    )
+    accreditation_filters = []
+    for a in active_accreds:
+        c_val = a.country.name.strip().lower() if a.country else ""
+        filter_val = (a.short_code or a.name or "").strip().lower()
+        # Count matching labs having this accreditation
+        cnt = sum(
+            1 for l in labs
+            if any(filter_val in (acc or "").strip().lower() for acc in l.get("accreditations", []))
+        )
+        # Display label: e.g. "NABL Accredited", "BIS Recognized", "ISO/IEC 17025"
+        label = a.name
+        if label.lower() == "nabl":
+            label = "NABL Accredited"
+        elif label.lower() == "bis":
+            label = "BIS Recognized"
+        elif "accredit" not in label.lower() and "recogniz" not in label.lower() and "iso" not in label.lower():
+            label = f"{label} Accredited"
+
+        accreditation_filters.append({
+            "id": a.id,
+            "name": label,
+            "short_code": a.short_code,
+            "value": filter_val,
+            "country": c_val,
+            "count": cnt,
+        })
 
     connected_cnt = sum(1 for l in labs if l.get("lab_type") == "connected")
     partner_cnt = sum(1 for l in labs if l.get("lab_type") == "partner")
 
     return {
-        "country_counts": {
-            "india": india_cnt,
-            "usa": usa_cnt,
-            "germany": germany_cnt,
-        },
+        "country_filters": country_filters,
+        "accreditation_filters": accreditation_filters,
+        "country_counts": country_counts,
         "category_counts": {
             "water": 0,
             "product": 0,
@@ -499,16 +552,18 @@ class ProductSearchView(View):
         labs, _ac_items = search_labs_by_product(q)
 
         # Dynamic filter facet counts
-        filter_counts = _compute_filter_counts(labs)
+        filter_facets = _compute_filter_facets(labs)
 
         context = {
             "query": q,
             "raw_query": q,
             "results": labs,
             "count": len(labs),
-            "country_counts": filter_counts["country_counts"],
-            "category_counts": filter_counts["category_counts"],
-            "lab_type_counts": filter_counts["lab_type_counts"],
+            "country_filters": filter_facets["country_filters"],
+            "accreditation_filters": filter_facets["accreditation_filters"],
+            "country_counts": filter_facets["country_counts"],
+            "category_counts": filter_facets["category_counts"],
+            "lab_type_counts": filter_facets["lab_type_counts"],
             "product_search_url": "/api/home/search/products/",
             "lab_search_url": "/api/home/search/labs/",
         }
@@ -552,16 +607,18 @@ class LabSearchView(View):
         )
 
         # Dynamic filter facet counts
-        filter_counts = _compute_filter_counts(labs)
+        filter_facets = _compute_filter_facets(labs)
 
         context = {
             "query": q,
             "raw_query": q,
             "results": labs,
             "count": len(labs),
-            "country_counts": filter_counts["country_counts"],
-            "category_counts": filter_counts["category_counts"],
-            "lab_type_counts": filter_counts["lab_type_counts"],
+            "country_filters": filter_facets["country_filters"],
+            "accreditation_filters": filter_facets["accreditation_filters"],
+            "country_counts": filter_facets["country_counts"],
+            "category_counts": filter_facets["category_counts"],
+            "lab_type_counts": filter_facets["lab_type_counts"],
             "product_search_url": "/api/home/search/products/",
             "lab_search_url": "/api/home/search/labs/",
         }

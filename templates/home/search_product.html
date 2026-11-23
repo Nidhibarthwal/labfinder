@@ -79,74 +79,37 @@
             <input type="text" id="countryFilterInput" placeholder="Type to filter..." autocomplete="off">
           </div>
           <div class="sidebar-checkbox-list">
-            <label class="sidebar-checkbox-item" data-country-item data-country-name="India">
-              <input type="checkbox" data-filter-type="country" value="india">
+            {% for c in country_filters %}
+            <label class="sidebar-checkbox-item" data-country-item data-country-name="{{ c.name }}">
+              <input type="checkbox" data-filter-type="country" value="{{ c.value }}">
               <div class="sidebar-checkbox-left">
                 <span class="sidebar-checkbox-custom">
                   <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
                 </span>
-                <span class="sidebar-checkbox-label">India</span>
+                <span class="sidebar-checkbox-label">{{ c.name }}</span>
               </div>
-              <span class="sidebar-checkbox-count">{{ country_counts.india|default:"0" }}</span>
+              <span class="sidebar-checkbox-count">{{ c.count|default:"0" }}</span>
             </label>
-
-            <label class="sidebar-checkbox-item" data-country-item data-country-name="United States">
-              <input type="checkbox" data-filter-type="country" value="united states">
-              <div class="sidebar-checkbox-left">
-                <span class="sidebar-checkbox-custom">
-                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
-                </span>
-                <span class="sidebar-checkbox-label">United States</span>
-              </div>
-              <span class="sidebar-checkbox-count">{{ country_counts.usa|default:"0" }}</span>
-            </label>
-
-            <label class="sidebar-checkbox-item" data-country-item data-country-name="Germany">
-              <input type="checkbox" data-filter-type="country" value="germany">
-              <div class="sidebar-checkbox-left">
-                <span class="sidebar-checkbox-custom">
-                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
-                </span>
-                <span class="sidebar-checkbox-label">Germany</span>
-              </div>
-              <span class="sidebar-checkbox-count">{{ country_counts.germany|default:"0" }}</span>
-            </label>
+            {% endfor %}
           </div>
         </div>
 
         <!-- Filter 2: Accreditation -->
         <div class="sidebar-filter-group">
           <h4 class="sidebar-filter-group__header">Accreditation</h4>
-          <div class="sidebar-checkbox-list">
-            <label class="sidebar-checkbox-item">
-              <input type="checkbox" data-filter-type="accreditation" value="nabl">
+          <div class="sidebar-checkbox-list" id="accreditationFilterList">
+            {% for a in accreditation_filters %}
+            <label class="sidebar-checkbox-item" data-accred-item data-country="{{ a.country }}">
+              <input type="checkbox" data-filter-type="accreditation" value="{{ a.value }}">
               <div class="sidebar-checkbox-left">
                 <span class="sidebar-checkbox-custom">
                   <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
                 </span>
-                <span class="sidebar-checkbox-label">NABL Accredited</span>
+                <span class="sidebar-checkbox-label">{{ a.name }}</span>
               </div>
+              <span class="sidebar-checkbox-count">{{ a.count|default:"0" }}</span>
             </label>
-
-            <label class="sidebar-checkbox-item">
-              <input type="checkbox" data-filter-type="accreditation" value="iso/iec 17025">
-              <div class="sidebar-checkbox-left">
-                <span class="sidebar-checkbox-custom">
-                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
-                </span>
-                <span class="sidebar-checkbox-label">ISO/IEC 17025</span>
-              </div>
-            </label>
-
-            <label class="sidebar-checkbox-item">
-              <input type="checkbox" data-filter-type="accreditation" value="bis">
-              <div class="sidebar-checkbox-left">
-                <span class="sidebar-checkbox-custom">
-                  <svg viewBox="0 0 14 14"><polyline points="2.5 7.5 5.5 10.5 11.5 3.5"></polyline></svg>
-                </span>
-                <span class="sidebar-checkbox-label">BIS Recognized</span>
-              </div>
-            </label>
+            {% endfor %}
           </div>
         </div>
 
@@ -365,5 +328,5 @@
     labUrl: "{% url 'home-lab-search' %}"
   };
 </script>
-<script src="{% static 'js/search-results.js' %}"></script>
+<script src="{% static 'js/search-results.js' %}?v={% now 'U' %}"></script>
 {% endblock %}
