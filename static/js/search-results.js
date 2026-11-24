@@ -258,6 +258,26 @@
 
     var sidebar = document.querySelector('.search-sidebar');
     if (sidebar) {
+      var sidebarTitle = sidebar.querySelector('.search-sidebar__title');
+      if (sidebarTitle) {
+        if (!sidebarTitle.querySelector('.search-sidebar__title-toggle')) {
+          var toggleSpan = document.createElement('span');
+          toggleSpan.className = 'search-sidebar__title-toggle';
+          toggleSpan.innerHTML = 'Filters <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>';
+          sidebarTitle.appendChild(toggleSpan);
+        }
+
+        if (window.innerWidth <= 768) {
+          sidebar.classList.add('is-collapsed');
+        }
+
+        sidebarTitle.addEventListener('click', function (e) {
+          if (window.innerWidth <= 768) {
+            sidebar.classList.toggle('is-collapsed');
+          }
+        });
+      }
+
       sidebar.addEventListener('change', applyFilters);
       sidebar.addEventListener('click', function (e) {
         if (e.target.closest('.sidebar-checkbox-item')) {

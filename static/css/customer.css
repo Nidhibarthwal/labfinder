@@ -993,6 +993,10 @@
     font-size: 24px;
   }
 
+  .cd-table {
+    min-width: 640px;
+  }
+
   .cd-stats-grid {
     grid-template-columns: 1fr;
   }
