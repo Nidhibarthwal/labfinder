@@ -353,20 +353,12 @@
                     </div>
                     <div>
                         <p class="enq-lab-card__name">
-                            {% if selected_service and selected_service.is_number %}
-                                {{ selected_service.is_number }}
-                            {% elif service_name %}
-                                {{ service_name }}
-                            {% else %}
-                                Tensile Strength Test
-                            {% endif %}
+                            {{ lab.lab_name }}
                         </p>
                         <div class="enq-lab-card__meta">
-                            {% if lab %}
-                            📍 {{ lab.lab_name }}{% if lab.lab_city %} – {{ lab.lab_city }}{% endif %}
-                            {% else %}
-                            📍 Verified Accredited Labs
-                            {% endif %}
+                            
+                            📍 {{lab.lab_address|default:"Accredited Testing Laboratory"}}
+                            
                         </div>
                     </div>
                 </div>
@@ -379,9 +371,14 @@
             {% endif %}
 
             <div class="enq-quote-box">
-                <button type="button" class="enq-btn enq-btn--submit" id="enq-sidebar-submit" disabled>
+                <!-- <button type="button" class="enq-btn enq-btn--submit" id="enq-sidebar-submit" disabled>
                     Request Quote
-                </button>
+                </button> -->
+                {% if request.user.is_authenticated %}
+                <button type="submit" class="enq-btn enq-btn--submit" data-enq-submit="main" id="enq-main-submit">Request Quote</button>
+                {% else %}
+                <button type="button" class="enq-btn enq-btn--submit" data-enq-submit="main" id="btn-submit-trigger">Request Quote</button>
+                {% endif %}
                 <ul class="enq-trust">
                     <li>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
@@ -389,7 +386,7 @@
                     </li>
                     <li>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                        ~4.2h avg response
+                        < 24h avg response
                     </li>
                     <li>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
