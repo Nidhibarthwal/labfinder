@@ -506,18 +506,21 @@
   color: #64748b;
 }
 
-/* ---------- Orders list ---------- */
-.lp-filters--orders {
+/* ---------- Orders & Leads list ---------- */
+.lp-filters--orders,
+.lp-filters--leads {
   margin-top: 14px;
 }
 
-.lp-filters--orders a.is-active {
+.lp-filters--orders a.is-active,
+.lp-filters--leads a.is-active {
   background: #123c34;
   border-color: #123c34;
   color: #fff;
 }
 
-.lp-filters--orders a.is-active .lp-filter-badge {
+.lp-filters--orders a.is-active .lp-filter-badge,
+.lp-filters--leads a.is-active .lp-filter-badge {
   background: rgba(255, 255, 255, 0.22);
   color: #fff;
 }

@@ -49,22 +49,51 @@
       <div class="cd-card">
         <!-- Sub-tabs Navigation -->
         <div class="cd-subtabs" role="tablist">
-          <a href="?subtab=overview" class="cd-subtab {% if subtab == 'overview' %}is-active{% endif %}">
+          <a href="?subtab=overview{% if active_lab_lead %}&lab={{ active_lab_lead.lab_id }}{% endif %}" class="cd-subtab {% if subtab == 'overview' %}is-active{% endif %}">
             Overview
           </a>
-          <a href="?subtab=quotes" class="cd-subtab {% if subtab == 'quotes' %}is-active{% endif %}">
+          <a href="?subtab=quotes{% if active_lab_lead %}&lab={{ active_lab_lead.lab_id }}{% endif %}" class="cd-subtab {% if subtab == 'quotes' %}is-active{% endif %}">
             Quotes
             {% if quotes_count > 0 %}
               <span class="cd-subtab-badge">{{ quotes_count }}</span>
             {% endif %}
           </a>
-          <a href="?subtab=activity" class="cd-subtab {% if subtab == 'activity' %}is-active{% endif %}">
+          <a href="?subtab=chat{% if active_lab_lead %}&lab={{ active_lab_lead.lab_id }}{% endif %}" class="cd-subtab {% if subtab == 'chat' %}is-active{% endif %}">
+            Chat
+            {% if chat_count > 0 %}
+              <span class="cd-subtab-badge">{{ chat_count }}</span>
+            {% endif %}
+          </a>
+          <a href="?subtab=activity{% if active_lab_lead %}&lab={{ active_lab_lead.lab_id }}{% endif %}" class="cd-subtab {% if subtab == 'activity' %}is-active{% endif %}">
             Activity
           </a>
         </div>
 
         {% if subtab == 'overview' %}
           <!-- ================= OVERVIEW TAB ================= -->
+          {% if discussions %}
+            <!-- Lab Messages Alert Banner -->
+            <div class="cd-sub-section" style="padding-top:0;">
+              <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                  <div style="width:36px; height:36px; border-radius:50%; background:#dbeafe; display:flex; align-items:center; justify-content:center; color:#1d4ed8; font-size:18px;">💬</div>
+                  <div>
+                    <span style="font-weight:600; font-size:14px; color:#1e40af;">
+                      {% if active_lab_lead %}{{ active_lab_lead.lab.lab_name }}{% else %}Laboratory{% endif %} sent {{ discussions|length }} message{{ discussions|length|pluralize }}
+                    </span>
+                    {% with last_msg=discussions|last %}
+                    <p style="margin:2px 0 0 0; font-size:13px; color:#3b82f6;">
+                      Latest: &ldquo;{{ last_msg.message|truncatewords:15 }}&rdquo;
+                    </p>
+                    {% endwith %}
+                  </div>
+                </div>
+                <a href="?subtab=chat{% if active_lab_lead %}&lab={{ active_lab_lead.lab_id }}{% endif %}" class="cd-btn cd-btn--primary cd-btn--sm" style="text-decoration:none;">
+                  Open Chat &rsaquo;
+                </a>
+              </div>
+            </div>
+          {% endif %}
           <!-- 1. Your Requirement -->
           <div class="cd-sub-section">
             <h2 class="cd-section-title">Your requirement</h2>
@@ -157,6 +186,9 @@
                         <button type="submit" name="action" value="reject" class="cd-btn cd-btn--secondary">
                           Decline
                         </button>
+                        <a href="?subtab=chat&lab={{ ll.lab_id }}" class="cd-btn cd-btn--secondary" style="text-decoration:none;">
+                          💬 Message Lab
+                        </a>
                       </form>
                     {% elif q.is_accepted %}
                       <div class="cd-quote-actions">
@@ -166,10 +198,16 @@
                             View Order &rsaquo;
                           </a>
                         {% endif %}
+                        <a href="?subtab=chat&lab={{ ll.lab_id }}" class="cd-btn cd-btn--secondary" style="text-decoration:none;">
+                          💬 Message Lab
+                        </a>
                       </div>
                     {% elif q.rejected_at %}
                       <div class="cd-quote-actions">
                         <span class="cd-pill cd-pill--lost">Declined</span>
+                        <a href="?subtab=chat&lab={{ ll.lab_id }}" class="cd-btn cd-btn--secondary" style="text-decoration:none;">
+                          💬 Message Lab
+                        </a>
                       </div>
                     {% endif %}
                   </div>
@@ -179,8 +217,110 @@
               <div class="cd-empty-state">
                 <p class="cd-empty-text">No laboratory quotations received yet.</p>
                 <span class="cd-empty-sub">Partner laboratories are reviewing your request. You will be notified once a quotation arrives.</span>
+                {% if chat_count > 0 %}
+                  <div style="margin-top:16px;">
+                    <a href="?subtab=chat" class="cd-btn cd-btn--primary" style="text-decoration:none;">View Laboratory Messages ({{ chat_count }}) &rsaquo;</a>
+                  </div>
+                {% endif %}
               </div>
             {% endfor %}
+          </div>
+
+        {% elif subtab == 'chat' %}
+          <!-- ================= CHAT TAB ================= -->
+          <div class="cd-sub-section">
+            {% if lab_leads|length > 1 %}
+              <!-- Lab Switcher for Multi-lab Enquiries -->
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+                <span style="font-size:13px;font-weight:600;color:#64748b;">Participating Labs:</span>
+                {% for ll in lab_leads %}
+                  <a href="?subtab=chat&lab={{ ll.lab_id }}"
+                     class="cd-btn cd-btn--sm {% if active_lab_lead and active_lab_lead.id == ll.id %}cd-btn--primary{% else %}cd-btn--secondary{% endif %}"
+                     style="text-decoration:none;">
+                    {{ ll.lab.lab_name }}
+                    {% with count=ll.discussions.all|length %}
+                      {% if count > 0 %}
+                        <span class="cd-subtab-badge" style="margin-left:6px;">{{ count }}</span>
+                      {% endif %}
+                    {% endwith %}
+                  </a>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            {% if active_lab_lead %}
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f1f5f9;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <h2 class="cd-section-title" style="margin:0 0 4px 0;">Chat with {{ active_lab_lead.lab.lab_name }}</h2>
+                  <span style="font-size:13px;color:#64748b;">
+                    Status: <span class="cd-pill cd-pill--{{ active_lab_lead.status }}">{{ active_lab_lead.get_status_display }}</span>
+                    {% if active_lab_lead.quotation %}
+                      &bull; Quoted: ₹{{ active_lab_lead.quotation.total_amount }}
+                    {% endif %}
+                  </span>
+                </div>
+                {% if active_lab_lead.quotation and not active_lab_lead.quotation.is_accepted and not active_lab_lead.quotation.rejected_at %}
+                  <a href="?subtab=quotes&lab={{ active_lab_lead.lab_id }}" class="cd-btn cd-btn--amber cd-btn--sm" style="text-decoration:none;">
+                    Review Quotation (₹{{ active_lab_lead.quotation.total_amount }})
+                  </a>
+                {% endif %}
+              </div>
+
+              <div class="chat-box" id="customerChatBox" style="min-height:220px;max-height:480px;overflow-y:auto;background:#f8fafc;padding:16px;border-radius:8px;border:1px solid #e2e8f0;display:flex;flex-direction:column;gap:12px;">
+                {% for chat in discussions %}
+                  <div class="chat-bubble {% if chat.sender_type == 'lab' %}chat-bubble--lab{% else %}chat-bubble--customer{% endif %}">
+                    <span class="chat-author">
+                      {% if chat.sender_type == 'lab' %}
+                        {{ active_lab_lead.lab.lab_name|default:"Laboratory" }}
+                      {% elif chat.sender_type == 'customer' %}
+                        You
+                      {% else %}
+                        Support
+                      {% endif %}
+                      &bull; {{ chat.created_at|date:"M d, h:i A" }}
+                    </span>
+                    <div style="font-size:14px;line-height:1.5;">{{ chat.message|linebreaksbr }}</div>
+                    {% if chat.attachment %}
+                      <div class="chat-attachment" style="margin-top:8px;">
+                        <a href="{{ chat.attachment.url }}" target="_blank" download style="display:inline-flex;align-items:center;gap:4px;color:inherit;text-decoration:underline;">
+                          📎 {{ chat.attachment.name|cut:"enquiries/discussions/" }}
+                        </a>
+                      </div>
+                    {% endif %}
+                  </div>
+                {% empty %}
+                  <div class="chat-empty" style="text-align:center;padding:48px 16px;color:#94a3b8;">
+                    <p style="margin:0 0 6px 0;font-size:15px;font-weight:500;color:#64748b;">No messages yet with {{ active_lab_lead.lab.lab_name }}</p>
+                    <span style="font-size:13px;">Send a message below to clarify feasibility, test standards, sample requirements, or quotation details.</span>
+                  </div>
+                {% endfor %}
+              </div>
+
+              <!-- Send Message Form -->
+              <form method="post" enctype="multipart/form-data" action="{% url 'customer_lead_detail' enquiry.pk %}" style="margin-top:16px;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_message">
+                <input type="hidden" name="subtab" value="chat">
+                <input type="hidden" name="lab" value="{{ active_lab_lead.lab_id }}">
+                <div class="cd-form-group">
+                  <textarea name="message" rows="3" required placeholder="Type your message to {{ active_lab_lead.lab.lab_name }}..." class="chat-form-textarea"></textarea>
+                </div>
+                <div class="chat-form-footer">
+                  <label class="chat-form-attach">
+                    <span>📎 Attach file:</span>
+                    <input type="file" name="attachment">
+                  </label>
+                  <button type="submit" class="btn-send-msg">
+                    Send Message
+                  </button>
+                </div>
+              </form>
+            {% else %}
+              <div class="cd-empty-state">
+                <p class="cd-empty-text">No laboratory conversation available.</p>
+                <span class="cd-empty-sub">Once a laboratory accepts or responds to your enquiry, you can communicate with them here.</span>
+              </div>
+            {% endif %}
           </div>
 
         {% elif subtab == 'activity' %}
@@ -255,4 +395,13 @@
     </form>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var box = document.getElementById('customerChatBox');
+    if (box) {
+      box.scrollTop = box.scrollHeight;
+    }
+  });
+</script>
 {% endblock %}

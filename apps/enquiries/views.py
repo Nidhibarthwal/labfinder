@@ -67,10 +67,15 @@ def _resolve_sender_type(user, lab_lead: LabLead) -> str:
     return "customer"
 
 
-def _lead_detail_url(enquiry, lab_lead):
+def _lead_detail_url(enquiry, lab_lead, subtab=None):
     url = reverse("lead_detail", kwargs={"enquiry_id": enquiry.pk})
+    params = []
     if lab_lead and enquiry.quotation_type == "multiple_labs":
-        url = f"{url}?lab={lab_lead.lab_id}"
+        params.append(f"lab={lab_lead.lab_id}")
+    if subtab:
+        params.append(f"subtab={subtab}")
+    if params:
+        url = f"{url}?{'&'.join(params)}"
     return url
 
 
@@ -473,6 +478,14 @@ class EnquiryNowView(View):
             if hasattr(enquiry, "preferred_standards") and not enquiry.preferred_standards:
                 enquiry.preferred_standards = pref_service
 
+            # Ensure budget and urgency from POST are always saved
+            budget_val = (request.POST.get("budget") or form.cleaned_data.get("budget") or "").strip()
+            enquiry.budget = budget_val
+
+            urgency_val = (request.POST.get("urgency") or form.cleaned_data.get("urgency") or "").strip()
+            if urgency_val:
+                enquiry.urgency = urgency_val
+
             enquiry.save()
 
             if enquiry.quotation_type == "selected_lab" and lab:
@@ -532,6 +545,9 @@ def lead_detail(request, enquiry_id):
     user_branch = _branch_for_user(request.user)
     is_customer = enquiry.is_owned_by(request.user)
     is_staff = request.user.is_staff or request.user.is_superuser
+
+    if is_customer and not user_branch and not is_staff:
+        return redirect("customer_lead_detail", enquiry_id=enquiry.id)
 
     lab_lead = None
     target_lab = None
@@ -617,7 +633,8 @@ def lead_detail(request, enquiry_id):
                     request,
                     f"Lead status updated to '{lab_lead.get_status_display()}'.",
                 )
-                return redirect(_lead_detail_url(enquiry, lab_lead))
+                subtab = request.POST.get("subtab") or "overview"
+                return redirect(_lead_detail_url(enquiry, lab_lead, subtab=subtab))
 
         elif action == "add_message":
             discussion_form = EnquiryDiscussionForm(request.POST, request.FILES)
@@ -639,7 +656,8 @@ def lead_detail(request, enquiry_id):
                     )
 
                 messages.success(request, "Message posted successfully.")
-                return redirect(_lead_detail_url(enquiry, lab_lead))
+                subtab = request.POST.get("subtab") or "chat"
+                return redirect(_lead_detail_url(enquiry, lab_lead, subtab=subtab))
 
         elif action == "accept_quotation":
             if not is_customer and not is_staff:
@@ -706,6 +724,9 @@ def lead_detail(request, enquiry_id):
             "accept_form": AcceptQuotationForm(),
             "reject_form": RejectQuotationForm(),
             "needs_lab_pick": False,
+            "branch": user_branch or getattr(lab_lead, "lab", None),
+            "active_tab": "leads",
+            "subtab": request.GET.get("subtab", "overview"),
         },
     )
 
@@ -794,6 +815,8 @@ def create_quotation(request, enquiry_id):
             "enquiry": enquiry,
             "lab_lead": lab_lead,
             "quote_form": quote_form,
+            "branch": lab,
+            "active_tab": "leads",
         },
     )
 

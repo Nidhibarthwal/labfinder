@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -306,7 +307,9 @@ class Quotation(models.Model):
         Branch, on_delete=models.CASCADE, related_name="sent_quotations"
     )
     quote_number = models.CharField(max_length=50, unique=True)
-    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.01"))]
+    )
     currency = models.CharField(max_length=3, default="INR")
     estimated_turnaround_days = models.PositiveIntegerField(default=7)
     validity_days = models.PositiveIntegerField(

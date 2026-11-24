@@ -255,7 +255,11 @@
                 <!-- Target Start Date -->
                 <section class="enq-section">
                     <div class="enq-section__head">
-                        <svg class="enq-section__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        <svg class="enq-section__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M8 2v4M16 2v4M3 10h18"/>
+                            <path d="M21 13V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h8"/>
+                            <path d="M19.5 13.5 14 19v3h3l5.5-5.5a1.5 1.5 0 0 0-2-2z"/>
+                        </svg>
                         <h2>Target Start Date</h2>
                     </div>
                     <div class="enq-pills">
@@ -270,7 +274,11 @@
                 <!-- Budget -->
                 <section class="enq-section">
                     <div class="enq-section__head">
-                        <svg class="enq-section__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <svg class="enq-section__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+                            <rect x="14" y="8" width="8" height="8" rx="1.5"/>
+                            <circle cx="18" cy="12" r="1" fill="currentColor"/>
+                        </svg>
                         <h2>Estimated Budget</h2>
                     </div>
                     <div class="enq-pills">
@@ -279,13 +287,6 @@
                         <button type="button" class="enq-pill" data-pill-group="budget" data-value="₹7000-20000">₹7,000 – ₹20,000</button>
                         <button type="button" class="enq-pill" data-pill-group="budget" data-value="₹20000-50000">₹20,000 – ₹50,000</button>
                         <button type="button" class="enq-pill" data-pill-group="budget" data-value="₹50000+">₹50,000+</button>
-                    </div>
-                    <div class="enq-budget-custom-wrap" style="margin-top: 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <span style="font-size: 13px; color: #64748b; font-weight: 500;">Or enter custom budget:</span>
-                        <div style="position: relative; width: 220px;">
-                            <span style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #64748b; font-weight: 600; font-size: 14px;">₹</span>
-                            <input type="text" id="id_custom_budget" class="enq-input" style="padding-left: 24px; height: 36px; font-size: 13px; border-radius: 6px; width: 100%; border: 1px solid #cbd5e1;" placeholder="e.g. 50000 or 5000-7000">
-                        </div>
                     </div>
                     <input type="hidden" name="budget" id="id_budget" data-pill-target="budget" value="">
                 </section>
@@ -395,7 +396,7 @@
 
 {% block extra_js %}
 <script src="{% static 'js/auth-modal.js' %}"></script>
-<script src="{% static 'js/enquiry-now.js' %}"></script>
+<script src="{% static 'js/enquiry-now.js' %}?v={% now 'U' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var searchInput = document.getElementById('enq-catalog-search');
@@ -561,6 +562,18 @@ document.addEventListener('DOMContentLoaded', function () {
         
         var combined = [baseDesc].concat(extra).filter(Boolean).join('\n\n');
         if (descFinal) descFinal.value = combined;
+
+        // Ensure active budget and urgency pills are synced to hidden inputs
+        var activeBudget = document.querySelector('[data-pill-group="budget"].is-active');
+        var budgetField = document.getElementById('id_budget') || document.querySelector('[data-pill-target="budget"]');
+        if (budgetField && activeBudget) {
+            budgetField.value = activeBudget.getAttribute('data-value') || '';
+        }
+        var activeUrgency = document.querySelector('[data-pill-group="urgency"].is-active');
+        var urgencyField = document.getElementById('id_urgency') || document.querySelector('[data-pill-target="urgency"]');
+        if (urgencyField && activeUrgency) {
+            urgencyField.value = activeUrgency.getAttribute('data-value') || 'immediate';
+        }
     }
 
     var form = document.getElementById('main-enquiry-form') || document.getElementById('enq-auth-form');

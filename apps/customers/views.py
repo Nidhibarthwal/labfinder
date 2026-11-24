@@ -398,7 +398,7 @@ class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
                             "discussions",
                             queryset=EnquiryDiscussion.objects.filter(
                                 is_internal=False
-                            ).select_related("sender", "lab"),
+                            ).select_related("sender", "lab").order_by("created_at"),
                         )
                     ),
                 )
@@ -409,6 +409,9 @@ class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         enquiry = self.object
         lab_leads = list(enquiry.lab_leads.all())
+        if not lab_leads and enquiry.lab:
+            ll = enquiry.ensure_lab_lead(enquiry.lab)
+            lab_leads = [ll]
 
         status, status_display = _aggregate_status(lab_leads)
         context["effective_status"] = status
@@ -424,6 +427,11 @@ class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
             )
         elif len(lab_leads) == 1:
             active_lead = lab_leads[0]
+        elif len(lab_leads) > 1:
+            active_lead = next(
+                (ll for ll in lab_leads if any(not d.is_internal for d in ll.discussions.all())),
+                lab_leads[0],
+            )
 
         context["active_lab_lead"] = active_lead
         if active_lead:
@@ -435,10 +443,17 @@ class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
             context["quotation"] = None
             context["discussions"] = []
 
+        # Count total discussions across all leads
+        total_chat_count = sum(
+            len([d for d in ll.discussions.all() if not d.is_internal])
+            for ll in lab_leads
+        )
+        context["chat_count"] = total_chat_count
+
         # Master navigation active tab
         context["active_tab"] = "inquiries"
 
-        # Determine subtab inside card: overview, quotes, activity
+        # Determine subtab inside card: overview, quotes, chat, activity
         subtab = self.request.GET.get("subtab")
         if not subtab:
             if self.request.GET.get("compare") == "1":
@@ -513,7 +528,7 @@ class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
 
         message_text = request.POST.get("message", "").strip()
         lab_id = request.POST.get("lab") or request.GET.get("lab")
-        subtab = request.POST.get("subtab") or request.GET.get("subtab") or "quotes"
+        subtab = request.POST.get("subtab") or request.GET.get("subtab") or "chat"
 
         if not message_text:
             messages.error(request, "Message cannot be empty.")
@@ -527,6 +542,8 @@ class CustomerLeadDetailView(LoginRequiredMixin, DetailView):
             leads = list(enquiry.lab_leads.all()[:2])
             if len(leads) == 1:
                 lab_lead = leads[0]
+            elif enquiry.lab_leads.exists():
+                lab_lead = enquiry.lab_leads.first()
 
         if lab_lead is None:
             messages.error(

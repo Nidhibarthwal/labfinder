@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django import forms
 
 from .models import (
@@ -106,6 +107,27 @@ class EnquiryDiscussionForm(forms.ModelForm):
 
 
 class QuotationForm(forms.ModelForm):
+    total_amount = forms.DecimalField(
+        required=True,
+        min_value=Decimal("0.01"),
+        error_messages={
+            "required": "Please enter the total quotation amount.",
+            "min_value": "Quotation amount must be greater than 0.",
+        },
+        widget=forms.NumberInput(attrs={
+            "class": "form-control",
+            "placeholder": "e.g. 5000.00",
+            "step": "0.01",
+            "min": "0.01",
+            "required": "required",
+        }),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance or not self.instance.pk:
+            self.initial["total_amount"] = None
+
     class Meta:
         model = Quotation
         fields = [
@@ -117,9 +139,6 @@ class QuotationForm(forms.ModelForm):
             "notes",
         ]
         widgets = {
-            "total_amount": forms.NumberInput(attrs={
-                "class": "form-control", "placeholder": "0.00", "step": "0.01", "min": "0",
-            }),
             "estimated_turnaround_days": forms.NumberInput(attrs={
                 "class": "form-control", "min": "1",
                 "placeholder": "Days to complete testing after sample receipt",

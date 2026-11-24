@@ -596,6 +596,13 @@ textarea.form-control {
 .od-pill--cancelled                   { background: #F3F4F6; color: #6B7280; }
 .od-pill--quote_sent                  { background: #DBEAFE; color: #2563EB; }
 .od-pill--confirmed                   { background: #D1FAE5; color: #059669; }
+.od-pill--new                         { background: #EFF6FF; color: #1D4ED8; }
+.od-pill--contacted                   { background: #FEF3C7; color: #B45309; }
+.od-pill--quoted                      { background: #EDE9FE; color: #7C3AED; }
+.od-pill--won                         { background: #D1FAE5; color: #059669; }
+.od-pill--converted                   { background: #ECFDF5; color: #047857; }
+.od-pill--lost,
+.od-pill--not_qualified               { background: #FEE2E2; color: #B91C1C; }
 
 /* ---- Buttons ---- */
 .od-btn              { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid transparent; text-decoration: none; white-space: nowrap; }

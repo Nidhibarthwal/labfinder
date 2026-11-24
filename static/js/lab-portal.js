@@ -22,6 +22,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Auto-scroll active lead filter pill into view on load
+  var activeLeadFilter = document.querySelector('.lp-filters--leads a.is-active');
+  if (activeLeadFilter) {
+    try {
+      activeLeadFilter.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    } catch (e) {
+      activeLeadFilter.scrollIntoView(false);
+    }
+  }
+
   var q = document.getElementById('lp-lead-search');
 
   function filterLeads(value) {
@@ -115,6 +125,44 @@ document.addEventListener('DOMContentLoaded', function () {
       var link = document.createElement('a');
       link.href = url;
       link.download = 'orders.csv';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  var leadExportBtn = document.getElementById('lp-lead-export');
+  if (leadExportBtn) {
+    leadExportBtn.addEventListener('click', function () {
+      var lines = [[
+        'Lead ID', 'Customer', 'Company', 'Test', 'Contact', 'Location', 'Budget', 'Status', 'Received'
+      ]];
+      document.querySelectorAll('#lp-lead-table tbody tr').forEach(function (tr) {
+        if (tr.classList.contains('lp-empty-row') || tr.style.display === 'none') return;
+        lines.push([
+          tr.getAttribute('data-lead') || '',
+          tr.getAttribute('data-customer') || '',
+          tr.getAttribute('data-company') || '',
+          tr.getAttribute('data-test') || '',
+          tr.getAttribute('data-contact') || '',
+          tr.getAttribute('data-location') || '',
+          tr.getAttribute('data-budget') || '',
+          tr.getAttribute('data-status') || '',
+          tr.getAttribute('data-date') || ''
+        ]);
+      });
+      var csv = lines.map(function (cols) {
+        return cols.map(function (value) {
+          var text = String(value).replace(/"/g, '""');
+          return '"' + text + '"';
+        }).join(',');
+      }).join('\n');
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = 'leads.csv';
       document.body.appendChild(link);
       link.click();
       link.remove();

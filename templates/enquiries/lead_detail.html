@@ -2,281 +2,708 @@
 {% load static %}
 
 {% block meta_data %}
-<title>Lead #{{ enquiry.pk }} – {{ enquiry.product_name }} | LabFinder 360</title>
+<title>Lead #{{ enquiry.pk }} – {{ enquiry.product_name }} | LabFinder Leads</title>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-<div class="lead-container" style="max-width: 1040px; margin: 30px auto; padding: 0 16px;">
+<link rel="stylesheet" href="{% static 'css/lab-portal.css' %}">
+<div class="lp">
+  {% include 'accounts/includes/_lp_header_nav.html' %}
 
-{% if needs_lab_pick %}
-    <!-- Customer has multiple lab conversations – pick one -->
-    <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #E5E7EB;">
-        <h1 style="font-size:20px; margin:0 0 8px 0;">{{ enquiry.product_name }}</h1>
-        <p style="color:#6B7280; font-size:14px; margin:0 0 20px 0;">
-            Multiple laboratories are responding to this enquiry. Choose a conversation:
-        </p>
-        <div style="display:flex; flex-direction:column; gap:10px;">
-            {% for ll in lab_leads %}
-            <a href="{% url 'lead_detail' enquiry.id %}?lab={{ ll.lab_id }}"
-               style="display:block; padding:14px 16px; border:1px solid #E5E7EB; border-radius:8px; text-decoration:none; color:#111827;">
-                <strong>{{ ll.lab.lab_name }}</strong>
-                <span style="margin-left:10px; font-size:12px; color:#2563EB;">{{ ll.get_status_display }}</span>
-            </a>
-            {% endfor %}
-        </div>
-        <p style="margin-top:16px;"><a href="/dashboard/#leads" style="color:#2563EB; font-size:14px;">&larr; Back</a></p>
-    </div>
+  <div class="od-wrap">
 
-{% else %}
+    {# ── BACK LINK ── #}
+    <a href="{% url 'dashboard' %}?tab=leads" class="od-back">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to leads
+    </a>
 
-    <!-- Header -->
+    {% if needs_lab_pick %}
+    {# ── CUSTOMER LAB PICK (IF MULTIPLE LABS) ── #}
     <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #E5E7EB; margin-bottom:24px;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
-            <div>
-                <a href="/dashboard/#leads" style="color:#2563EB; text-decoration:none; font-size:14px;">&larr; Back to Leads</a>
-                <h1 style="font-size:22px; font-weight:700; color:#111827; margin:8px 0 4px 0;">
-                    {{ enquiry.product_name }}
-                </h1>
-                <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:6px;">
-                    {% if lab_lead %}
-                    <span class="badge" style="background:#EFF6FF; color:#1D4ED8; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600;">
-                        {{ lab_lead.get_status_display }}
-                    </span>
-                    {% endif %}
-                    {% if enquiry.quotation_type == 'multiple_labs' %}
-                    <span style="background:#FEF3C7; color:#92400E; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600;">
-                        Multi-lab enquiry
-                    </span>
-                    {% endif %}
-                    {% if enquiry.urgency and enquiry.urgency != 'normal' %}
-                    <span style="background:#FEE2E2; color:#991B1B; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600;">
-                        {{ enquiry.get_urgency_display }}
-                    </span>
-                    {% endif %}
-                    <span style="color:#6B7280; font-size:13px;">
-                        Submitted {{ enquiry.created_at|date:"M d, Y · h:i A" }}
-                    </span>
-                </div>
-            </div>
-
-            <!-- { if is_lab_side and status_form %}
-            <form method="post" action="{% url 'lead_detail' enquiry.id %}{% if enquiry.quotation_type == 'multiple_labs' %}?lab={{ lab_lead.lab_id }}{% endif %}" style="display:flex; gap:8px; align-items:center;">
-                { csrf_token %}
-                <input type="hidden" name="action" value="update_status">
-                {{ status_form.status }}
-                <button type="submit" class="btn btn-secondary" style="padding:6px 12px; font-size:13px;">Update Status</button>
-            </form>
-            { endif %} -->
-        </div>
+      <h1 style="font-size:20px; margin:0 0 8px 0; color:#111827;">{{ enquiry.product_name }}</h1>
+      <p style="color:#6B7280; font-size:14px; margin:0 0 20px 0;">
+        Multiple laboratories are responding to this enquiry. Choose a conversation:
+      </p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for ll in lab_leads %}
+        <a href="{% url 'lead_detail' enquiry.id %}?lab={{ ll.lab_id }}"
+           style="display:block; padding:14px 16px; border:1px solid #E5E7EB; border-radius:8px; text-decoration:none; color:#111827;">
+          <strong>{{ ll.lab.lab_name }}</strong>
+          <span style="margin-left:10px; font-size:12px; color:#2563EB;">{{ ll.get_status_display }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <p style="margin-top:16px;"><a href="{% url 'dashboard' %}?tab=leads" style="color:#2563EB; font-size:14px;">&larr; Back to leads</a></p>
     </div>
 
-    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px;">
+    {% else %}
 
-        <!-- LEFT -->
-        <div>
-            <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #E5E7EB; margin-bottom:24px;">
-                <h3 style="font-size:16px; font-weight:700; margin:0 0 12px 0;">Scope &amp; Testing Requirements</h3>
-                <p style="color:#374151; font-size:14px; line-height:1.6; white-space:pre-line; margin:0;">{{ enquiry.description }}</p>
-                <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:16px;">
-                    {% if enquiry.budget %}
-                    <div style="background:#F3F4F6; padding:8px 12px; border-radius:6px; font-size:13px;">
-                        <strong>Budget:</strong> {% if "₹" in enquiry.budget %}{{ enquiry.budget }}{% else %}₹{{ enquiry.budget }}{% endif %}
-                    </div>
-                    {% endif %}
-                    {% if enquiry.quantity_or_sample_info %}
-                    <div style="background:#F3F4F6; padding:8px 12px; border-radius:6px; font-size:13px;">
-                        <strong>Samples:</strong> {{ enquiry.quantity_or_sample_info }}
-                    </div>
-                    {% endif %}
-                    {% if enquiry.preferred_services %}
-                    <div style="background:#F3F4F6; padding:8px 12px; border-radius:6px; font-size:13px;">
-                        <strong>Standards:</strong> {{ enquiry.preferred_services }}
-                    </div>
-                    {% endif %}
-                    {% if enquiry.company_name %}
-                    <div style="background:#F3F4F6; padding:8px 12px; border-radius:6px; font-size:13px;">
-                        <strong>Company:</strong> {{ enquiry.company_name }}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Discussion (per LabLead) -->
-            <div style="background:#fff; padding:24px; border-radius:12px; border:1px solid #E5E7EB;">
-                <h3 style="font-size:16px; font-weight:700; margin:0 0 16px 0;">
-                    Discussion with {% if is_customer %}{{ lab_lead.lab.lab_name }}{% else %}Customer{% endif %}
-                </h3>
-
-                <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:20px; max-height:480px; overflow-y:auto;">
-                    {% for msg in discussions %}
-                    <div style="padding:14px; border-radius:10px;
-                        background:{% if msg.sender_type == 'lab' %}#EFF6FF{% else %}#F9FAFB{% endif %};
-                        border:1px solid {% if msg.sender_type == 'lab' %}#BFDBFE{% else %}#E5E7EB{% endif %};">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:12px;">
-                            <strong style="color:{% if msg.sender_type == 'lab' %}#1D4ED8{% else %}#374151{% endif %};">
-                                {% if msg.sender_type == 'lab' %}
-                                    🏥 {{ msg.lab.lab_name|default:"Lab Officer" }}
-                                    {% if msg.is_internal %}<span style="color:#B45309; margin-left:6px;">(Internal)</span>{% endif %}
-                                {% else %}
-                                    👤 {{ enquiry.contact_name|default:msg.sender.get_full_name|default:msg.sender.email }}
-                                {% endif %}
-                            </strong>
-                            <span style="color:#9CA3AF;">{{ msg.created_at|date:"M d, h:i A" }}</span>
-                        </div>
-                        <p style="margin:0; color:#1F2937; font-size:14px; white-space:pre-line;">{{ msg.message }}</p>
-                        {% if msg.attachment %}
-                        <div style="margin-top:8px;">
-                            <a href="{{ msg.attachment.url }}" target="_blank" style="font-size:12px; color:#2563EB; text-decoration:none;">
-                                📎 View Attachment
-                            </a>
-                        </div>
-                        {% endif %}
-                    </div>
-                    {% empty %}
-                    <p style="color:#9CA3AF; font-size:13px; font-style:italic; margin:0;">
-                        No messages yet. Start the conversation to clarify feasibility, standards or sample requirements.
-                    </p>
-                    {% endfor %}
-                </div>
-
-                <form method="post" enctype="multipart/form-data"
-                      action="{% url 'lead_detail' enquiry.id %}{% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}?lab={{ lab_lead.lab_id }}{% endif %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="add_message">
-                    {% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}
-                    <input type="hidden" name="lab" value="{{ lab_lead.lab_id }}">
-                    {% endif %}
-                    {{ discussion_form.message }}
-                    <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:10px;">
-                        <label style="font-size:13px;color:#374151;display:flex;align-items:center;gap:8px;"><span>Attachment</span> {{ discussion_form.attachment }}</label>
-                        {% if is_lab_side %}
-                        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#6B7280; cursor:pointer;">
-                            {{ discussion_form.is_internal }}
-                            Internal note (hidden from customer)
-                        </label>
-                        {% endif %}
-                        <button type="submit" class="btn btn-primary" style="margin-left:auto; padding:8px 16px;">
-                            Send Message
-                        </button>
-                    </div>
-                </form>
-            </div>
+    {# ── HEADER ── #}
+    <div class="od-header">
+      <div class="od-header-left">
+        <h1>{{ enquiry.product_name }}</h1>
+        <span class="od-pill od-pill--{{ lab_lead.status }}">{{ lab_lead.get_status_display }}</span>
+        <div class="od-sub">
+          {{ enquiry.contact_name|default:enquiry.user|default:"Customer" }}
+          {% if enquiry.company_name %} &bull; {{ enquiry.company_name }}{% endif %}
+          {% if enquiry.city %} &bull; {{ enquiry.city }}{% endif %}
+          {% if quotation %}
+            &bull; &#8377;{{ quotation.total_amount|floatformat:0 }}
+          {% elif enquiry.budget %}
+            &bull; Budget: {% if "₹" in enquiry.budget %}{{ enquiry.budget }}{% else %}₹{{ enquiry.budget }}{% endif %}
+          {% endif %}
+          {% if enquiry.urgency and enquiry.urgency != 'normal' %}
+            &bull; <span style="background:#FEE2E2;color:#991B1B;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">{{ enquiry.get_urgency_display }}</span>
+          {% endif %}
+          &bull; Submitted {{ enquiry.created_at|date:"M d, Y · h:i A" }}
         </div>
+      </div>
+      <div class="od-header-btns">
+        {% if is_lab_side and not quotation %}
+          <a href="{% url 'create_quotation' enquiry.id %}" class="od-btn od-btn--amber">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Generate Quotation
+          </a>
+        {% elif is_lab_side and quotation and lab_lead.status == 'won' and not lab_lead.lims_job %}
+          <form method="post" action="{% url 'create_order_from_lead' enquiry.id %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="od-btn od-btn--amber">
+              ✓ Accept &amp; Create Order
+            </button>
+          </form>
+        {% elif is_lab_side and lab_lead.lims_job %}
+          <a href="{% url 'order_detail' lab_lead.lims_job.id %}" class="od-btn od-btn--outline">
+            Open Order #{{ lab_lead.lims_job.job_number }}
+          </a>
+        {% endif %}
+      </div>
+    </div>
 
-        <!-- RIGHT -->
-        <div>
-            <div style="background:#fff; padding:20px; border-radius:12px; border:1px solid #E5E7EB; margin-bottom:20px;">
-                <h3 style="font-size:15px; font-weight:700; margin:0 0 12px 0;">Customer Contact</h3>
-                <p style="margin:0 0 6px 0; font-size:14px; color:#111827;">
-                    <strong>{{ enquiry.contact_name|default:"—" }}</strong>
-                </p>
-                {% if enquiry.company_name %}
-                <p style="margin:0 0 6px 0; font-size:13px; color:#6B7280;">{{ enquiry.company_name }}</p>
-                {% endif %}
-                {% if enquiry.email %}
-                <p style="margin:0 0 4px 0; font-size:13px;">
-                    <a href="mailto:{{ enquiry.email }}" style="color:#2563EB; text-decoration:none;">{{ enquiry.email }}</a>
-                </p>
-                {% endif %}
-                {% if enquiry.mobile_number %}
-                <p style="margin:0; font-size:13px; color:#374151;">{{ enquiry.mobile_number }}</p>
-                {% endif %}
+    {# ── PROGRESS STEPPER (5 steps) ── #}
+    {% with s=lab_lead.status has_job=lab_lead.lims_job %}
+    <div class="od-stepper-wrap" id="odStepperWrap">
+      <div class="od-stepper">
+        <div class="od-steps" id="odSteps">
+
+          {# Step 1: Inbound Lead #}
+          {% if s == 'new' %}
+            <div class="od-step current">
+          {% elif s in 'contacted,quoted,won,converted' or has_job %}
+            <div class="od-step done">
+          {% else %}
+            <div class="od-step done">
+          {% endif %}
+            <div class="od-step__icon">
+              {% if s in 'contacted,quoted,won,converted' or has_job %}
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              {% else %}1{% endif %}
+            </div>
+            <div class="od-step__label">Inbound Lead</div>
+          </div>
+
+          {# Step 2: Feasibility & Contact #}
+          {% if s == 'contacted' %}
+            <div class="od-step current">
+          {% elif s in 'quoted,won,converted' or has_job %}
+            <div class="od-step done">
+          {% else %}
+            <div class="od-step future">
+          {% endif %}
+            <div class="od-step__icon">
+              {% if s in 'quoted,won,converted' or has_job %}
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              {% elif s == 'contacted' %}2{% else %}2{% endif %}
+            </div>
+            <div class="od-step__label">Feasibility Check</div>
+          </div>
+
+          {# Step 3: Quotation Sent #}
+          {% if s == 'quoted' %}
+            <div class="od-step current">
+          {% elif s in 'won,converted' or has_job %}
+            <div class="od-step done">
+          {% else %}
+            <div class="od-step future">
+          {% endif %}
+            <div class="od-step__icon">
+              {% if s in 'won,converted' or has_job %}
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              {% elif s == 'quoted' %}3{% else %}3{% endif %}
+            </div>
+            <div class="od-step__label">Quotation Sent</div>
+          </div>
+
+          {# Step 4: Customer Approved #}
+          {% if s == 'won' and not has_job %}
+            <div class="od-step current">
+          {% elif s == 'converted' or has_job %}
+            <div class="od-step done">
+          {% else %}
+            <div class="od-step future">
+          {% endif %}
+            <div class="od-step__icon">
+              {% if s == 'converted' or has_job %}
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              {% elif s == 'won' %}4{% else %}4{% endif %}
+            </div>
+            <div class="od-step__label">Customer Approved</div>
+          </div>
+
+          {# Step 5: Converted to Order #}
+          {% if s == 'converted' or has_job %}
+            <div class="od-step done">
+          {% else %}
+            <div class="od-step future">
+          {% endif %}
+            <div class="od-step__icon">
+              {% if s == 'converted' or has_job %}
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              {% else %}5{% endif %}
+            </div>
+            <div class="od-step__label">Order Created</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+
+    {# ── MAIN TWO-COLUMN GRID ── #}
+    <div class="od-grid">
+
+      {# ── LEFT: TABS ── #}
+      <div class="od-main-col">
+        <div class="od-main-card">
+
+          {# Tab nav #}
+          <div class="od-tabs" role="tablist">
+            <button class="od-tab {% if subtab == 'overview' or not subtab %}active{% endif %}" id="tab-overview" onclick="odTab(this,'overview')" role="tab">Overview</button>
+            <button class="od-tab {% if subtab == 'chat' %}active{% endif %}" id="tab-chat" onclick="odTab(this,'chat')" role="tab">
+              Chat &amp; Discussion
+              {% if discussions %}<span class="od-badge">{{ discussions|length }}</span>{% endif %}
+            </button>
+            <button class="od-tab {% if subtab == 'qi' %}active{% endif %}" id="tab-qi" onclick="odTab(this,'qi')" role="tab">
+              Quotation
+              {% if quotation %}<span class="od-badge">&#10003;</span>{% endif %}
+            </button>
+            <button class="od-tab {% if subtab == 'docs' or subtab == 'documents' %}active{% endif %}" id="tab-docs" onclick="odTab(this,'docs')" role="tab">
+              Documents
+              {% if enquiry.media %}<span class="od-badge">1</span>{% endif %}
+            </button>
+          </div>
+
+          {# ============ OVERVIEW TAB ============ #}
+          <div class="od-tab-content {% if subtab == 'overview' or not subtab %}active{% endif %}" id="pane-overview">
+            <p class="od-section-title od-section-title--spaced">CUSTOMER REQUIREMENT</p>
+            <div class="od-req-box">
+              &ldquo;{{ enquiry.description }}&rdquo;
             </div>
 
-            {% if lab_lead %}
-            <div style="background:#fff; padding:20px; border-radius:12px; border:1px solid #E5E7EB; margin-bottom:20px;">
-                <h3 style="font-size:15px; font-weight:700; margin:0 0 8px 0;">Laboratory</h3>
-                <p style="margin:0; font-size:14px; color:#111827;">{{ lab_lead.lab.lab_name }}</p>
+            <p class="od-section-title">TESTING SPECIFICATIONS</p>
+            <div class="od-table-responsive">
+              <table class="od-items-table">
+                <thead>
+                  <tr>
+                    <th>PRODUCT</th>
+                    <th>PREFERRED SERVICES / STANDARD</th>
+                    <th>SAMPLE / QUANTITY</th>
+                    <th class="right">BUDGET</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>{{ enquiry.product_name }}</strong></td>
+                    <td>{{ enquiry.preferred_services|default:"Standard Testing" }}</td>
+                    <td>{{ enquiry.quantity_or_sample_info|default:"—" }}</td>
+                    <td class="right">{% if enquiry.budget %}{% if "₹" in enquiry.budget %}{{ enquiry.budget }}{% else %}₹{{ enquiry.budget }}{% endif %}{% else %}—{% endif %}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {% if quotation %}
+            <p class="od-section-title od-section-title--mt" style="margin-top:24px;">QUOTATION BREAKDOWN</p>
+            <div class="od-table-responsive">
+              <table class="od-items-table">
+                <thead>
+                  <tr>
+                    <th>ITEM / SCOPE</th>
+                    <th>EST. TURNAROUND</th>
+                    <th>VALIDITY</th>
+                    <th class="right">AMOUNT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <strong>{{ quotation.quote_number }}</strong>
+                      {% if quotation.scope_notes %}<div style="font-size:12px;color:#6B7280;margin-top:4px;">{{ quotation.scope_notes }}</div>{% endif %}
+                    </td>
+                    <td>{{ quotation.estimated_turnaround_days }} day(s)</td>
+                    <td>{{ quotation.validity_days }} day(s)</td>
+                    <td class="right">&#8377;{{ quotation.total_amount|floatformat:0 }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="od-items-total od-items-total--spaced">
+              <div class="od-subtotal-row">
+                <span>Subtotal</span><span class="val">&#8377;{{ quotation.total_amount|floatformat:0 }}</span>
+              </div>
+              <div class="od-total-row">
+                <span>Total</span><span>&#8377;{{ quotation.total_amount|floatformat:0 }}</span>
+              </div>
             </div>
             {% endif %}
 
-            <div style="background:#fff; padding:20px; border-radius:12px; border:1px solid #E5E7EB; margin-bottom:20px;">
-                <h3 style="font-size:15px; font-weight:700; margin:0 0 12px 0;">Quotation &amp; Pipeline</h3>
-
+            {# Activity timeline #}
+            <div class="od-activity">
+              <h3>PIPELINE ACTIVITY</h3>
+              <ul class="od-activity-list">
+                {% if lab_lead.lims_job %}
+                <li>
+                  <div class="od-activity-dot"></div>
+                  <div>
+                    <div class="od-activity-text">Order #{{ lab_lead.lims_job.job_number }} created</div>
+                    <div class="od-activity-date">{{ lab_lead.lims_job.created_at|date:"M d, Y" }}</div>
+                  </div>
+                </li>
+                {% endif %}
+                {% if quotation and quotation.accepted_at %}
+                <li>
+                  <div class="od-activity-dot"></div>
+                  <div>
+                    <div class="od-activity-text">Customer approved quotation</div>
+                    <div class="od-activity-date">{{ quotation.accepted_at|date:"M d, Y" }}</div>
+                  </div>
+                </li>
+                {% elif quotation and quotation.rejected_at %}
+                <li>
+                  <div class="od-activity-dot" style="background:#EF4444;"></div>
+                  <div>
+                    <div class="od-activity-text">Customer declined quotation{% if quotation.rejection_reason %}: {{ quotation.rejection_reason }}{% endif %}</div>
+                    <div class="od-activity-date">{{ quotation.rejected_at|date:"M d, Y" }}</div>
+                  </div>
+                </li>
+                {% endif %}
                 {% if quotation %}
-                <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:14px; margin-bottom:14px;">
-                    <p style="margin:0 0 6px 0; font-size:13px;"><strong>Quote #</strong> {{ quotation.quote_number }}</p>
-                    <p style="margin:0 0 6px 0; font-size:18px; font-weight:700; color:#166534;">
-                        {{ quotation.currency }} {{ quotation.total_amount }}
-                    </p>
-                    <p style="margin:0 0 4px 0; font-size:13px; color:#374151;">
-                        TAT: {{ quotation.estimated_turnaround_days }} day(s)
-                        · Valid {{ quotation.validity_days }} day(s)
-                    </p>
-                    {% if quotation.scope_notes %}
-                    <p style="margin:8px 0 0 0; font-size:12px; color:#6B7280; white-space:pre-line;">{{ quotation.scope_notes }}</p>
-                    {% endif %}
-                    {% if quotation.is_accepted %}
-                    <p style="margin:10px 0 0 0; font-size:12px; color:#166534; font-weight:600;">✓ Accepted by customer</p>
-                    {% elif quotation.rejected_at %}
-                    <p style="margin:10px 0 0 0; font-size:12px; color:#B91C1C; font-weight:600;">✗ Declined by customer</p>
-                    {% endif %}
+                <li>
+                  <div class="od-activity-dot"></div>
+                  <div>
+                    <div class="od-activity-text">Quotation #{{ quotation.quote_number }} sent (&#8377;{{ quotation.total_amount|floatformat:0 }})</div>
+                    <div class="od-activity-date">{{ quotation.created_at|date:"M d, Y" }}</div>
+                  </div>
+                </li>
+                {% endif %}
+                {% if lab_lead.status != 'new' and lab_lead.status_changed_at %}
+                <li>
+                  <div class="od-activity-dot"></div>
+                  <div>
+                    <div class="od-activity-text">Lead moved to {{ lab_lead.get_status_display }}</div>
+                    <div class="od-activity-date">{{ lab_lead.status_changed_at|date:"M d, Y" }}</div>
+                  </div>
+                </li>
+                {% endif %}
+                <li>
+                  <div class="od-activity-dot"></div>
+                  <div>
+                    <div class="od-activity-text">Inbound customer enquiry received</div>
+                    <div class="od-activity-date">{{ enquiry.created_at|date:"M d, Y" }}</div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {# ============ CHAT TAB ============ #}
+          <div class="od-tab-content {% if subtab == 'chat' %}active{% endif %}" id="pane-chat">
+            <div class="od-chat-msgs" id="odChatMsgs">
+              {% for m in discussions %}
+                {% if m.is_internal %}
+                <div class="od-msg od-msg--lab od-msg--internal">
+                  <div class="od-msg__bubble">🔒 [Internal Note] {{ m.message }}</div>
+                  <div class="od-msg__meta">
+                    {% if m.lab %}{{ m.lab.lab_name }}{% else %}Lab Team{% endif %} &bull; {{ m.created_at|date:"M d, H:i" }}
+                  </div>
+                  {% if m.attachment %}<a class="od-attach-link" href="{{ m.attachment.url }}" target="_blank">📎 Attachment</a>{% endif %}
                 </div>
-
-                {% if is_customer and lab_lead.status == 'quoted' and not quotation.is_accepted and not quotation.rejected_at %}
-                <form method="post" action="{% url 'lead_detail' enquiry.id %}?lab={{ lab_lead.lab_id }}" style="margin-bottom:10px;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="accept_quotation">
-                    <input type="hidden" name="lab" value="{{ lab_lead.lab_id }}">
-                    <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; margin-bottom:8px; cursor:pointer;">
-                        {{ accept_form.confirm }}
-                        <span>I accept the quotation terms and pricing</span>
-                    </label>
-                    <button type="submit" class="btn btn-success" style="width:100%; padding:10px;">Accept Quotation</button>
-                </form>
-                <form method="post" action="{% url 'lead_detail' enquiry.id %}?lab={{ lab_lead.lab_id }}">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="reject_quotation">
-                    <input type="hidden" name="lab" value="{{ lab_lead.lab_id }}">
-                    {{ reject_form.reason }}
-                    <button type="submit" class="btn btn-outline-secondary" style="width:100%; margin-top:8px; padding:8px;">Decline Quotation</button>
-                </form>
-                {% endif %}
-
-                {% if is_lab_side and lab_lead.status == 'won' and not lab_lead.lims_job %}
-                <form method="post" action="{% url 'create_order_from_lead' enquiry.id %}" style="margin-top:12px;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success" style="width:100%; padding:10px;">
-                        ✓ Accept &amp; Create Order
-                    </button>
-                </form>
-                {% elif is_lab_side and lab_lead.lims_job %}
-                <a href="{% url 'order_detail' lab_lead.lims_job.id %}" class="btn btn-primary" style="display:block;text-align:center;margin-top:12px;padding:10px;">
-                    Open Order #{{ lab_lead.lims_job.job_number }}
-                </a>
-                {% elif is_lab_side and lab_lead.status == 'quoted' %}
-                <p style="font-size:13px;color:#6B7280;margin-top:8px;">Waiting for customer to accept the quotation.</p>
-                {% endif %}
-
+                {% elif m.sender_type == 'lab' %}
+                <div class="od-msg od-msg--lab">
+                  <div class="od-msg__bubble">{{ m.message }}</div>
+                  <div class="od-msg__meta">
+                    {% if m.lab %}{{ m.lab.lab_name }}{% else %}You{% endif %} &bull; {{ m.created_at|date:"M d, H:i" }}
+                  </div>
+                  {% if m.attachment %}<a class="od-attach-link" href="{{ m.attachment.url }}" target="_blank">📎 Attachment</a>{% endif %}
+                </div>
                 {% else %}
-                    {% if is_lab_side %}
-                    <a href="{% url 'create_quotation' enquiry.id %}" class="btn btn-primary" style="display:block; text-align:center; padding:10px;">
-                        + Generate Quotation
-                    </a>
-                    {% else %}
-                    <p style="margin:0; font-size:13px; color:#6B7280;">
-                        Awaiting quotation from the laboratory.
-                    </p>
-                    {% endif %}
+                <div class="od-msg od-msg--customer">
+                  <div class="od-msg__bubble">{{ m.message }}</div>
+                  <div class="od-msg__meta">
+                    {{ enquiry.contact_name|default:m.sender.get_full_name|default:"Customer" }} &bull; {{ m.created_at|date:"M d, H:i" }}
+                  </div>
+                  {% if m.attachment %}<a class="od-attach-link" href="{{ m.attachment.url }}" target="_blank">📎 Attachment</a>{% endif %}
+                </div>
                 {% endif %}
+              {% empty %}
+                <div class="od-chat-empty">No messages yet. Clarify feasibility, standards or sample requirements below.</div>
+              {% endfor %}
             </div>
 
-            {% if lab_lead and lab_lead.lims_job %}
-            <div style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:12px; padding:16px;">
-                <strong style="color:#065F46; font-size:14px;">Active LIMS Job</strong>
-                <p style="margin:8px 0 0 0; font-size:13px; color:#064E3B;">
-                    Job #{{ lab_lead.lims_job.job_number }}<br>
-                    Sample ID: {{ lab_lead.lims_job.sample_accession_id }}<br>
-                    Status: {{ lab_lead.lims_job.status }}
-                </p>
+            {# Quick-reply chips (lab only) #}
+            {% if is_lab_side %}
+            <div class="od-quick-chips">
+              <span class="od-chip" onclick="odQuickReply('Feasibility confirmed. We can perform testing per your requirements.')">Feasibility confirmed ✓</span>
+              <span class="od-chip" onclick="odQuickReply('Quotation is being prepared and will be sent shortly.')">Quote coming shortly</span>
+              <span class="od-chip" onclick="odQuickReply('Please share the sample quantity and dimensions.')">Sample details needed</span>
+              <span class="od-chip" onclick="odQuickReply('Please ship the test samples to our registered laboratory address.')">Sample dispatch instructions</span>
             </div>
             {% endif %}
-        </div>
-    </div>
 
-{% endif %}
-</div>
-{% endblock %}
-{% block extra_js %}
-<link rel="stylesheet" href="{% static 'css/lead.css' %}">
+            {# Message form #}
+            <div class="od-chat-form">
+              <form method="post" enctype="multipart/form-data" id="odMsgForm" action="{% url 'lead_detail' enquiry.id %}{% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}?lab={{ lab_lead.lab_id }}{% endif %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_message">
+                <input type="hidden" name="subtab" value="chat">
+                {% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}
+                <input type="hidden" name="lab" value="{{ lab_lead.lab_id }}">
+                {% endif %}
+                <div class="od-chat-input-row">
+                  <textarea
+                    id="odMsgInput"
+                    name="message"
+                    class="od-chat-textarea"
+                    placeholder="Message {{ enquiry.contact_name|default:'customer' }}..."
+                    rows="1"
+                    oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"
+                    required></textarea>
+                  <label for="odAttach" class="od-attach-btn" title="Attach file">
+                    <svg width="20" height="20" fill="none" stroke="#6B7280" stroke-width="2" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                  </label>
+                  <input type="file" id="odAttach" name="attachment" class="form-control" style="display:none;">
+                  <button type="submit" class="od-btn od-btn--amber od-btn--send">Send</button>
+                </div>
+                {% if is_lab_side %}
+                <div class="od-internal-wrap">
+                  <label class="od-internal-label">
+                    <input type="checkbox" name="is_internal" class="form-check-input od-form-check-sm">
+                    Mark as internal note (hidden from customer)
+                  </label>
+                </div>
+                {% endif %}
+                <div id="odAttachDisplay" class="od-attach-display"></div>
+              </form>
+            </div>
+          </div>
+
+          {# ============ QUOTATION TAB ============ #}
+          <div class="od-tab-content {% if subtab == 'qi' %}active{% endif %}" id="pane-qi">
+            {% if quotation %}
+            <div class="od-section-header">
+              <p class="od-section-title">ACTIVE QUOTATION</p>
+            </div>
+            <div class="od-qi-list">
+              <div class="od-qi-item">
+                <div class="od-qi-icon">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div class="od-qi-info">
+                  <div class="od-qi-num">{{ quotation.quote_number }}</div>
+                  <div class="od-qi-date">
+                    Sent {{ quotation.created_at|date:"M d, Y" }}
+                    &bull; Turnaround: {{ quotation.estimated_turnaround_days }} day(s)
+                    &bull; Valid: {{ quotation.validity_days }} day(s)
+                  </div>
+                </div>
+                <div class="od-qi-right">
+                  <div class="od-qi-amount">&#8377;{{ quotation.total_amount|floatformat:0 }}</div>
+                  {% if quotation.is_accepted %}
+                    <span class="od-qi-status od-qi-status--accepted">&#10003; Accepted</span>
+                  {% elif quotation.rejected_at %}
+                    <span class="od-qi-status od-qi-status--unpaid">&#10007; Declined</span>
+                  {% else %}
+                    <span class="od-qi-status od-qi-status--pending">Awaiting Approval</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            {% if quotation.scope_notes %}
+            <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:14px;margin-top:16px;">
+              <strong style="font-size:12px;color:#6B7280;text-transform:uppercase;">Scope Notes:</strong>
+              <p style="margin:4px 0 0 0;font-size:13px;color:#374151;white-space:pre-line;">{{ quotation.scope_notes }}</p>
+            </div>
+            {% endif %}
+
+            {% if is_lab_side and lab_lead.status == 'won' and not lab_lead.lims_job %}
+            <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:16px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+              <div>
+                <strong style="color:#166534;font-size:14px;">Customer Approved This Quotation</strong>
+                <p style="margin:2px 0 0 0;font-size:13px;color:#15803D;">Ready to convert into an active laboratory job order.</p>
+              </div>
+              <form method="post" action="{% url 'create_order_from_lead' enquiry.id %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="od-btn od-btn--amber" style="padding:10px 20px;">
+                  ✓ Accept &amp; Create Order
+                </button>
+              </form>
+            </div>
+            {% elif is_lab_side and lab_lead.lims_job %}
+            <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:16px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+              <div>
+                <strong style="color:#1D4ED8;font-size:14px;">Order Converted</strong>
+                <p style="margin:2px 0 0 0;font-size:13px;color:#2563EB;">LIMS Job #{{ lab_lead.lims_job.job_number }} is in progress.</p>
+              </div>
+              <a href="{% url 'order_detail' lab_lead.lims_job.id %}" class="od-btn od-btn--amber" style="padding:10px 20px;">
+                Open Order #{{ lab_lead.lims_job.job_number }} &rarr;
+              </a>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div style="text-align:center;padding:48px 24px;">
+              <svg width="48" height="48" fill="none" stroke="#9CA3AF" stroke-width="1.5" viewBox="0 0 24 24" style="margin:0 auto 12px;display:block;"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <h3 style="font-size:16px;font-weight:600;color:#111827;margin:0 0 6px 0;">No Quotation Generated Yet</h3>
+              <p style="color:#6B7280;font-size:14px;margin:0 0 20px 0;">Generate and submit pricing, estimated turnaround time and testing scope to the customer.</p>
+              {% if is_lab_side %}
+              <a href="{% url 'create_quotation' enquiry.id %}" class="od-btn od-btn--amber" style="padding:10px 24px;display:inline-flex;">
+                + Generate Quotation
+              </a>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+
+          {# ============ DOCUMENTS TAB ============ #}
+          <div class="od-tab-content {% if subtab == 'docs' or subtab == 'documents' %}active{% endif %}" id="pane-docs">
+            <div class="od-docs-header">
+              <p class="od-section-title od-section-title--flush">FILES SHARED ON THIS LEAD</p>
+            </div>
+
+            {% if enquiry.media %}
+            <div class="od-doc-item">
+              <div class="od-doc-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="od-doc-info">
+                <div class="od-doc-name">Customer Enquiry Attachment</div>
+                <div class="od-doc-meta">
+                  Uploaded by {{ enquiry.contact_name|default:"Customer" }} &bull; {{ enquiry.created_at|date:"M d, Y" }}
+                </div>
+              </div>
+              <a href="{{ enquiry.media.url }}" target="_blank" download class="od-doc-dl" title="Download">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              </a>
+            </div>
+            {% endif %}
+
+            {% for m in discussions %}
+              {% if m.attachment %}
+              <div class="od-doc-item">
+                <div class="od-doc-icon">
+                  <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div class="od-doc-info">
+                  <div class="od-doc-name">Attachment from message</div>
+                  <div class="od-doc-meta">
+                    {% if m.sender_type == 'lab' %}{{ m.lab.lab_name|default:"Lab" }}{% else %}{{ enquiry.contact_name|default:"Customer" }}{% endif %}
+                    &bull; {{ m.created_at|date:"M d, Y" }}
+                  </div>
+                </div>
+                <a href="{{ m.attachment.url }}" target="_blank" download class="od-doc-dl" title="Download">
+                  <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                </a>
+              </div>
+              {% endif %}
+            {% empty %}
+              {% if not enquiry.media %}
+              <div class="od-docs-empty">No documents or attachments shared yet.</div>
+              {% endif %}
+            {% endfor %}
+            {% if not enquiry.media and not discussions %}
+              <div class="od-docs-empty">No documents or attachments shared yet.</div>
+            {% endif %}
+          </div>
+
+        </div>{# /od-main-card #}
+      </div>{# /od-main-col #}
+
+      {# ── RIGHT SIDEBAR ── #}
+      <div class="od-sidebar">
+
+        {# NEXT ACTION card #}
+        <div class="od-side-card od-side-card--next-action">
+          <div class="od-next-action">
+            <p class="label">NEXT ACTION</p>
+            {% if lab_lead.status == 'new' %}
+              <p class="title">Review &amp; Reply</p>
+              <p class="sub">Inbound enquiry received — clarify feasibility or provide quotation.</p>
+              <button class="od-btn od-btn--amber od-next-action-btn" onclick="odTab(document.getElementById('tab-chat'),'chat')">
+                Reply to Customer
+              </button>
+            {% elif lab_lead.status == 'contacted' %}
+              <p class="title">Prepare Quotation</p>
+              <p class="sub">Feasibility discussion in progress — submit terms to customer.</p>
+              {% if is_lab_side %}
+              <a href="{% url 'create_quotation' enquiry.id %}" class="od-btn od-btn--amber od-next-action-btn" style="text-align:center;justify-content:center;">
+                + Generate Quotation
+              </a>
+              {% endif %}
+            {% elif lab_lead.status == 'quoted' %}
+              <p class="title">Awaiting Customer Approval</p>
+              <p class="sub">Quotation sent — waiting for customer to accept or respond.</p>
+            {% elif lab_lead.status == 'won' %}
+              {% if lab_lead.lims_job %}
+              <p class="title">Order Created</p>
+              <p class="sub">LIMS Job #{{ lab_lead.lims_job.job_number }} is in progress.</p>
+              <a href="{% url 'order_detail' lab_lead.lims_job.id %}" class="od-btn od-btn--amber od-next-action-btn" style="text-align:center;justify-content:center;">
+                Open Order
+              </a>
+              {% else %}
+              <p class="title">Customer Approved!</p>
+              <p class="sub">Customer accepted the quotation. Click below to create the job order.</p>
+              <form method="post" action="{% url 'create_order_from_lead' enquiry.id %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="od-btn od-btn--amber od-next-action-btn">
+                  ✓ Accept &amp; Create Order
+                </button>
+              </form>
+              {% endif %}
+            {% elif lab_lead.status == 'converted' or lab_lead.lims_job %}
+              <p class="title">Active Order</p>
+              <p class="sub">Order #{{ lab_lead.lims_job.job_number }}</p>
+              <a href="{% url 'order_detail' lab_lead.lims_job.id %}" class="od-btn od-btn--outline od-next-action-btn" style="text-align:center;justify-content:center;">
+                View Order
+              </a>
+            {% elif lab_lead.status == 'lost' %}
+              <p class="title">Lead Closed (Lost)</p>
+              <p class="sub">{{ lab_lead.lost_reason|default:"Customer declined quotation" }}</p>
+            {% elif lab_lead.status == 'not_qualified' %}
+              <p class="title">Not Qualified</p>
+              <p class="sub">Marked not feasible / out of scope.</p>
+            {% else %}
+              <p class="title">{{ lab_lead.get_status_display }}</p>
+              <p class="sub">Reference: Lead #{{ enquiry.pk }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        {# CUSTOMER card #}
+        <div class="od-side-card od-side-card--customer">
+          <div class="od-cust-card">
+            <p class="od-cust-label">CUSTOMER</p>
+            <div class="od-cust-top">
+              <div class="od-cust-avatar">
+                {% with name=enquiry.contact_name|default:enquiry.user|default:"Customer" %}
+                  {{ name|slice:":2"|upper }}
+                {% endwith %}
+              </div>
+              <div>
+                <div class="od-cust-name">{{ enquiry.contact_name|default:enquiry.user|default:"Customer" }}</div>
+                <div class="od-cust-role">{{ enquiry.email|default:"" }}</div>
+              </div>
+            </div>
+            <div class="od-cust-info">
+              {% if enquiry.email %}
+              <div class="od-cust-row">
+                <span class="key">Email</span>
+                <span class="val">{{ enquiry.email }}</span>
+              </div>
+              {% endif %}
+              {% if enquiry.mobile_number %}
+              <div class="od-cust-row">
+                <span class="key">Phone</span>
+                <span class="val">{{ enquiry.mobile_number }}</span>
+              </div>
+              {% endif %}
+              {% if enquiry.company_name %}
+              <div class="od-cust-row">
+                <span class="key">Company</span>
+                <span class="val">{{ enquiry.company_name }}</span>
+              </div>
+              {% endif %}
+              {% if enquiry.city %}
+              <div class="od-cust-row">
+                <span class="key">City</span>
+                <span class="val">{{ enquiry.city }}</span>
+              </div>
+              {% endif %}
+              <div class="od-cust-row">
+                <span class="key">Enquiry Date</span>
+                <span class="val">{{ enquiry.created_at|date:"M d, Y" }}</span>
+              </div>
+            </div>
+            <div class="od-cust-actions">
+              {% if enquiry.mobile_number %}
+              <a href="tel:{{ enquiry.mobile_number }}" class="od-cust-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.63 19.79 19.79 0 013 1.19 2 2 0 014.11 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                Call
+              </a>
+              {% else %}
+              <span class="od-cust-btn od-cust-btn--disabled">Call</span>
+              {% endif %}
+              {% if enquiry.email %}
+              <a href="mailto:{{ enquiry.email }}" class="od-cust-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Email
+              </a>
+              {% else %}
+              <span class="od-cust-btn od-cust-btn--disabled">Email</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+
+        {# VALUE & SUMMARY card #}
+        <div class="od-side-card od-side-card--payment">
+          <div class="od-pay-card">
+            <p class="od-pay-label">COMMERCIAL VALUE</p>
+            {% if quotation %}
+            <div class="od-pay-row">
+              <span class="key">Quotation</span>
+              <span class="val">&#8377;{{ quotation.total_amount|floatformat:0 }}</span>
+            </div>
+            <div class="od-pay-row">
+              <span class="key">TAT</span>
+              <span class="val">{{ quotation.estimated_turnaround_days }} day(s)</span>
+            </div>
+            <div class="od-pay-row">
+              <span class="key">Validity</span>
+              <span class="val">{{ quotation.validity_days }} day(s)</span>
+            </div>
+            {% elif enquiry.budget %}
+            <div class="od-pay-row">
+              <span class="key">Budget</span>
+              <span class="val">{% if "₹" in enquiry.budget %}{{ enquiry.budget }}{% else %}₹{{ enquiry.budget }}{% endif %}</span>
+            </div>
+            {% else %}
+            <div class="od-pay-row">
+              <span class="key">Budget</span>
+              <span class="val">Open / Negotiable</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>{# /od-sidebar #}
+    </div>{# /od-grid #}
+
+    {% endif %}
+
+    {# Django messages #}
+    {% for msg in messages %}
+    <div class="od-flash od-flash--{% if msg.tags == 'success' %}success{% elif msg.tags == 'error' %}error{% else %}info{% endif %}" id="odFlash">
+      {{ msg }}
+      <button class="od-flash-close" onclick="this.parentElement.remove()">&times;</button>
+    </div>
+    {% endfor %}
+
+  </div>{# /od-wrap #}
+</div>{# /lp #}
 {% endblock %}

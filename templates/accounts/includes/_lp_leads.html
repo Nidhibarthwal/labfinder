@@ -3,55 +3,145 @@
     <h2 class="lp-head__title">Leads</h2>
     <p class="lp-muted">Track and move every enquiry through your pipeline.</p>
   </div>
-  <a class="lp-btn lp-btn--new" href="{% url 'enquiry_now' %}">+ New Lead</a>
+  <div style="display: flex; gap: 8px; align-items: center;">
+    <button type="button" class="lp-btn lp-btn--ghost lp-btn--export" id="lp-lead-export">Export CSV</button>
+    <a class="lp-btn lp-btn--new" href="{% url 'enquiry_now' %}">+ New Lead</a>
+  </div>
 </div>
 
-<div class="lp-filters" role="tablist" aria-label="Lead status filters">
-  <a href="?tab=leads&status=all" class="{% if active_status == 'all' %}is-active{% endif %}">All Leads {{ counts.all }}</a>
-  <a href="?tab=leads&status=new" class="{% if active_status == 'new' %}is-active{% endif %}">New {{ counts.new }}</a>
-  <a href="?tab=leads&status=contacted" class="{% if active_status == 'contacted' %}is-active{% endif %}">Contacted {{ counts.contacted }}</a>
-  <a href="?tab=leads&status=quoted" class="{% if active_status == 'quoted' %}is-active{% endif %}">In Progress {{ counts.quoted }}</a>
-  <a href="?tab=leads&status=won" class="{% if active_status == 'won' %}is-active{% endif %}">Interested {{ counts.won }}</a>
+<div class="lp-order-stats">
+  <article class="lp-order-stat">
+    <span class="lp-order-stat__icon lp-order-stat__icon--active" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+    </span>
+    <div>
+      <strong>{{ counts.all|default:0 }}</strong>
+      <span>Total leads</span>
+    </div>
+  </article>
+  <article class="lp-order-stat">
+    <span class="lp-order-stat__icon lp-order-stat__icon--action" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    </span>
+    <div>
+      <strong>{{ counts.new|default:0 }}</strong>
+      <span>Need your action</span>
+    </div>
+  </article>
+  <article class="lp-order-stat">
+    <span class="lp-order-stat__icon lp-order-stat__icon--pay" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+    </span>
+    <div>
+      <strong>{{ counts.contacted|default:0 }}</strong>
+      <span>In communication</span>
+    </div>
+  </article>
+  <article class="lp-order-stat">
+    <span class="lp-order-stat__icon" style="background: #e0f2fe; color: #0284c7;" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+    </span>
+    <div>
+      <strong>{{ counts.quoted|default:0 }}</strong>
+      <span>Quoted pipeline</span>
+    </div>
+  </article>
 </div>
 
-<input class="lp-search" id="lp-lead-search" type="search" placeholder="Search by customer, company or test" aria-label="Search leads">
+<div class="lp-filters-wrap">
+  <nav class="lp-filters lp-filters--leads" id="lpLeadsFilters" aria-label="Lead status filters">
+    <a href="?tab=leads&status=all" class="{% if active_status == 'all' or not active_status %}is-active{% endif %}">
+      <span>All leads</span>
+      <span class="lp-filter-badge">{{ counts.all|default:0 }}</span>
+    </a>
+    <a href="?tab=leads&status=new" class="{% if active_status == 'new' %}is-active{% endif %}">
+      <span>New</span>
+      <span class="lp-filter-badge">{{ counts.new|default:0 }}</span>
+    </a>
+    <a href="?tab=leads&status=contacted" class="{% if active_status == 'contacted' %}is-active{% endif %}">
+      <span>Contacted</span>
+      <span class="lp-filter-badge">{{ counts.contacted|default:0 }}</span>
+    </a>
+    <a href="?tab=leads&status=quoted" class="{% if active_status == 'quoted' %}is-active{% endif %}">
+      <span>In progress</span>
+      <span class="lp-filter-badge">{{ counts.quoted|default:0 }}</span>
+    </a>
+    <a href="?tab=leads&status=won" class="{% if active_status == 'won' %}is-active{% endif %}">
+      <span>Interested</span>
+      <span class="lp-filter-badge">{{ counts.won|default:0 }}</span>
+    </a>
+    <a href="?tab=leads&status=converted" class="{% if active_status == 'converted' %}is-active{% endif %}">
+      <span>Converted</span>
+      <span class="lp-filter-badge">{{ counts.converted|default:0 }}</span>
+    </a>
+    <a href="?tab=leads&status=lost" class="{% if active_status == 'lost' %}is-active{% endif %}">
+      <span>Lost</span>
+      <span class="lp-filter-badge">{{ counts.lost|default:0 }}</span>
+    </a>
+  </nav>
+</div>
+
+<div class="lp-search-wrap">
+  <svg class="lp-search-wrap__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+  <input class="lp-search" id="lp-lead-search" type="search" placeholder="Search by lead ID, customer, company or test..." aria-label="Search leads">
+</div>
 
 {# Desktop table #}
 <div class="lp-card lp-table-wrap">
-  <table class="lp-table" id="lp-lead-table">
+  <table class="lp-table lp-table--orders" id="lp-lead-table">
     <thead>
       <tr>
         <th>Lead</th>
-        <th>Test Requested</th>
+        <th>Customer</th>
+        <th>Test</th>
         <th>Contact</th>
         <th>Location</th>
-        <th>Status</th>
         <th>Budget</th>
+        <th>Status</th>
+        <th>Received</th>
         <th aria-hidden="true"></th>
       </tr>
     </thead>
     <tbody>
     {% for row in lead_rows %}
       {% with e=row.enquiry %}
-      <tr data-search="{{ e.contact_name }} {{ e.company_name }} {{ e.product_name }}" data-href="{% url 'lead_detail' e.id %}">
+      <tr
+        data-href="{% url 'lead_detail' e.id %}"
+        data-search="{% if e.enquiry_id %}{{ e.enquiry_id }} {% endif %}{{ e.id|stringformat:'s'|slice:':8' }} {{ e.contact_name }} {{ e.company_name }} {{ e.product_name }} {{ e.mobile_number }} {% if e.user %}{{ e.user.email }}{% elif e.email %}{{ e.email }}{% endif %} {% if e.lab and e.lab.lab_city %}{{ e.lab.lab_city }}{% elif branch.lab_city %}{{ branch.lab_city }}{% endif %}"
+        data-lead="{% if e.enquiry_id %}{{ e.enquiry_id }}{% else %}#{{ e.id|stringformat:'s'|slice:':8'|upper }}{% endif %}"
+        data-customer="{{ e.contact_name|default:e.display_name|default:'Customer' }}"
+        data-company="{{ e.company_name|default:'—' }}"
+        data-test="{{ e.product_name|default:'—' }}"
+        data-contact="{{ e.mobile_number|default:'—' }}"
+        data-location="{% if e.lab and e.lab.lab_city %}{{ e.lab.lab_city }}{% elif branch.lab_city %}{{ branch.lab_city }}{% else %}—{% endif %}"
+        data-budget="{% if e.budget %}{% if '₹' in e.budget %}{{ e.budget }}{% else %}₹{{ e.budget }}{% endif %}{% else %}—{% endif %}"
+        data-status="{{ row.status_display }}"
+        data-date="{{ e.created_at|date:'M j, Y' }}">
         <td data-label="Lead">
+          <div class="lp-name">{% if e.enquiry_id %}{{ e.enquiry_id }}{% else %}#{{ e.id|stringformat:'s'|slice:':8'|upper }}{% endif %}</div>
+          {% if row.status == 'new' %}<div class="lp-order-new">NEW</div>{% endif %}
+        </td>
+        <td data-label="Customer">
           <div class="lp-name">{{ e.contact_name|default:e.display_name|default:"Customer" }}</div>
           <div class="lp-sub">{{ e.company_name|default:"—" }}</div>
         </td>
-        <td data-label="Test">{{ e.product_name }}</td>
+        <td data-label="Test">
+          <div class="lp-order-test">{{ e.product_name|default:"—" }}</div>
+        </td>
         <td data-label="Contact">
-          <div>{{ e.mobile_number|default:"—" }}</div>
+          <div class="lp-name">{{ e.mobile_number|default:"—" }}</div>
           <div class="lp-sub">{% if e.user %}{{ e.user.email }}{% elif e.email %}{{ e.email }}{% else %}—{% endif %}</div>
         </td>
         <td data-label="Location">{% if e.lab and e.lab.lab_city %}{{ e.lab.lab_city }}{% elif branch.lab_city %}{{ branch.lab_city }}{% else %}—{% endif %}</td>
-        <td data-label="Status"><span class="lp-pill {{ row.status }}">{{ row.status_display }}</span></td>
         <td data-label="Budget">{% if e.budget %}{% if "₹" in e.budget %}{{ e.budget }}{% else %}₹{{ e.budget }}{% endif %}{% else %}—{% endif %}</td>
+        <td data-label="Status"><span class="lp-pill {{ row.status }}">{{ row.status_display }}</span></td>
+        <td data-label="Received" class="lp-order-next">{{ e.created_at|date:"M j" }}</td>
         <td class="lp-row-chevron" aria-hidden="true">›</td>
       </tr>
       {% endwith %}
     {% empty %}
       <tr class="lp-empty-row">
-        <td colspan="7">No leads yet.</td>
+        <td colspan="9">No leads yet.</td>
       </tr>
     {% endfor %}
     </tbody>
@@ -64,18 +154,18 @@
     {% with e=row.enquiry %}
     <article
       class="lp-lead-card"
-      data-search="{{ e.contact_name }} {{ e.company_name }} {{ e.product_name }}"
+      data-search="{% if e.enquiry_id %}{{ e.enquiry_id }} {% endif %}{{ e.id|stringformat:'s'|slice:':8' }} {{ e.contact_name }} {{ e.company_name }} {{ e.product_name }} {{ e.mobile_number }} {% if e.user %}{{ e.user.email }}{% elif e.email %}{{ e.email }}{% endif %}"
       data-href="{% url 'lead_detail' e.id %}"
       role="link"
       tabindex="0">
       <div class="lp-lead-card__top">
         <div>
-          <div class="lp-name">{{ e.contact_name|default:e.display_name|default:"Customer" }}</div>
+          <div class="lp-name">{% if e.enquiry_id %}{{ e.enquiry_id }}{% else %}#{{ e.id|stringformat:'s'|slice:':8'|upper }}{% endif %} · {{ e.contact_name|default:e.display_name|default:"Customer" }}</div>
           <div class="lp-sub">{{ e.company_name|default:"—" }}</div>
         </div>
         <span class="lp-pill {{ row.status }}">{{ row.status_display }}</span>
       </div>
-      <div class="lp-lead-card__product">{{ e.product_name }}</div>
+      <div class="lp-lead-card__product">{{ e.product_name|default:"—" }}</div>
       <div class="lp-lead-card__meta">
         <span>{{ e.mobile_number|default:"—" }}</span>
         <span class="lp-meta-dot">·</span>
@@ -84,6 +174,8 @@
           <span class="lp-meta-dot">·</span>
           <span>{% if "₹" in e.budget %}{{ e.budget }}{% else %}₹{{ e.budget }}{% endif %}</span>
         {% endif %}
+        <span class="lp-meta-dot">·</span>
+        <span>{{ e.created_at|date:"M j" }}</span>
       </div>
       <div class="lp-lead-card__email lp-sub">
         {% if e.user %}{{ e.user.email }}{% elif e.email %}{{ e.email }}{% endif %}

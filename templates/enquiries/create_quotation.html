@@ -2,64 +2,320 @@
 {% load static %}
 
 {% block meta_data %}
-<title>Create Quotation #{{ enquiry.pk }} - LabFinder 360</title>
+<title>Generate Quotation · Lead #{{ enquiry.pk }} – {{ enquiry.product_name }} | LabFinder</title>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}
 
 {% block content %}
-<div class="quote-container" style="max-width:640px;margin:30px auto;padding:0 16px;">
-    <div class="quote-header" style="margin-bottom:20px;">
-        <h1 style="font-size:22px;margin:0 0 8px 0;">Create Official Quotation</h1>
-        <a href="{% url 'lead_detail' enquiry.pk %}" style="color:#2563EB;font-size:14px;">&larr; Back to Lead Details</a>
+<link rel="stylesheet" href="{% static 'css/lab-portal.css' %}">
+<div class="lp">
+  {% include 'accounts/includes/_lp_header_nav.html' %}
+
+  <div class="od-wrap">
+
+    {# ── BACK LINK ── #}
+    <a href="{% url 'lead_detail' enquiry.pk %}{% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}?lab={{ lab_lead.lab_id }}{% endif %}" class="od-back">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Lead #{{ enquiry.pk }}
+    </a>
+
+    {# ── HEADER ── #}
+    <div class="od-header">
+      <div class="od-header-left">
+        <h1>{{ enquiry.product_name }}</h1>
+        <span class="od-pill od-pill--{{ lab_lead.status }}">{{ lab_lead.get_status_display }}</span>
+        <div class="od-sub">
+          {{ enquiry.contact_name|default:enquiry.user|default:"Customer" }}
+          {% if enquiry.company_name %} &bull; {{ enquiry.company_name }}{% endif %}
+          {% if enquiry.city %} &bull; {{ enquiry.city }}{% endif %}
+          {% if enquiry.budget %}
+            &bull; Budget: {% if "₹" in enquiry.budget %}{{ enquiry.budget }}{% else %}₹{{ enquiry.budget }}{% endif %}
+          {% endif %}
+          {% if enquiry.urgency and enquiry.urgency != 'normal' %}
+            &bull; <span style="background:#FEE2E2;color:#991B1B;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;">{{ enquiry.get_urgency_display }}</span>
+          {% endif %}
+          &bull; Submitted {{ enquiry.created_at|date:"M d, Y · h:i A" }}
+        </div>
+      </div>
+      <div class="od-header-btns">
+        <a href="{% url 'lead_detail' enquiry.pk %}{% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}?lab={{ lab_lead.lab_id }}{% endif %}" class="od-btn od-btn--outline">
+          &larr; View Lead Details
+        </a>
+      </div>
     </div>
 
-    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:16px;margin-bottom:20px;">
-        <div style="margin-bottom:8px;"><strong>Customer:</strong> {{ enquiry.contact_name|default:enquiry.email }}</div>
-        <div style="margin-bottom:8px;"><strong>Test:</strong> {{ enquiry.product_name }}</div>
-        <div><strong>Budget:</strong> {% if enquiry.budget %}₹{{ enquiry.budget }}{% else %}Not specified{% endif %}</div>
+    {# ── PROGRESS STEPPER (5 steps with Step 3 Quotation highlighted as active) ── #}
+    <div class="od-stepper-wrap" id="odStepperWrap">
+      <div class="od-stepper">
+        <div class="od-steps" id="odSteps">
+
+          {# Step 1: Inbound Lead #}
+          <div class="od-step done">
+            <div class="od-step__icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="od-step__label">Inbound Lead</div>
+          </div>
+
+          {# Step 2: Feasibility Check #}
+          <div class="od-step done">
+            <div class="od-step__icon">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="od-step__label">Feasibility Check</div>
+          </div>
+
+          {# Step 3: Generate Quotation #}
+          <div class="od-step current">
+            <div class="od-step__icon">3</div>
+            <div class="od-step__label">Generate Quotation</div>
+          </div>
+
+          {# Step 4: Customer Approved #}
+          <div class="od-step future">
+            <div class="od-step__icon">4</div>
+            <div class="od-step__label">Customer Approved</div>
+          </div>
+
+          {# Step 5: Order Created #}
+          <div class="od-step future">
+            <div class="od-step__icon">5</div>
+            <div class="od-step__label">Order Created</div>
+          </div>
+
+        </div>
+      </div>
     </div>
 
-    <form method="post" action="{% url 'create_quotation' enquiry.pk %}" style="background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:24px;">
-        {% csrf_token %}
+    {# ── MAIN TWO-COLUMN GRID ── #}
+    <div class="od-grid">
 
-        <div class="form-group" style="margin-bottom:16px;">
-            <label for="id_total_amount"><strong>Total Amount (₹)</strong> *</label>
-            {{ quote_form.total_amount }}
-            {{ quote_form.total_amount.errors }}
+      {# ── LEFT: FORM CARD ── #}
+      <div class="od-main-col">
+        <div class="od-main-card">
+
+          {# Tab nav matching lead_detail #}
+          <div class="od-tabs" role="tablist">
+            <a href="{% url 'lead_detail' enquiry.pk %}?subtab=overview{% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}&lab={{ lab_lead.lab_id }}{% endif %}" class="od-tab" role="tab">Overview</a>
+            <a href="{% url 'lead_detail' enquiry.pk %}?subtab=chat{% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}&lab={{ lab_lead.lab_id }}{% endif %}" class="od-tab" role="tab">Chat &amp; Discussion</a>
+            <button type="button" class="od-tab active" role="tab">
+              Quotation
+              <span class="od-badge">+ New</span>
+            </button>
+            <a href="{% url 'lead_detail' enquiry.pk %}?subtab=docs{% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}&lab={{ lab_lead.lab_id }}{% endif %}" class="od-tab" role="tab">Documents</a>
+          </div>
+
+          <div class="od-tab-content active" style="display:block;">
+            <p class="od-section-title od-section-title--spaced" style="margin-top:0;">OFFICIAL QUOTATION DETAILS</p>
+
+            <!-- Customer Requirement Snippet -->
+            <div class="od-req-box" style="margin-bottom:20px;">
+              <strong>Requirement:</strong> &ldquo;{{ enquiry.description }}&rdquo;
+              {% if enquiry.preferred_services %}
+                <div style="margin-top:6px;font-style:normal;font-size:13px;color:#0F3D39;">
+                  <strong>Services:</strong> {{ enquiry.preferred_services }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Quotation Form -->
+            <form method="post" action="{% url 'create_quotation' enquiry.pk %}{% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}?lab={{ lab_lead.lab_id }}{% endif %}">
+              {% csrf_token %}
+              {% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}
+                <input type="hidden" name="lab" value="{{ lab_lead.lab_id }}">
+              {% endif %}
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+                <div>
+                  <label for="id_total_amount" class="od-form-label">
+                    Total Quoted Amount (₹) <span style="color:#DC2626;">*</span>
+                  </label>
+                  {{ quote_form.total_amount }}
+                  {% if quote_form.total_amount.errors %}
+                    <div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ quote_form.total_amount.errors }}</div>
+                  {% endif %}
+                  <span style="font-size:12px;color:#6B7280;">All-inclusive price for testing and certification.</span>
+                </div>
+
+                <div>
+                  <label for="id_estimated_turnaround_days" class="od-form-label">
+                    Estimated Turnaround (Days) <span style="color:#DC2626;">*</span>
+                  </label>
+                  {{ quote_form.estimated_turnaround_days }}
+                  {% if quote_form.estimated_turnaround_days.errors %}
+                    <div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ quote_form.estimated_turnaround_days.errors }}</div>
+                  {% endif %}
+                  <span style="font-size:12px;color:#6B7280;">Working days to deliver report after sample receipt (TAT).</span>
+                </div>
+              </div>
+
+              <div style="margin-bottom:20px;">
+                <label for="id_validity_days" class="od-form-label">
+                  Quote Validity (Days) <span style="color:#DC2626;">*</span>
+                </label>
+                {{ quote_form.validity_days }}
+                {% if quote_form.validity_days.errors %}
+                  <div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ quote_form.validity_days.errors }}</div>
+                {% endif %}
+                <span style="font-size:12px;color:#6B7280;">Number of days this price offer remains valid for customer acceptance.</span>
+              </div>
+
+              <div style="margin-bottom:20px;">
+                <label for="id_scope_notes" class="od-form-label">
+                  Scope Notes &amp; Standards
+                </label>
+                {{ quote_form.scope_notes }}
+                {% if quote_form.scope_notes.errors %}
+                  <div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ quote_form.scope_notes.errors }}</div>
+                {% endif %}
+                <span style="font-size:12px;color:#6B7280;">Parameters covered, test standards (e.g. IS/ISO/ASTM), and sample requirements.</span>
+              </div>
+
+              <div style="margin-bottom:20px;">
+                <label for="id_terms" class="od-form-label">
+                  Commercial Terms &amp; Conditions
+                </label>
+                {{ quote_form.terms }}
+                {% if quote_form.terms.errors %}
+                  <div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ quote_form.terms.errors }}</div>
+                {% endif %}
+                <span style="font-size:12px;color:#6B7280;">Payment milestones, sample retention, and report delivery terms.</span>
+              </div>
+
+              <div style="margin-bottom:24px;">
+                <label for="id_notes" class="od-form-label">
+                  Additional Remarks / Instructions for Customer
+                </label>
+                {{ quote_form.notes }}
+                {% if quote_form.notes.errors %}
+                  <div style="color:#DC2626;font-size:12px;margin-top:4px;">{{ quote_form.notes.errors }}</div>
+                {% endif %}
+              </div>
+
+              <div style="display:flex;gap:12px;justify-content:flex-end;align-items:center;padding-top:18px;border-top:1px solid #E5E7EB;">
+                <a href="{% url 'lead_detail' enquiry.pk %}{% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}?lab={{ lab_lead.lab_id }}{% endif %}" class="od-btn od-btn--outline" style="text-decoration:none;">
+                  Cancel
+                </a>
+                <button type="submit" class="od-btn od-btn--amber">
+                  ✓ Generate &amp; Send Quotation
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {# ── RIGHT: SIDEBAR ── #}
+      <div class="od-sidebar">
+
+        {# NEXT ACTION card #}
+        <div class="od-side-card od-side-card--next-action">
+          <div class="od-next-action">
+            <p class="label">NEXT ACTION</p>
+            <p class="title">Generate Quotation</p>
+            <p class="sub" style="margin-bottom:0;">Specify total amount, turnaround days (TAT), and scope to issue official quote to customer.</p>
+          </div>
         </div>
 
-        <div class="form-group" style="margin-bottom:16px;">
-            <label for="id_estimated_turnaround_days"><strong>Estimated Turnaround (Days)</strong> *</label>
-            <p style="font-size:12px;color:#6B7280;margin:4px 0 6px;">How many days testing will take after the sample is received (TAT).</p>
-            {{ quote_form.estimated_turnaround_days }}
-            {{ quote_form.estimated_turnaround_days.errors }}
+        {# CUSTOMER card #}
+        <div class="od-side-card od-side-card--customer">
+          <div class="od-cust-card">
+            <p class="od-cust-label">CUSTOMER</p>
+            <div class="od-cust-top">
+              <div class="od-cust-avatar">
+                {% with name=enquiry.contact_name|default:enquiry.user|default:"Customer" %}
+                  {{ name|slice:":2"|upper }}
+                {% endwith %}
+              </div>
+              <div>
+                <div class="od-cust-name">{{ enquiry.contact_name|default:enquiry.user|default:"Customer" }}</div>
+                <div class="od-cust-role">{{ enquiry.email|default:"" }}</div>
+              </div>
+            </div>
+            <div class="od-cust-info">
+              {% if enquiry.email %}
+              <div class="od-cust-row">
+                <span class="key">Email</span>
+                <span class="val">{{ enquiry.email }}</span>
+              </div>
+              {% endif %}
+              {% if enquiry.mobile_number %}
+              <div class="od-cust-row">
+                <span class="key">Phone</span>
+                <span class="val">{{ enquiry.mobile_number }}</span>
+              </div>
+              {% endif %}
+              {% if enquiry.company_name %}
+              <div class="od-cust-row">
+                <span class="key">Company</span>
+                <span class="val">{{ enquiry.company_name }}</span>
+              </div>
+              {% endif %}
+              {% if enquiry.city %}
+              <div class="od-cust-row">
+                <span class="key">City</span>
+                <span class="val">{{ enquiry.city }}</span>
+              </div>
+              {% endif %}
+              <div class="od-cust-row">
+                <span class="key">Enquiry Date</span>
+                <span class="val">{{ enquiry.created_at|date:"M d, Y" }}</span>
+              </div>
+            </div>
+            <div class="od-cust-actions">
+              {% if enquiry.mobile_number %}
+              <a href="tel:{{ enquiry.mobile_number }}" class="od-cust-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.63 19.79 19.79 0 013 1.19 2 2 0 014.11 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+                Call
+              </a>
+              {% else %}
+              <span class="od-cust-btn od-cust-btn--disabled">Call</span>
+              {% endif %}
+              {% if enquiry.email %}
+              <a href="mailto:{{ enquiry.email }}" class="od-cust-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Email
+              </a>
+              {% else %}
+              <span class="od-cust-btn od-cust-btn--disabled">Email</span>
+              {% endif %}
+            </div>
+          </div>
         </div>
 
-        <div class="form-group" style="margin-bottom:16px;">
-            <label for="id_validity_days"><strong>Quote Validity (Days)</strong> *</label>
-            <p style="font-size:12px;color:#6B7280;margin:4px 0 6px;">How long this price remains valid for the customer to accept.</p>
-            {{ quote_form.validity_days }}
-            {{ quote_form.validity_days.errors }}
+        {# VALUE & SUMMARY card #}
+        <div class="od-side-card od-side-card--payment">
+          <div class="od-pay-card">
+            <p class="od-pay-label">COMMERCIAL VALUE</p>
+            <div class="od-pay-row">
+              <span class="key">Target Budget</span>
+              <span class="val">{% if enquiry.budget %}{% if "₹" in enquiry.budget %}{{ enquiry.budget }}{% else %}₹{{ enquiry.budget }}{% endif %}{% else %}Open / Negotiable{% endif %}</span>
+            </div>
+            <div class="od-pay-row">
+              <span class="key">TAT Expected</span>
+              <span class="val">{{ enquiry.get_urgency_display|default:"Standard" }}</span>
+            </div>
+            <div class="od-pay-row">
+              <span class="key">Samples</span>
+              <span class="val">{{ enquiry.quantity_or_sample_info|default:"Standard" }}</span>
+            </div>
+          </div>
         </div>
 
-        <div class="form-group" style="margin-bottom:16px;">
-            <label for="id_scope_notes"><strong>Scope Notes</strong></label>
-            {{ quote_form.scope_notes }}
-        </div>
+      </div>{# /od-sidebar #}
+    </div>{# /od-grid #}
 
-        <div class="form-group" style="margin-bottom:16px;">
-            <label for="id_terms"><strong>Terms</strong></label>
-            {{ quote_form.terms }}
-        </div>
+    {# Django messages #}
+    {% for msg in messages %}
+    <div class="od-flash od-flash--{% if msg.tags == 'success' %}success{% elif msg.tags == 'error' %}error{% else %}info{% endif %}" id="odFlash">
+      {{ msg }}
+      <button class="od-flash-close" onclick="this.parentElement.remove()">&times;</button>
+    </div>
+    {% endfor %}
 
-        <div class="form-group" style="margin-bottom:16px;">
-            <label for="id_notes"><strong>Additional Notes</strong></label>
-            {{ quote_form.notes }}
-        </div>
-
-        <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:20px;">
-            <a href="{% url 'lead_detail' enquiry.pk %}" class="btn btn-secondary" style="padding:10px 16px;">Cancel</a>
-            <button type="submit" class="btn btn-primary" style="padding:10px 16px;">Generate &amp; Send Quote</button>
-        </div>
-    </form>
-</div>
+  </div>{# /od-wrap #}
+</div>{# /lp #}
 {% endblock %}
