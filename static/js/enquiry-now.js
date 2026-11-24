@@ -28,20 +28,37 @@
 
   function initOptions() {
     qsa('.enq-option').forEach(function (opt) {
-      opt.addEventListener('click', function (e) {
-        if (e.target.tagName === 'INPUT') return;
-        var input = qs('input[type="radio"]', opt);
-        if (input) {
-          input.checked = true;
-          input.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      });
+      // Checkbox support (e.g. allow_multiple_labs)
+      var checkbox = qs('input[type="checkbox"]', opt);
+      if (checkbox) {
+        var syncCheckbox = function () {
+          opt.classList.toggle('is-selected', checkbox.checked);
+          var hiddenQuotationType = qs('#id_quotation_type');
+          if (hiddenQuotationType && checkbox.name === 'allow_multiple_labs') {
+            hiddenQuotationType.value = checkbox.checked ? 'multiple_labs' : 'selected_lab';
+          }
+        };
+        checkbox.addEventListener('change', syncCheckbox);
+        syncCheckbox();
+        return;
+      }
+
+      // Radio support
       var input = qs('input[type="radio"]', opt);
       if (input) {
+        opt.addEventListener('click', function (e) {
+          if (e.target.tagName === 'INPUT') return;
+          input.checked = true;
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        });
         var sync = function () {
-          qsa('.enq-option[data-option-group="' + opt.getAttribute('data-option-group') + '"]').forEach(function (o) {
-            o.classList.toggle('is-selected', qs('input', o).checked);
-          });
+          var group = opt.getAttribute('data-option-group');
+          if (group) {
+            qsa('.enq-option[data-option-group="' + group + '"]').forEach(function (o) {
+              var r = qs('input[type="radio"]', o);
+              if (r) o.classList.toggle('is-selected', r.checked);
+            });
+          }
         };
         input.addEventListener('change', sync);
         sync();

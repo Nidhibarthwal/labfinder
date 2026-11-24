@@ -96,22 +96,38 @@
                         <h2>Quotation Preference</h2>
                     </div>
                     {% if lab %}
-                    <label class="enq-option is-selected" data-option-group="quotation_type">
-                        <input type="radio" name="quotation_type" value="selected_lab" checked>
-                        <span class="enq-option__title">Get quote from {{ lab.lab_name }} only</span>
-                        <div class="enq-option__desc">Direct quote request sent specifically to this laboratory</div>
+                    <div class="enq-option is-selected enq-option--mandatory" style="cursor: default;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span class="enq-mandatory-check" aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 4px; background: #0c769e; color: #fff; flex-shrink: 0;">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                </span>
+                                <span class="enq-option__title">Get quote from {{ lab.lab_name }}</span>
+                            </div>
+                            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px;">Mandatory</span>
+                        </div>
+                        <div class="enq-option__desc" style="margin-left: 28px;">Direct quote request sent specifically to this laboratory</div>
+                    </div>
+                    <label class="enq-option enq-option--checkbox" for="id_allow_multiple_labs" style="cursor: pointer;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="checkbox" name="allow_multiple_labs" id="id_allow_multiple_labs" value="multiple_labs" style="width: 18px; height: 18px; accent-color: #0c769e; cursor: pointer; margin: 0; flex-shrink: 0;">
+                            <span class="enq-option__title">Get competitive quotes from other verified labs too</span>
+                        </div>
+                        <div class="enq-option__desc" style="margin-left: 28px;">Compare multiple responses and prices from accredited labs</div>
                     </label>
-                    <label class="enq-option" data-option-group="quotation_type">
-                        <input type="radio" name="quotation_type" value="multiple_labs">
-                        <span class="enq-option__title">Get competitive quotes from other verified labs too</span>
-                        <div class="enq-option__desc">Compare multiple responses and prices from accredited labs</div>
-                    </label>
+                    <input type="hidden" name="quotation_type" id="id_quotation_type" value="selected_lab">
                     {% else %}
-                    <label class="enq-option is-selected" data-option-group="quotation_type">
-                        <input type="radio" name="quotation_type" value="multiple_labs" checked>
-                        <span class="enq-option__title">Get quotes from multiple accredited labs</span>
-                        <div class="enq-option__desc">We will match your requirement with verified testing laboratories</div>
-                    </label>
+                    <div class="enq-option is-selected enq-option--locked" style="cursor: not-allowed;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="checkbox" checked disabled style="width: 18px; height: 18px; accent-color: #0c769e; cursor: not-allowed; margin: 0; flex-shrink: 0;" aria-label="Get quotes from multiple accredited labs">
+                                <span class="enq-option__title">Get quotes from multiple accredited labs</span>
+                            </div>
+                            <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 9999px;">Selected</span>
+                        </div>
+                        <div class="enq-option__desc" style="margin-left: 28px;">We will match your requirement with verified testing laboratories</div>
+                        <input type="hidden" name="quotation_type" value="multiple_labs">
+                    </div>
                     {% endif %}
                 </section>
 

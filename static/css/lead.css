@@ -912,7 +912,18 @@ body.enquiry-now-page {
   border-color: #0c769e;
   background: #f0f9ff;
 }
+.enq-option.enq-option--mandatory,
+.enq-option.enq-option--locked {
+  cursor: default;
+}
+.enq-option.enq-option--mandatory:hover,
+.enq-option.enq-option--locked:hover {
+  border-color: #0c769e;
+}
 .enq-option input { margin-right: 10px; accent-color: #0c769e; }
+.enq-option--checkbox input[type="checkbox"] {
+  accent-color: #0c769e;
+}
 .enq-option__title {
   font-size: 14px;
   font-weight: 600;

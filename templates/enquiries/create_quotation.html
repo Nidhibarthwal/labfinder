@@ -128,7 +128,7 @@
                 <input type="hidden" name="lab" value="{{ lab_lead.lab_id }}">
               {% endif %}
 
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+              <div class="od-form-row">
                 <div>
                   <label for="id_total_amount" class="od-form-label">
                     Total Quoted Amount (₹) <span style="color:#DC2626;">*</span>
@@ -195,7 +195,7 @@
                 {% endif %}
               </div>
 
-              <div style="display:flex;gap:12px;justify-content:flex-end;align-items:center;padding-top:18px;border-top:1px solid #E5E7EB;">
+              <div class="od-form-actions">
                 <a href="{% url 'lead_detail' enquiry.pk %}{% if enquiry.quotation_type == 'multiple_labs' and lab_lead %}?lab={{ lab_lead.lab_id }}{% endif %}" class="od-btn od-btn--outline" style="text-decoration:none;">
                   Cancel
                 </a>

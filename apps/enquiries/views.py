@@ -384,9 +384,14 @@ class EnquiryNowView(View):
                 enquiry.lab_category = lab.lab_category
 
             # Quotation Type
-            quotation_type = request.POST.get("quotation_type")
-            if quotation_type not in ("selected_lab", "multiple_labs"):
-                quotation_type = "selected_lab" if lab else "multiple_labs"
+            allow_multiple = request.POST.get("allow_multiple_labs")
+            quotation_type_raw = request.POST.get("quotation_type")
+            if not lab:
+                quotation_type = "multiple_labs"
+            elif allow_multiple in ("on", "1", "true", "multiple_labs") or quotation_type_raw == "multiple_labs":
+                quotation_type = "multiple_labs"
+            else:
+                quotation_type = "selected_lab"
             enquiry.quotation_type = quotation_type
 
         # Extract Posted Contact Details
@@ -488,7 +493,7 @@ class EnquiryNowView(View):
 
             enquiry.save()
 
-            if enquiry.quotation_type == "selected_lab" and lab:
+            if lab:
                 if hasattr(enquiry, "ensure_lab_lead"):
                     enquiry.ensure_lab_lead(lab)
 
