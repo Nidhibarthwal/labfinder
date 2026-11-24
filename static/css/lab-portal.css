@@ -4980,3 +4980,148 @@
     font-size: 16px;
   }
 }
+
+/* ============================================================
+   Lab Detail Page Responsive Styles
+   ============================================================ */
+.lp-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 992px) {
+  .lp-detail-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .lp-metrics-banner {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .lp-certs-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .lp-detail-hero__top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .lp-detail-hero__actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .lp-detail-hero__actions > * {
+    flex: 1 1 auto;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .lp-detail-nav {
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    gap: 16px;
+    padding-bottom: 2px;
+  }
+
+  .lp-detail-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lp-pricing-table {
+    min-width: 580px;
+  }
+
+  .lp-pricing-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .lp-pricing-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lp-pricing-tab {
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .lp-detail-hero__identity {
+    gap: 12px;
+  }
+
+  .lp-detail-hero__logo,
+  .lp-detail-hero__logo-fallback {
+    width: 60px;
+    height: 60px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+
+  .lp-detail-hero__title {
+    font-size: 18px;
+  }
+
+  .lp-metrics-banner {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .lp-metric-pill {
+    padding: 10px 12px;
+  }
+
+  .lp-metric-pill__val {
+    font-size: 18px;
+  }
+
+  .lp-metric-pill__lbl {
+    font-size: 11px;
+  }
+
+  .lp-certs-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .lp-cert-card {
+    padding: 20px 16px;
+  }
+
+  .lp-detail-hero__actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .lp-detail-hero__actions a {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 360px) {
+  .lp-detail-hero__title {
+    font-size: 16px;
+  }
+
+  .lp-metric-pill {
+    padding: 8px 10px;
+  }
+
+  .lp-metric-pill__val {
+    font-size: 16px;
+  }
+}

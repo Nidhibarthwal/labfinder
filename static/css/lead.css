@@ -619,9 +619,26 @@ body.enquiry-now-page {
 @media (max-width: 900px) {
   .enq-layout {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
   .enq-sidebar {
     order: -1;
+  }
+  .enq-sidebar #enq-sidebar-submit {
+    display: none;
+  }
+  .enq-sidebar .enq-quote-box {
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    margin-bottom: 0;
+  }
+  .enq-sidebar .enq-trust {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    justify-content: center;
   }
 }
 
@@ -1123,6 +1140,21 @@ body.enquiry-now-page {
   .enq-page {
     padding-left: 12px;
     padding-right: 12px;
+  }
+  .enq-card {
+    padding: 18px 14px;
+    border-radius: 12px;
+  }
+  .enq-auth-banner {
+    padding: 14px;
+  }
+  .enq-auth-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .enq-auth-actions .enq-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 

@@ -879,6 +879,38 @@ textarea.form-control {
 .od-btn--mt                  { margin-top: 8px; }
 .od-btn--sm-create           { font-size: 13px; padding: 7px 14px; }
 
+.od-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.od-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 18px;
+  border-top: 1px solid #E5E7EB;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .od-form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .od-form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .od-form-actions .od-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* ---- Order Detail Responsive Breakpoints ---- */
 @media (max-width: 992px) {
   .od-wrap {
