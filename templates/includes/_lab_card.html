@@ -1,15 +1,20 @@
 {% load static %}
-<a href="{% if lab.slug %}{% url 'lab-detail' lab.slug %}{% else %}/lab-detail/{{ lab.id }}/{% endif %}" class="lab-card__arrow-btn" aria-label="View lab details">
 <div class="lab-card" data-lab-id="{{ lab.id }}">
     <!-- Card Image Header -->
     <div class="lab-card__img-wrap">
-        {% if lab.lab_logo %}
-            <img src="{{ lab.lab_logo.url }}" alt="{{ lab.lab_name|default:'Laboratory' }}" class="lab-card__img lab-card__img--contain" loading="lazy">
-        {% else %}
-            <img src="{% static 'images/default-lab.png' %}" alt="{{ lab.lab_name|default:'Laboratory' }}" class="lab-card__img" loading="lazy">
-        {% endif %}
+        <a href="{% if lab.get_absolute_url %}{{ lab.get_absolute_url }}{% elif lab.url %}{{ lab.url }}{% elif lab.slug %}{% url 'lab-detail' lab.slug %}{% else %}/lab-detail/{{ lab.id }}/{% endif %}" style="display: block; width: 100%; height: 100%;" aria-label="View {% firstof lab.lab_name lab.name 'Laboratory' %} details">
+            {% if lab.lab_logo %}
+                <img src="{% if lab.lab_logo.url %}{{ lab.lab_logo.url }}{% else %}/media/{{ lab.lab_logo }}{% endif %}" alt="{% firstof lab.lab_name lab.name 'Laboratory' %}" class="lab-card__img lab-card__img--contain" loading="lazy" onerror="this.onerror=null; this.src='{% static 'images/default-lab.png' %}';">
+            {% elif lab.logo %}
+                <img src="{{ lab.logo }}" alt="{% firstof lab.lab_name lab.name 'Laboratory' %}" class="lab-card__img lab-card__img--contain" loading="lazy" onerror="this.onerror=null; this.src='{% static 'images/default-lab.png' %}';">
+            {% elif lab.logo_base64 %}
+                <img src="data:image/png;base64,{{ lab.logo_base64 }}" alt="{% firstof lab.lab_name lab.name 'Laboratory' %}" class="lab-card__img lab-card__img--contain" loading="lazy">
+            {% else %}
+                <img src="{% static 'images/default-lab.png' %}" alt="{% firstof lab.lab_name lab.name 'Laboratory' %}" class="lab-card__img" loading="lazy">
+            {% endif %}
+        </a>
 
-        {% if lab.VISTA_code or lab.source == 'vista' %}
+        {% if lab.VISTA_code or lab.source == 'vista' or lab.is_vista %}
             <div class="lab-card__badge-vista">
                 <img src="{% static 'images/vista-icon.svg' %}" alt="" width="14" height="14">
                 <span><strong>Vista</strong> Integrated</span>
@@ -27,8 +32,10 @@
         </div>
 
         <!-- Lab Name -->
-        <h3 class="lab-card__title" title="{{ lab.lab_name }}">
-            {{ lab.lab_name }}
+        <h3 class="lab-card__title" title="{% firstof lab.lab_name lab.name %}">
+            <a href="{% if lab.get_absolute_url %}{{ lab.get_absolute_url }}{% elif lab.url %}{{ lab.url }}{% elif lab.slug %}{% url 'lab-detail' lab.slug %}{% else %}/lab-detail/{{ lab.id }}/{% endif %}" style="color: inherit; text-decoration: none;">
+                {% firstof lab.lab_name lab.name %}
+            </a>
         </h3>
 
         <!-- Location (City, State) -->
@@ -37,7 +44,7 @@
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                 <circle cx="12" cy="10" r="3"></circle>
             </svg>
-            {{ lab.lab_city }}{% if lab.lab_state %}, {{ lab.lab_state.name }}{% endif %}
+            {% if lab.lab_city %}{{ lab.lab_city }}{% if lab.lab_state %}, {{ lab.lab_state.name }}{% endif %}{% elif lab.location %}{{ lab.location }}{% else %}India{% endif %}
         </p>
 
         <!-- Certifications / Accreditation Tags -->
@@ -50,6 +57,8 @@
                     {% if accreditations|length > 3 %}
                         <span class="lab-card__tag">+{{ accreditations|length|add:"-3" }} more</span>
                     {% endif %}
+                {% else %}
+                    <span class="lab-card__tag">&nbsp;</span>
                 {% endif %}
             {% endwith %}
         </div>
@@ -60,6 +69,8 @@
                 <span class="lab-card__price">
                     {% if lab.min_order_value %}
                         ₹{{ lab.min_order_value }}
+                    {% elif lab.price %}
+                        {{ lab.price }}
                     {% else %}
                         On Request
                     {% endif %}
@@ -68,8 +79,10 @@
                     TAT: {{ lab.turnaround_time|default:"24-48 hrs" }}
                 </span> -->
             </div>
-            <img src="{% static 'images/arrow_forward_ios.svg' %}" alt="Go" width="7" height="12">
+
+            <a href="{% if lab.get_absolute_url %}{{ lab.get_absolute_url }}{% elif lab.url %}{{ lab.url }}{% elif lab.slug %}{% url 'lab-detail' lab.slug %}{% else %}/lab-detail/{{ lab.id }}/{% endif %}" class="lab-card__arrow-btn" aria-label="View lab details">
+                <img src="{% static 'images/arrow_forward_ios.svg' %}" alt="Go" width="7" height="12">
+            </a>
         </div>
     </div>
 </div>
-</a>
