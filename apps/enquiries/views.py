@@ -1080,7 +1080,7 @@ class SubmitLabReviewView(View):
             messages.error(
                 request, "Please log in or sign up to submit your review."
             )
-            return redirect("lab-detail", pk=lab_id)
+            return redirect(branch.get_absolute_url())
 
         title = request.POST.get("title", "").strip()
         summary = request.POST.get("summary", "").strip()
@@ -1127,7 +1127,7 @@ class SubmitLabReviewView(View):
             review.calculate_overall_rating()
 
         messages.success(request, "Thank you! Your review has been submitted.")
-        return redirect("lab-detail", pk=branch.pk)
+        return redirect(branch.get_absolute_url())
 
 
 class ReplyLabReviewView(View):

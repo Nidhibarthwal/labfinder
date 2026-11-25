@@ -1,4 +1,5 @@
-from django.http import JsonResponse
+import uuid
+from django.http import JsonResponse, Http404, HttpResponsePermanentRedirect
 from django.utils import timezone
 from rest_framework.generics import ListAPIView
 from apps.labs.models import (
@@ -30,8 +31,28 @@ class LabNavigationMenuAPIView(ListAPIView):
 class LabDetailView(View):
 
     def get(self, request, *args, **kwargs):
+        slug = self.kwargs.get("slug")
         branch_id = self.kwargs.get("id") or self.kwargs.get("pk")
-        branch = get_object_or_404(Branch, pk=branch_id)
+        branch = None
+
+        if branch_id:
+            branch = get_object_or_404(Branch, pk=branch_id)
+            if branch.slug:
+                return HttpResponsePermanentRedirect(branch.get_absolute_url())
+        elif slug:
+            branch = Branch.objects.filter(slug=slug).first()
+            if not branch:
+                try:
+                    uuid_val = uuid.UUID(str(slug))
+                    branch = Branch.objects.filter(pk=uuid_val).first()
+                    if branch and branch.slug:
+                        return HttpResponsePermanentRedirect(branch.get_absolute_url())
+                except (ValueError, AttributeError):
+                    pass
+            if not branch:
+                raise Http404("Laboratory not found.")
+        else:
+            raise Http404("Laboratory not found.")
 
         # 1. Active certificates
         accreditations = Accreditation.objects.filter(
@@ -408,7 +429,7 @@ class PurchasePromotionalAddonView(View):
             target_category=target_category,
             target_country=target_country,
             banner_headline=request.POST.get("banner_headline", "").strip(),
-            banner_link=request.POST.get("banner_link", "").strip() or reverse("lab-detail", kwargs={"pk": lab.pk}),
+            banner_link=request.POST.get("banner_link", "").strip() or lab.get_absolute_url(),
             price_paid=addon.base_price,
             status='active',
             starts_at=now,

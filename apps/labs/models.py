@@ -13,6 +13,7 @@ from django.core.validators import FileExtensionValidator
 import os
 from apps.samples_configurations.models import Category, SubCategory, ParameterQualitativeValue, ParameterRangeValue, SampleClauseCategory, SampleClauseSubCategory, ServiceCategory, TestMethod
 from django.utils.text import slugify
+from django.urls import reverse
 
 
 PRICING_METHOD = (("standard", 'Standard Wise'), ("parameter", 'Parameter Wise'))
@@ -347,6 +348,7 @@ class Branch(Trackable):
     # ============================================================
 
     lab_name = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    slug = models.SlugField(max_length=255, blank=True, null=True, unique=True, db_index=True)
     lab_name_hindi =models.CharField(max_length=255, blank=True, null=True, db_index=True)
     lab_logo = models.ImageField(upload_to='labs/logos/', blank=True, null=True)
     logo_base64 = models.TextField(blank=True, null=True)
@@ -567,13 +569,57 @@ class Branch(Trackable):
         cat_ids.update(item_cat_ids)
         return list(cat_ids)
 
+    def generate_unique_slug(self):
+        base = slugify(self.lab_name or "lab")
+        if not base:
+            base = "lab"
+        base = base[:180]
+        candidate = base
+
+        qs = Branch.objects.filter(slug=candidate)
+        if self.pk:
+            qs = qs.exclude(pk=self.pk)
+        if not qs.exists():
+            return candidate
+
+        city = (self.lab_city or (self.lab_district.name if self.lab_district else "")).strip()
+        if city:
+            city_slug = slugify(city)
+            if city_slug and city_slug not in candidate:
+                candidate_city = f"{candidate}-{city_slug}"[:220]
+                qs_city = Branch.objects.filter(slug=candidate_city)
+                if self.pk:
+                    qs_city = qs_city.exclude(pk=self.pk)
+                if not qs_city.exists():
+                    return candidate_city
+                candidate = candidate_city
+
+        counter = 2
+        while True:
+            candidate_n = f"{candidate[:210]}-{counter}"
+            qs_n = Branch.objects.filter(slug=candidate_n)
+            if self.pk:
+                qs_n = qs_n.exclude(pk=self.pk)
+            if not qs_n.exists():
+                return candidate_n
+            counter += 1
+
+    def get_absolute_url(self):
+        if self.slug:
+            return reverse("lab-detail", kwargs={"slug": self.slug})
+        return reverse("lab-detail-pk", kwargs={"pk": self.pk})
+
     def clean(self):
         super().clean()
+        if not self.slug and self.lab_name:
+            self.slug = self.generate_unique_slug()
         if getattr(self, "lab_category_id", None) and self.category_data:
             # Validates before saving via Django Admin or ModelForm
             validate_lab_data(self.lab_category.id, self.category_data)
 
     def save(self, *args, **kwargs):
+        if not self.slug and self.lab_name:
+            self.slug = self.generate_unique_slug()
         self.full_clean()  # Trigger clean() during manual model save calls
         super().save(*args, **kwargs)
 

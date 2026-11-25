@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from apps.enquiries.models import Enquiry
+from apps.enquiries.models import Enquiry, LabLead
 from apps.labs.models import Branch
 
 User = get_user_model()
@@ -128,7 +128,47 @@ class LinkedInSSOAndEnquiryTests(TestCase):
 
     def test_lab_detail_page_contains_enquiry_link(self):
         """Lab detail page contains Send Enquiry link with lab_id query parameter."""
-        response = self.client.get(reverse("lab-detail", kwargs={"pk": self.lab.pk}))
+        response = self.client.get(self.lab.get_absolute_url())
         self.assertEqual(response.status_code, 200)
         expected_link = f'href="{reverse("enquiry_now")}?lab_id={self.lab.pk}"'
         self.assertIn(expected_link, response.content.decode("utf-8"))
+
+    def test_enquiry_with_lab_and_allow_multiple_labs_checked(self):
+        """When checkbox allow_multiple_labs is checked, quotation_type is multiple_labs and lab_lead is created."""
+        response = self.client.post(
+            reverse("enquiry_now"),
+            {
+                "lab_id": str(self.lab.pk),
+                "allow_multiple_labs": "multiple_labs",
+                "email": "tester@domain.com",
+                "mobile_number": "9123456789",
+                "product_name": "Concrete Cube",
+                "description": "Compressive strength test",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        enquiry = Enquiry.objects.filter(product_name="Concrete Cube").first()
+        self.assertIsNotNone(enquiry)
+        self.assertEqual(enquiry.lab, self.lab)
+        self.assertEqual(enquiry.quotation_type, "multiple_labs")
+        self.assertTrue(LabLead.objects.filter(enquiry=enquiry, lab=self.lab).exists())
+
+    def test_enquiry_render_quotation_preference_with_and_without_lab(self):
+        """Verify UI elements for quotation preference depending on lab presence."""
+        # 1. With lab: mandatory card without radio, plus checkbox for competitive quotes
+        resp_lab = self.client.get(f"{reverse('enquiry_now')}?lab_id={self.lab.pk}")
+        self.assertEqual(resp_lab.status_code, 200)
+        content_lab = resp_lab.content.decode("utf-8")
+        self.assertIn("enq-option--mandatory", content_lab)
+        self.assertIn("Mandatory", content_lab)
+        self.assertIn('name="allow_multiple_labs"', content_lab)
+        self.assertIn('type="checkbox"', content_lab)
+        self.assertNotIn('name="quotation_type" type="radio"', content_lab)
+
+        # 2. Without lab: locked auto-select section that cannot be unselected
+        resp_no_lab = self.client.get(reverse("enquiry_now"))
+        self.assertEqual(resp_no_lab.status_code, 200)
+        content_no_lab = resp_no_lab.content.decode("utf-8")
+        self.assertIn("enq-option--locked", content_no_lab)
+        self.assertIn("Get quotes from multiple accredited labs", content_no_lab)
+        self.assertIn('disabled', content_no_lab)

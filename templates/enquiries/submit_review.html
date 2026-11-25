@@ -61,7 +61,7 @@
                 </div>
 
                 <div class="modal-actions">
-                    <a href="{% url 'lab-detail' pk=branch.pk %}" class="btn-modal-cancel">Cancel</a>
+                    <a href="{{ branch.get_absolute_url }}" class="btn-modal-cancel">Cancel</a>
                     <button type="button" id="btnReviewSubmit" class="btn-modal-save">Submit Review</button>
                 </div>
             </form>

@@ -63,7 +63,7 @@
             </div>
         </div>
 
-        <a href="{% if enquiry.lab %}/lab-detail/{{ enquiry.lab.pk }}/{% else %}/{% endif %}" class="btn-home">
+        <a href="{% if enquiry.lab %}{{ enquiry.lab.get_absolute_url }}{% else %}/{% endif %}" class="btn-home">
             &larr; Return to {% if enquiry.lab %}Laboratory Page{% else %}Home{% endif %}
         </a>
     </div>

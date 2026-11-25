@@ -39,7 +39,8 @@ def _format_lab_card_product(b, tests=None):
         "country": str(b.lab_country.name) if b.lab_country else "India",
         "tests": formatted_tests[:4],
         "lab_type": "connected" if ((b.source == "vista") or bool(b.VISTA_code)) else "partner",
-        "url": f"/lab-detail/{b.pk}/",
+        "url": b.get_absolute_url(),
+        "slug": b.slug,
         "promotional_tier": getattr(b, "promotional_tier", "basic"),
         "priority_tier_level": getattr(b, "priority_tier_level", 3),
         "is_verified_growth": getattr(b, "is_verified_growth", False),
@@ -71,7 +72,8 @@ def _format_lab_card_lab(b):
         "accreditations": accred_names[:2],
         "price": "₹1,800+",
         "tat": "Onwards",
-        "url": f"/lab-detail/{b.pk}/",
+        "url": b.get_absolute_url(),
+        "slug": b.slug,
         "country": str(b.lab_country.name) if b.lab_country else "India",
         "lab_type": "connected" if ((b.source == "vista") or bool(b.VISTA_code)) else "partner",
         "promotional_tier": getattr(b, "promotional_tier", "basic"),
@@ -455,7 +457,8 @@ def search_labs_by_name(query, limit=None, subcategory_id=None, category_id=None
             "lab_id": str(b.pk),
             "lab_name": b.lab_name or "",
             "logo": b.lab_logo.url if b.lab_logo else "",
-            "url": f"/lab-detail/{b.pk}/",
+            "url": b.get_absolute_url(),
+            "slug": b.slug,
         })
 
     return labs, autocomplete_items

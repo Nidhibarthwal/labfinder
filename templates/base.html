@@ -6,7 +6,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LabFinder 360 | Find Testing Labs & Services</title>
+    <title>{% block title %}LabFinder 360 | Find Testing Labs & Services{% endblock %}</title>
+    {% block extra_head %}
     <meta name="description" content="Find trusted laboratories and testing services with LabFinder 360. Explore labs, testing facilities, and services all in one convenient platform." />
     <meta name="keywords" content="LabFinder 360, testing labs, laboratories, lab testing services, laboratory services, diagnostic labs" />
     <meta name="robots" content="index, follow" />
@@ -15,6 +16,7 @@
     <meta property="og:description" content="Find trusted laboratories and testing services with LabFinder 360. Explore labs, testing facilities, and services all in one convenient platform." />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="{% static 'images/logo.svg' %}" />
+    {% endblock %}
 
     <link rel="stylesheet" href="{% static 'css/home.css' %}">
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">

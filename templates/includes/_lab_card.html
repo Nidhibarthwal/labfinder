@@ -1,5 +1,5 @@
 {% load static %}
-
+<a href="{% if lab.slug %}{% url 'lab-detail' lab.slug %}{% else %}/lab-detail/{{ lab.id }}/{% endif %}" class="lab-card__arrow-btn" aria-label="View lab details">
 <div class="lab-card" data-lab-id="{{ lab.id }}">
     <!-- Card Image Header -->
     <div class="lab-card__img-wrap">
@@ -68,10 +68,8 @@
                     TAT: {{ lab.turnaround_time|default:"24-48 hrs" }}
                 </span> -->
             </div>
-
-            <a href="{% if lab.slug %}{% url 'lab-detail' lab.slug %}{% else %}/lab-detail/{{ lab.id }}/{% endif %}" class="lab-card__arrow-btn" aria-label="View lab details">
-                <img src="{% static 'images/arrow_forward_ios.svg' %}" alt="Go" width="7" height="12">
-            </a>
+            <img src="{% static 'images/arrow_forward_ios.svg' %}" alt="Go" width="7" height="12">
         </div>
     </div>
 </div>
+</a>

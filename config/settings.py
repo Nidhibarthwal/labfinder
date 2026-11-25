@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sitemaps",
     "corsheaders",
     "import_export",
     "mptt",
@@ -64,6 +65,7 @@ LOCAL_APPS =[
     "apps.workflow",
     "apps.web",
     "apps.enquiries",
+    "apps.seo",
 ]
 THIRD_PARTY_APPS = [
     "rapidfuzz",

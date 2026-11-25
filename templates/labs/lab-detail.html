@@ -518,7 +518,7 @@
                             <div class="lp-other-lab-avatar-fallback">{{ other.lab_name|slice:":2"|upper }}</div>
                         {% endif %}
                         <div class="lp-other-lab-info">
-                            <a href="{% url 'lab-detail' pk=other.pk %}" class="lp-other-lab-name">{{ other.lab_name }}</a>
+                            <a href="{{ other.get_absolute_url }}" class="lp-other-lab-name">{{ other.lab_name }}</a>
                             <div class="lp-other-lab-meta">{{ other.lab_city|default:other.lab_state.name|default:"" }}{% if other.avg_rating %} • {{ other.avg_rating|floatformat:1 }}★{% endif %}</div>
                             <div class="lp-other-lab-badges">
                                 {% for accred in other.branch_accreditation.all|slice:":2" %}
