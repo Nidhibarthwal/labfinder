@@ -8,6 +8,24 @@ from apps.seo.models import SEOLandingPage, SEOTemplate
 
 logger = logging.getLogger(__name__)
 
+ALLOWED_TOP_TIERS = (3, 5, 10, 20, 50)
+
+
+def get_top_count_tier(lab_count):
+    """
+    Returns the highest allowed SEO 'Top N' tier (3, 5, 10, 20, 50)
+    that does not exceed lab_count, or None if lab_count < 3.
+    """
+    if not lab_count or lab_count < ALLOWED_TOP_TIERS[0]:
+        return None
+    tier = None
+    for t in ALLOWED_TOP_TIERS:
+        if lab_count >= t:
+            tier = t
+        else:
+            break
+    return tier
+
 
 def get_or_create_default_template(page_type="category_city"):
     """
@@ -114,20 +132,22 @@ def sync_branch_categories_from_group_names():
     return total_added
 
 
-def generate_bulk_seo_pages(min_labs_threshold=1, overwrite_customized=False, include_groups=True):
+def generate_bulk_seo_pages(min_labs_threshold=3, overwrite_customized=False, include_groups=True):
     """
     Main bulk generator engine using both Branch.categories and Branch.group_name.
-    Scans Category table, Branch locations, and prominent group specialties.
+    Only generates pages for allowed Top-N tiers: 3, 5, 10, 20, 50 (never top-1, top-2, top-4, etc.).
     """
     # 1. Sync laboratory categories from group names & disciplines
     sync_branch_categories_from_group_names()
 
+    effective_min_labs = max(min_labs_threshold, ALLOWED_TOP_TIERS[0])
     template = get_or_create_default_template("category_city")
     categories = Category.objects.filter(active=True)
 
     created_count = 0
     updated_count = 0
     deactivated_count = 0
+    valid_slugs = set()
 
     # Pass 1: Generate landing pages for formal Categories (Branch.categories)
     for cat in categories:
@@ -152,11 +172,15 @@ def generate_bulk_seo_pages(min_labs_threshold=1, overwrite_customized=False, in
             ).distinct()
 
             lab_count = labs_qs.count()
-            if lab_count < min_labs_threshold:
+            if lab_count < effective_min_labs:
                 continue
 
-            count_display = min(5, lab_count) if lab_count >= 3 else lab_count
+            count_display = get_top_count_tier(lab_count)
+            if count_display is None:
+                continue
+
             slug = slugify(f"top-{count_display}-{cat.name}-labs-in-{city_clean}")
+            valid_slugs.add(slug)
 
             meta = build_page_metadata(template, cat.name, city_clean, count_display)
 
@@ -237,11 +261,15 @@ def generate_bulk_seo_pages(min_labs_threshold=1, overwrite_customized=False, in
                 ).distinct()
 
                 lab_count = labs_qs.count()
-                if lab_count < min_labs_threshold:
+                if lab_count < effective_min_labs:
                     continue
 
-                count_display = min(5, lab_count) if lab_count >= 3 else lab_count
+                count_display = get_top_count_tier(lab_count)
+                if count_display is None:
+                    continue
+
                 slug = slugify(f"top-{count_display}-{g_name}-labs-in-{city_clean}")
+                valid_slugs.add(slug)
 
                 meta = build_page_metadata(template, g_name, city_clean, count_display)
 
@@ -286,6 +314,18 @@ def generate_bulk_seo_pages(min_labs_threshold=1, overwrite_customized=False, in
                     page.save()
                     updated_count += 1
 
+    # Clean up stale/disallowed tier pages (e.g., top-1, top-2, top-4, or outdated tiers)
+    stale_qs = SEOLandingPage.objects.exclude(slug__in=valid_slugs)
+    if overwrite_customized:
+        deactivated_count = stale_qs.count()
+        stale_qs.delete()
+    else:
+        non_custom_stale = stale_qs.filter(is_customized=False)
+        deactivated_count += non_custom_stale.count()
+        non_custom_stale.delete()
+        custom_stale = stale_qs.filter(is_customized=True, is_active=True)
+        deactivated_count += custom_stale.update(is_active=False)
+
     return {
         "created": created_count,
         "updated": updated_count,
@@ -307,8 +347,10 @@ def update_bulk_seo_metadata(page_type=None, force=False):
 
     pages_to_update = []
     for page in qs.select_related("category"):
+        count_display = get_top_count_tier(page.lab_count)
+        if count_display is None:
+            continue
         cat_name = page.display_category
-        count_display = min(5, page.lab_count) if page.lab_count >= 3 else (page.lab_count or 1)
         meta = build_page_metadata(template, cat_name, page.city, count_display)
 
         page.meta_title = meta["meta_title"]
@@ -349,8 +391,19 @@ def sync_lab_seo(branch):
         ).distinct()
 
         lab_count = labs_qs.count()
-        count_display = min(5, lab_count) if lab_count >= 3 else lab_count
+        count_display = get_top_count_tier(lab_count)
+        if count_display is None:
+            SEOLandingPage.objects.filter(
+                category=cat, city__iexact=city_clean, is_customized=False
+            ).delete()
+            continue
+
         slug = slugify(f"top-{count_display}-{cat.name}-labs-in-{city_clean}")
+
+        # Remove older tier slug for the same category + city if tier changed (e.g., top-3 -> top-5)
+        SEOLandingPage.objects.filter(
+            category=cat, city__iexact=city_clean, is_customized=False
+        ).exclude(slug=slug).delete()
 
         meta = build_page_metadata(template, cat.name, city_clean, count_display)
 

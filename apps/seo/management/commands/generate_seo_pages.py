@@ -9,8 +9,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--min-labs",
             type=int,
-            default=1,
-            help="Minimum number of laboratories required to activate an SEO page (default: 1)",
+            default=3,
+            help="Minimum number of laboratories required to generate an SEO page (minimum enforced: 3; allowed tiers: 3, 5, 10, 20, 50)",
         )
         parser.add_argument(
             "--overwrite-customized",

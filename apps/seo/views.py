@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
 
 from apps.seo.models import SEOLandingPage
+from apps.seo.services import get_top_count_tier
 from apps.labs.models import Branch
 
 
@@ -33,7 +34,8 @@ def seo_landing_page_view(request, slug):
 
     labs_qs = labs_qs.distinct().order_by("-is_active", "-created_at")
 
-    top_labs = list(labs_qs[:10])
+    tier_limit = get_top_count_tier(page.lab_count) or 10
+    top_labs = list(labs_qs[:tier_limit])
 
     # 2. Build Structured Data (JSON-LD)
     # A. BreadcrumbList Schema
