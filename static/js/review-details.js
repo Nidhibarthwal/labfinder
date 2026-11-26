@@ -1,7 +1,46 @@
 document.addEventListener("DOMContentLoaded", () => {
     const getCsrfToken = () => document.querySelector('[name=csrfmiddlewaretoken]')?.value || "";
 
+    const UNDER_REVIEW_MSG = "Your lab profile has already been submitted and is currently being reviewed for approval. Updates are disabled while under review.";
+    let lastReviewAlertAt = 0;
+
+    function isUnderReview() {
+        const btn = document.getElementById("btnSubmitApproval");
+        return ((btn?.dataset?.labStatus || "").toLowerCase() === "reviewed");
+    }
+
+    function showUnderReviewAlert() {
+        const now = Date.now();
+        if (now - lastReviewAlertAt < 1500) return;
+        lastReviewAlertAt = now;
+        if (typeof window.showSiteToast === "function") {
+            window.showSiteToast(UNDER_REVIEW_MSG, "warning");
+        } else {
+            alert(UNDER_REVIEW_MSG);
+        }
+    }
+
+    if (isUnderReview()) {
+        document.addEventListener("change", (e) => {
+            if (e.target.closest("main") || e.target.closest(".product-modal") || e.target.closest(".review-card")) {
+                showUnderReviewAlert();
+            }
+        }, true);
+
+        document.addEventListener("submit", (e) => {
+            if (e.target.closest("main") || e.target.closest(".product-modal")) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                showUnderReviewAlert();
+            }
+        }, true);
+    }
+
     async function sendAutoSave(action, formData) {
+        if (isUnderReview()) {
+            showUnderReviewAlert();
+            return { status: "error", message: UNDER_REVIEW_MSG };
+        }
         const csrfToken = getCsrfToken();
         formData.append("action", action);
         formData.append("csrfmiddlewaretoken", csrfToken);
@@ -1315,10 +1354,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // H. Submit Profile for Approval
-        if (e.target.closest("#btnSubmitApproval")) {
+        const submitBtn = e.target.closest("#btnSubmitApproval");
+        if (submitBtn) {
+            if (submitBtn.disabled || isUnderReview()) {
+                showUnderReviewAlert();
+                return;
+            }
             if (!confirm("Are you sure you want to submit your profile for approval?")) return;
             const res = await sendAutoSave("submit_for_approval", new FormData());
             if (res?.status === "success") {
+                submitBtn.disabled = true;
+                submitBtn.dataset.labStatus = "reviewed";
+                submitBtn.textContent = "Submitted For Approval";
+                submitBtn.style.opacity = "0.65";
+                submitBtn.style.cursor = "not-allowed";
                 alert(res.message || "Profile submitted for approval successfully!");
                 window.location.href = "/lab-review-detail/";
             } else {

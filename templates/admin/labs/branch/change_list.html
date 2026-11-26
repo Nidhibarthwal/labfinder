@@ -1,0 +1,45 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+
+{% block object-tools-items %}
+  <li>
+    <form id="sendClaimProfileEmailForm" method="post" action="{% url 'admin:labs_branch_send_claim_email' %}" style="display:inline;">
+      {% csrf_token %}
+      <div id="claimSelectedIdsContainer"></div>
+      <button type="submit" id="sendClaimProfileEmailBtn" class="addlink" style="background:#facc15; color:#0f172a; font-weight:700; border:none; cursor:pointer; padding:6px 14px; border-radius:15px; line-height:1.4;">
+        Send Claim Profile Email
+      </button>
+    </form>
+  </li>
+  {% include "admin/import_export/change_list_import_item.html" %}
+  {% include "admin/import_export/change_list_export_item.html" %}
+  {{ block.super }}
+
+  <script>
+    (function() {
+      var form = document.getElementById("sendClaimProfileEmailForm");
+      if (!form) return;
+      form.addEventListener("submit", function(e) {
+        var container = document.getElementById("claimSelectedIdsContainer");
+        container.innerHTML = "";
+        var checked = document.querySelectorAll("input.action-select:checked");
+        if (checked.length > 0) {
+          checked.forEach(function(cb) {
+            var input = document.createElement("input");
+            input.type = "hidden";
+            input.name = "selected_ids";
+            input.value = cb.value;
+            container.appendChild(input);
+          });
+          if (!confirm("Send Claim Profile Email to " + checked.length + " selected lab(s) that have not received it yet?")) {
+            e.preventDefault();
+          }
+        } else {
+          if (!confirm("No specific labs selected. Send Claim Profile Email to ALL labs that have not received it yet?")) {
+            e.preventDefault();
+          }
+        }
+      });
+    })();
+  </script>
+{% endblock %}

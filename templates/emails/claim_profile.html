@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ lab_name }} is now live on LabFinder360</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f3f5f8; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color:#111827; -webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f3f5f8; padding:24px 12px;">
+    <tr>
+      <td align="center">
+        <!-- Main Container -->
+        <table role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" style="max-width:600px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 2px 12px rgba(15, 23, 42, 0.06);">
+
+          <!-- Top Header Logo -->
+          <tr>
+            <td align="center" style="padding:28px 32px 16px 32px;">
+              <span style="font-size:24px; font-weight:800; letter-spacing:-0.5px; color:#0f2b3c; display:inline-block;">
+                Lab<span style="color:#0c769e;">Finder</span><sup style="font-size:11px; color:#facc15; font-weight:800; margin-left:2px;">360</sup>
+              </span>
+            </td>
+          </tr>
+
+          <!-- Hero Pill Badge -->
+          <tr>
+            <td align="center" style="padding:10px 32px 14px 32px;">
+              <span style="display:inline-block; background-color:#f0fdf4; color:#b45309; font-size:10px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; padding:6px 14px; border-radius:999px; border:1px solid #dcfce7;">
+                &#10022; CONGRATULATIONS &middot; YOUR LAB IS FEATURED
+              </span>
+            </td>
+          </tr>
+
+          <!-- Hero Heading -->
+          <tr>
+            <td align="center" style="padding:0 40px 12px 40px;">
+              <h1 style="margin:0; font-size:26px; line-height:1.28; font-weight:800; color:#0f172a; letter-spacing:-0.4px;">
+                {{ lab_name }} is now live on LabFinder360.
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Hero Subtext -->
+          <tr>
+            <td align="center" style="padding:0 44px 24px 44px;">
+              <p style="margin:0; font-size:14px; line-height:1.6; color:#64748b;">
+                Businesses actively searching for testing partners can now find your lab. Claim your official profile to showcase your full capabilities and turn searches into qualified enquiries.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Hero Illustration -->
+          <tr>
+            <td align="center" style="padding:4px 32px 24px 32px;">
+              <img src="cid:laboratory_illustration" alt="Laboratory illustration" width="340" style="display:block; max-width:100%; height:auto; margin:0 auto; border:0;" />
+            </td>
+          </tr>
+
+          <!-- Primary CTA Button -->
+          <tr>
+            <td align="center" style="padding:0 32px 10px 32px;">
+              <a href="{{ claim_url }}" target="_blank" style="display:inline-block; background-color:#facc15; color:#0f172a; font-size:13px; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; text-decoration:none; padding:14px 40px; border-radius:999px;">
+                CLAIM YOUR LAB
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:0 32px 30px 32px;">
+              <span style="font-size:10px; font-weight:700; letter-spacing:0.8px; color:#b45309; text-transform:uppercase;">
+                FREE TO CLAIM &middot; VERIFY OWNERSHIP IN MINUTES
+              </span>
+            </td>
+          </tr>
+
+          <!-- Greeting & Intro -->
+          <tr>
+            <td style="padding:0 36px 20px 36px;">
+              <p style="margin:0 0 12px 0; font-size:14px; font-weight:700; color:#0f172a;">
+                Hello {{ contact_person }},
+              </p>
+              <p style="margin:0; font-size:14px; line-height:1.65; color:#475569;">
+                Congratulations! Based on publicly available industry records, we have created a preliminary listing for <strong style="color:#0f172a;">{{ lab_name }}</strong> on LabFinder360. Review your details below and verify your ownership to unlock tools built to grow your testing business.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Unclaimed Listing Card -->
+          <tr>
+            <td style="padding:0 36px 32px 36px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#fafbfc; border:1px solid #e2e8f0; border-radius:14px;">
+                <tr>
+                  <td style="padding:22px 24px;">
+                    <span style="display:inline-block; background-color:#fef3c7; color:#92400e; font-size:10px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; padding:4px 10px; border-radius:999px; margin-bottom:10px;">
+                      UNCLAIMED LISTING
+                    </span>
+                    <div style="font-size:18px; font-weight:800; color:#0f172a; margin:0 0 4px 0;">
+                      {{ lab_name }}
+                    </div>
+                    {% if location %}
+                    <div style="font-size:13px; color:#64748b; margin:0 0 12px 0;">
+                      {{ location }}
+                    </div>
+                    {% endif %}
+                    {% if categories %}
+                    <div style="margin:0 0 14px 0;">
+                      {% for cat in categories %}
+                      <span style="display:inline-block; background-color:#ecfdf5; color:#047857; font-size:10px; font-weight:700; letter-spacing:0.6px; text-transform:uppercase; padding:4px 10px; border-radius:6px; margin:0 6px 6px 0;">
+                        {{ cat }}
+                      </span>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                    <p style="margin:0 0 16px 0; font-size:12px; line-height:1.5; color:#64748b;">
+                      Please review these details. A preliminary listing does not constitute an endorsement or confirmation of accreditation.
+                    </p>
+                    <a href="{{ claim_url }}" target="_blank" style="display:inline-block; background-color:#facc15; color:#0f172a; font-size:11px; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; text-decoration:none; padding:10px 22px; border-radius:999px;">
+                      CLAIM YOUR LAB
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Section: How LabFinder360 benefits your business -->
+          <tr>
+            <td style="padding:0 36px 24px 36px;">
+              <h2 style="margin:0 0 6px 0; font-size:19px; font-weight:800; color:#047857;">
+                How LabFinder360 benefits your business
+              </h2>
+              <p style="margin:0 0 22px 0; font-size:13px; line-height:1.55; color:#64748b;">
+                A dedicated B2B marketplace connecting enterprises with testing, calibration, and pharma/clinical laboratories.
+              </p>
+
+              <!-- Benefit 01 -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:20px;">
+                <tr>
+                  <td valign="middle" style="padding-right:16px;">
+                    <div style="font-size:11px; font-weight:800; color:#059669; margin-bottom:4px;">01.</div>
+                    <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">Higher Visibility with Active Buyers</div>
+                    <div style="font-size:13px; line-height:1.55; color:#64748b;">Get discovered by businesses actively filtering for your exact testing categories, accreditations, and location.</div>
+                  </td>
+                  <td width="110" align="right" valign="middle">
+                    <div style="width:96px; height:64px; background-color:#ecfdf5; border-radius:12px; text-align:center; line-height:64px; font-size:26px; color:#059669;">&#128269;</div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Benefit 02 -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:20px;">
+                <tr>
+                  <td width="110" align="left" valign="middle" style="padding-right:16px;">
+                    <div style="width:96px; height:64px; background-color:#fefce8; border-radius:12px; text-align:center; line-height:64px; font-size:26px; color:#ca8a04;">&#9989;</div>
+                  </td>
+                  <td valign="middle">
+                    <div style="font-size:11px; font-weight:800; color:#d97706; margin-bottom:4px;">02.</div>
+                    <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">Better-Qualified Enquiries</div>
+                    <div style="font-size:13px; line-height:1.55; color:#64748b;">Buyers review your testing scope and turnaround times upfront, so enquiries match what your lab delivers.</div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Benefit 03 -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:20px;">
+                <tr>
+                  <td valign="middle" style="padding-right:16px;">
+                    <div style="font-size:11px; font-weight:800; color:#059669; margin-bottom:4px;">03.</div>
+                    <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">Faster Quote-to-Test Workflow</div>
+                    <div style="font-size:13px; line-height:1.55; color:#64748b;">Receive direct project enquiries, discuss technical requirements, and share quotes from one clean workspace.</div>
+                  </td>
+                  <td width="110" align="right" valign="middle">
+                    <div style="width:96px; height:64px; background-color:#f8fafc; border-radius:12px; text-align:center; line-height:64px; font-size:22px; color:#0f172a;">&#9898;&#128993;&#9989;</div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Benefit 04 -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin-bottom:8px;">
+                <tr>
+                  <td width="110" align="left" valign="middle" style="padding-right:16px;">
+                    <div style="width:96px; height:64px; background-color:#ecfdf5; border-radius:12px; text-align:center; line-height:64px; font-size:26px; color:#059669;">&#128196;</div>
+                  </td>
+                  <td valign="middle">
+                    <div style="font-size:11px; font-weight:800; color:#059669; margin-bottom:4px;">04.</div>
+                    <div style="font-size:14px; font-weight:700; color:#0f172a; margin-bottom:4px;">Centralized Client Communication</div>
+                    <div style="font-size:13px; line-height:1.55; color:#64748b;">Track sample progress and organize test reports in one place&mdash;while your lab retains full ownership of all testing.</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Section: How buyers find and work with you -->
+          <tr>
+            <td style="padding:12px 36px 28px 36px;">
+              <h2 style="margin:0 0 6px 0; font-size:19px; font-weight:800; color:#047857;">
+                How buyers find and work with you
+              </h2>
+              <p style="margin:0 0 20px 0; font-size:13px; color:#64748b;">
+                A simpler path from discovery to final test reports.
+              </p>
+
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td width="25%" valign="top" style="padding-right:8px;">
+                    <div style="width:26px; height:26px; border-radius:50%; background-color:#f1f5f9; color:#0f172a; font-size:12px; font-weight:800; text-align:center; line-height:26px; margin-bottom:8px;">1</div>
+                    <div style="font-size:13px; font-weight:700; color:#0f172a; margin-bottom:4px;">Discover</div>
+                    <div style="font-size:11.5px; line-height:1.45; color:#64748b;">Search by test scope, industry &amp; city.</div>
+                  </td>
+                  <td width="25%" valign="top" style="padding:0 6px;">
+                    <div style="width:26px; height:26px; border-radius:50%; background-color:#f1f5f9; color:#0f172a; font-size:12px; font-weight:800; text-align:center; line-height:26px; margin-bottom:8px;">2</div>
+                    <div style="font-size:13px; font-weight:700; color:#0f172a; margin-bottom:4px;">Enquire</div>
+                    <div style="font-size:11.5px; line-height:1.45; color:#64748b;">Review profile and send direct briefs.</div>
+                  </td>
+                  <td width="25%" valign="top" style="padding:0 6px;">
+                    <div style="width:26px; height:26px; border-radius:50%; background-color:#f1f5f9; color:#0f172a; font-size:12px; font-weight:800; text-align:center; line-height:26px; margin-bottom:8px;">3</div>
+                    <div style="font-size:13px; font-weight:700; color:#0f172a; margin-bottom:4px;">Test &amp; Track</div>
+                    <div style="font-size:11.5px; line-height:1.45; color:#64748b;">Coordinate samples and live progress.</div>
+                  </td>
+                  <td width="25%" valign="top" style="padding-left:8px;">
+                    <div style="width:26px; height:26px; border-radius:50%; background-color:#d1fae5; color:#059669; font-size:12px; font-weight:800; text-align:center; line-height:26px; margin-bottom:8px;">&#10003;</div>
+                    <div style="font-size:13px; font-weight:700; color:#0f172a; margin-bottom:4px;">Get Reports</div>
+                    <div style="font-size:11.5px; line-height:1.45; color:#64748b;">Share final reports and documents.</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Section: Make the profile yours in 3 steps -->
+          <tr>
+            <td style="padding:24px 36px 28px 36px; background-color:#fafbfc; border-top:1px solid #f1f5f9;">
+              <h2 style="margin:0 0 4px 0; font-size:19px; font-weight:800; color:#047857;">
+                Make the profile yours in 3 steps
+              </h2>
+              <p style="margin:0 0 18px 0; font-size:13px; color:#64748b;">
+                Simple verification with zero setup fees.
+              </p>
+
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td style="padding:10px 0; border-bottom:1px solid #e2e8f0; font-size:13px;">
+                    <span style="color:#64748b; font-weight:700; margin-right:8px;">01</span>
+                    <strong style="color:#0f172a;">Request ownership</strong>
+                    <span style="color:#64748b; margin-left:6px;">Open your listing via the button below</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0; border-bottom:1px solid #e2e8f0; font-size:13px;">
+                    <span style="color:#64748b; font-weight:700; margin-right:8px;">02</span>
+                    <strong style="color:#0f172a;">Confirm connection</strong>
+                    <span style="color:#64748b; margin-left:6px;">Complete a quick verification check</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0; font-size:13px;">
+                    <span style="color:#64748b; font-weight:700; margin-right:8px;">03</span>
+                    <strong style="color:#0f172a;">Customize &amp; publish</strong>
+                    <span style="color:#64748b; margin-left:6px;">Add services, accreditations &amp; TAT</span>
+                  </td>
+                </tr>
+              </table>
+
+              <div align="center" style="padding:26px 0 6px 0;">
+                <p style="margin:0 0 16px 0; font-size:13px; font-weight:800; letter-spacing:0.6px; color:#0c769e; text-transform:uppercase;">
+                  PUT YOUR LAB IN FRONT OF BUSINESSES READY TO TEST.
+                </p>
+                <a href="{{ claim_url }}" target="_blank" style="display:inline-block; background-color:#0d1526; color:#ffffff; font-size:12px; font-weight:800; letter-spacing:0.8px; text-transform:uppercase; text-decoration:none; padding:14px 36px; border-radius:999px;">
+                  CLAIM YOUR LAB
+                </a>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Dark Footer -->
+          <tr>
+            <td style="background-color:#0d1526; padding:28px 36px; color:#94a3b8;">
+              <div style="margin-bottom:12px;">
+                <span style="font-size:20px; font-weight:800; letter-spacing:-0.4px; color:#ffffff;">
+                  LabFinder<sup style="font-size:10px; color:#facc15; font-weight:800; margin-left:2px;">360</sup>
+                </span>
+              </div>
+              <p style="margin:0 0 14px 0; font-size:11.5px; line-height:1.6; color:#94a3b8;">
+                Why did you receive this email? Your lab's information was sourced from {{ public_source }}. Because this is a preliminary listing, details may be incomplete or outdated. You may request a correction or removal at any time without claiming your profile.
+              </p>
+              <p style="margin:0 0 18px 0; font-size:11.5px; color:#e2e8f0;">
+                <a href="{{ site_url }}" style="color:#e2e8f0; text-decoration:none;">Request correction or removal</a>
+                &nbsp;&middot;&nbsp;
+                <a href="{{ site_url }}" style="color:#e2e8f0; text-decoration:none;">Unsubscribe</a>
+                &nbsp;&middot;&nbsp;
+                <a href="{{ site_url }}" style="color:#e2e8f0; text-decoration:none;">Privacy policy</a>
+              </p>
+              <div style="border-top:1px solid #1e293b; padding-top:14px; font-size:11px; line-height:1.5; color:#64748b;">
+                LabFinder360 is a marketplace and lead facilitator, not a testing laboratory. Enquiries and business outcomes are not guaranteed.<br />
+                &copy; {{ year }} LabFinder360. All rights reserved.
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

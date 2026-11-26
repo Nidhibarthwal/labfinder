@@ -1,10 +1,13 @@
 # apps/labs/admin.py
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.shortcuts import redirect
+from django.urls import path
 from django.utils import timezone
 from import_export.admin import ImportExportModelAdmin
 from import_export.admin import ImportExportMixin, ImportExportModelAdmin
 from django.db import models
 from apps.utility.models import AccreditationMaster
+from apps.labs.emails import send_claim_profile_email as send_claim_email_for_branch
 from django_json_widget.widgets import JSONEditorWidget
 
 
@@ -54,20 +57,22 @@ class ChildLabInline(admin.TabularInline):
 
 @admin.register(Branch)
 class LabAdmin(ImportExportModelAdmin):
+    change_list_template = "admin/labs/branch/change_list.html"
     list_display = (
-        'lab_name', 'lab_code', 'BIS_code', 'NABL_code', 'lab_hierarchy_type', 'parent', 'status', 'approval_status',
+        'lab_name', 'contact_email', 'claim_email_sent', 'claim_email_sent_at',
+        'lab_code', 'BIS_code', 'NABL_code', 'lab_hierarchy_type', 'parent', 'status', 'approval_status',
         'lab_city', 'lab_state', 'lab_region', 'is_public',
         'source', 'vista_tenant_id',
     )
     list_filter = (
-        'source','status', 'approval_status', 'lab_region', 'is_public',
-        'lab_state', 'lab_country', 'departments','created_at'
+        'claim_email_sent', 'source', 'status', 'approval_status', 'lab_region', 'is_public',
+        'lab_state', 'lab_country', 'departments', 'created_at'
     )
     search_fields = (
-        'lab_name', 'BIS_code', 'NABL_code', 'lab_code')
+        'lab_name', 'contact_email', 'BIS_code', 'NABL_code', 'lab_code')
     raw_id_fields = ()
-    filter_horizontal =  ('departments',)
-    readonly_fields = ('id', 'created_at', 'updated_at','vista_tenant_id')
+    filter_horizontal = ('departments',)
+    readonly_fields = ('id', 'created_at', 'updated_at', 'vista_tenant_id', 'claim_email_sent_at')
     inlines = [AccreditationInline, ChildLabInline]
     list_per_page = 50
 
@@ -93,7 +98,74 @@ class LabAdmin(ImportExportModelAdmin):
                      'registered_office_country','registered_office_state','registered_office_district')
 
 
-    actions = ['mark_approved', 'mark_pending']
+    actions = ['send_claim_profile_email', 'mark_approved', 'mark_pending']
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'send-claim-profile-email/',
+                self.admin_site.admin_view(self.send_claim_profile_email_view),
+                name='labs_branch_send_claim_email',
+            ),
+        ]
+        return custom_urls + urls
+
+    def _dispatch_claim_emails(self, request, queryset):
+        """
+        Sends Claim Profile email to labs in queryset that have not received it yet
+        and have a valid contact_email.
+        """
+        eligible_qs = (
+            queryset.filter(claim_email_sent=False)
+            .exclude(contact_email__isnull=True)
+            .exclude(contact_email__exact="")
+            .select_related("lab_state", "lab_country")
+            .prefetch_related("categories")
+        )
+        sent = 0
+        failed = 0
+        already_sent = queryset.filter(claim_email_sent=True).count()
+        missing_email = queryset.filter(claim_email_sent=False).filter(
+            models.Q(contact_email__isnull=True) | models.Q(contact_email__exact="")
+        ).count()
+
+        for branch in eligible_qs:
+            try:
+                if send_claim_email_for_branch(branch):
+                    sent += 1
+            except Exception as exc:
+                failed += 1
+                self.message_user(
+                    request,
+                    f"Failed to send email to {branch.lab_name} ({branch.contact_email}): {exc}",
+                    level=messages.ERROR,
+                )
+
+        summary = (
+            f"Claim Profile Email sent to {sent} lab(s). "
+            f"Skipped {already_sent} already sent, {missing_email} without contact_email"
+            + (f", {failed} failed." if failed else ".")
+        )
+        level = messages.SUCCESS if sent > 0 else messages.WARNING
+        self.message_user(request, summary, level=level)
+
+    def send_claim_profile_email_view(self, request):
+        if request.method != "POST":
+            return redirect("admin:labs_branch_changelist")
+
+        selected_ids = request.POST.getlist("selected_ids")
+        if selected_ids:
+            qs = Branch.objects.filter(pk__in=selected_ids)
+        else:
+            qs = Branch.objects.filter(claim_email_sent=False)
+
+        self._dispatch_claim_emails(request, qs)
+        return redirect("admin:labs_branch_changelist")
+
+    @admin.action(description="Send Claim Profile Email")
+    def send_claim_profile_email(self, request, queryset):
+        self._dispatch_claim_emails(request, queryset)
 
     @admin.action(description="Mark selected labs as Approved")
     def mark_approved(self, request, queryset):

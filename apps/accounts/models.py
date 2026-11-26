@@ -22,7 +22,7 @@ class OTPVerification(models.Model):
     )
 
     email = models.EmailField(db_index=True)
-    otp_code = models.CharField(max_length=5)
+    otp_code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     verified_at = models.DateTimeField(null=True, blank=True)
     attempts = models.PositiveIntegerField(default=0)

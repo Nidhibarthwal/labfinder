@@ -12,8 +12,18 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+try:
+    import certifi
+    os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+except ImportError:
+    pass
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+ENV_FILE = BASE_DIR / ".env"
+from dotenv import load_dotenv
+load_dotenv(ENV_FILE)
 
 
 # Quick-start development settings - unsuitable for production
@@ -79,6 +89,21 @@ THIRD_PARTY_APPS = [
 INSTALLED_APPS +=LOCAL_APPS
 INSTALLED_APPS +=THIRD_PARTY_APPS
 
+
+# Email & Site Base URL (configured per environment via .env or config/settings_local.py)
+SITE_BASE_URL = os.getenv("SITE_BASE_URL", "").rstrip("/")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "LabFinder360 <noreply@labfinder360.com>")
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+if EMAIL_HOST:
+    EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+    EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+    EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() in ("true", "1", "t")
+    EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL", "False").lower() in ("true", "1", "t")
+else:
+    EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+
 # import local settings
 try:
     from config.settings_local import *
@@ -116,10 +141,6 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # While credentials are empty/not provided, MOCK_LINKEDIN_LOGIN defaults to True so you can test SSO locally.
 LINKEDIN_CLIENT_ID = os.environ.get("LINKEDIN_CLIENT_ID", "")
 LINKEDIN_CLIENT_SECRET = os.environ.get("LINKEDIN_CLIENT_SECRET", "")
-
-ENV_FILE = BASE_DIR / ".env"
-from dotenv import load_dotenv
-load_dotenv(ENV_FILE)
 
 MOCK_LINKEDIN_LOGIN = os.environ.get(
     "MOCK_LINKEDIN_LOGIN",

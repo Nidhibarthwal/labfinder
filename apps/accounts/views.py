@@ -20,6 +20,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 
 from apps.accounts.models import OTPVerification
+from apps.labs.emails import send_otp_email, send_registration_success_email
 from django.contrib.auth import authenticate, login, logout, get_user_model, update_session_auth_hash
 User = get_user_model()
 from apps.labs.models import (
@@ -286,7 +287,8 @@ def generate_otp():
 def send_otp(email):
     email = email.strip().lower()
     otp = generate_otp()
-    
+    branch = Branch.objects.filter(contact_email__iexact=email).first()
+
     with transaction.atomic():
         # Invalidate previously active OTPs
         OTPVerification.objects.filter(
@@ -303,18 +305,8 @@ def send_otp(email):
             status=OTPVerification.Status.ACTIVE,
         )
 
-        # Send email
-        send_mail(
-            subject="Your LabFinder Verification Code",
-            message=(
-                f"Your LabFinder verification code is {otp}.\n\n"
-                "This code is valid for 5 minutes.\n"
-                "If you did not request this code, please ignore this email."
-            ),
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[email],
-            fail_silently=False,
-        )
+        # Send styled HTML OTP email matching figma-screens/lab/OTP.png
+        send_otp_email(email=email, otp_code=otp, branch=branch)
 
     return otp_record
 
@@ -395,8 +387,7 @@ class RegisterView(View):
         #     )
 
         try:
-            if settings.SERVER_LIVE:
-                send_otp(email)
+            send_otp(email)
 
             # Save registration information in session
             request.session["registration_email"] = email
@@ -413,6 +404,7 @@ class RegisterView(View):
             )
 
         except Exception as e:
+            logger.exception("Failed to send registration OTP to %s", email)
             return JsonResponse(
                 {
                     "success": False,
@@ -465,6 +457,66 @@ class VerifyEmailView(View):
         print("***************** No branch found for this email *************")
         return reverse("lab-website-url")
 
+    def complete_lab_verification_and_login(self, request, email):
+        """
+        Logs in (or creates) the lab user for the verified contact_email, links/verifies
+        the matching Branch, sends the Verified Lab Badge registration success email,
+        and returns the lab dashboard URL.
+        """
+        matched_branches = Branch.objects.filter(contact_email__iexact=email)
+        if not matched_branches.exists():
+            return self.get_redirect_url(email)
+
+        branch = matched_branches.first()
+        user = (
+            User.objects.filter(email__iexact=email).first()
+            or User.objects.filter(username__iexact=email).first()
+        )
+        if not user:
+            first_name = (branch.contact_person or branch.lab_name or email.split("@")[0])[:30]
+            user = User.objects.create_user(
+                username=email,
+                email=email,
+                password=secrets.token_urlsafe(16),
+                first_name=first_name,
+            )
+        if not user.is_active:
+            user.is_active = True
+            user.save(update_fields=["is_active"])
+
+        lab_group, _ = Group.objects.get_or_create(name="Lab")
+        user.groups.add(lab_group)
+
+        # Link branch to user and mark verified/approved
+        update_fields = []
+        if not branch.user_id:
+            branch.user = user
+            update_fields.append("user")
+        if branch.status != "approved":
+            branch.status = "approved"
+            update_fields.append("status")
+        if branch.approval_status != "approved":
+            branch.approval_status = "approved"
+            update_fields.append("approval_status")
+        if update_fields:
+            Branch.objects.filter(pk=branch.pk).update(
+                **{f: getattr(branch, f) for f in update_fields}
+            )
+
+        backend = request.session.get(
+            "auth_backend",
+            "django.contrib.auth.backends.ModelBackend",
+        )
+        login(request, user, backend=backend)
+
+        # Send Official Verified Lab Badge registration success email (Badge.png)
+        try:
+            send_registration_success_email(branch, email=email)
+        except Exception:
+            logger.exception("Failed to send registration success email to %s", email)
+
+        return reverse("dashboard")
+
     def get(self, request, *args, **kwargs):
         email = request.session.get("registration_email")
         if not email:
@@ -472,17 +524,7 @@ class VerifyEmailView(View):
 
         email = email.strip().lower()
 
-        # -------------------------------------------------
-        # OTP is required ONLY on live server
-        # -------------------------------------------------
-        if not settings.SERVER_LIVE:
-            request.session["email_verified"] = True
-            redirect_url = self.get_redirect_url(email)
-            return redirect(redirect_url)
-
-        # -------------------------------------------------
-        # Live server - check whether already verified
-        # -------------------------------------------------
+        # Check whether already verified in this session
         if request.session.get("email_verified") is True:
             redirect_url = self.get_redirect_url(email)
             return redirect(redirect_url)
@@ -507,7 +549,7 @@ class VerifyEmailView(View):
                     otp_record.created_at
                 ).total_seconds()
             )
-            expiry_secs = max(0, 300 - elapsed)
+            expiry_secs = max(0, 600 - elapsed)
             resend_secs = max(0, 60 - elapsed)
 
         expiry_formatted = (
@@ -540,20 +582,6 @@ class VerifyEmailView(View):
             )
 
         email = email.strip().lower()
-
-        # -------------------------------------------------
-        # OTP is required ONLY on live server
-        # -------------------------------------------------
-        if not settings.SERVER_LIVE:
-            request.session["email_verified"] = True
-            redirect_url = self.get_redirect_url(email)
-            return JsonResponse(
-                {
-                    "success": True,
-                    "message": "Email verified successfully.",
-                    "redirect_url": redirect_url,
-                }
-            )
 
         # Handle Resend OTP
         action = request.POST.get("action")
@@ -647,7 +675,6 @@ class VerifyEmailView(View):
                 },
                 status=400,
             )
-
         if otp_record.otp_code == otp:
             otp_record.status = OTPVerification.Status.VERIFIED
             otp_record.verified_at = timezone.now()
@@ -659,6 +686,21 @@ class VerifyEmailView(View):
             )
 
             request.session["email_verified"] = True
+
+            # If verified email matches a Branch where the Claim Profile email was sent,
+            # mark the Branch status as 'claimed' and send the Verified Badge email.
+            claimed_branches = Branch.objects.filter(
+                contact_email__iexact=email,
+                claim_email_sent=True,
+            )
+            if claimed_branches.exists():
+                claimed_branches.exclude(status="approved").update(status="claimed")
+                primary_branch = claimed_branches.first()
+                try:
+                    send_registration_success_email(primary_branch, email=email)
+                except Exception:
+                    logger.exception("Failed to send registration success email to %s", email)
+
             redirect_url = self.get_redirect_url(email)
 
             return JsonResponse(
@@ -1282,6 +1324,15 @@ class LabReviewDetailView(View):
         if not current_branch:
             return JsonResponse({"status": "error", "message": "Branch not found"}, status=404)
 
+        if (current_branch.status or "").lower() == "reviewed":
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Your lab profile has already been submitted and is currently being reviewed for approval.",
+                },
+                status=400,
+            )
+
         try:
             action = request.POST.get("action", "save_general")
 
@@ -1539,6 +1590,15 @@ class SaveProductScopeView(View):
         if not current_branch:
             return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
 
+        if (current_branch.status or "").lower() == "reviewed":
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Your lab profile has already been submitted and is currently being reviewed for approval.",
+                },
+                status=400,
+            )
+
         product_name = request.POST.get("product_name", "").strip()
         scope_notes = request.POST.get("scope_notes", "").strip()
         scope_id = request.POST.get("scope_id", "").strip()
@@ -1695,6 +1755,15 @@ class SaveTestingPackageView(View):
         current_branch = get_current_branch(request)
         if not current_branch:
             return JsonResponse({"status": "error", "message": "Unauthorized"}, status=403)
+
+        if (current_branch.status or "").lower() == "reviewed":
+            return JsonResponse(
+                {
+                    "status": "error",
+                    "message": "Your lab profile has already been submitted and is currently being reviewed for approval.",
+                },
+                status=400,
+            )
 
         package_id = request.POST.get("package_id", "").strip()
         package_name = request.POST.get("package_name", "").strip()

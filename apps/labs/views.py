@@ -1,5 +1,7 @@
 import uuid
-from django.http import JsonResponse, Http404, HttpResponsePermanentRedirect
+from pathlib import Path
+from django.conf import settings
+from django.http import FileResponse, JsonResponse, Http404, HttpResponsePermanentRedirect
 from django.utils import timezone
 from rest_framework.generics import ListAPIView
 from apps.labs.models import (
@@ -455,5 +457,61 @@ class PurchasePromotionalAddonView(View):
             "price_paid": float(addon.base_price),
             "expires_at": purchase.expires_at.strftime("%d %b %Y")
         })
+
+
+def _resolve_branch_by_slug_or_pk(slug):
+    branch = Branch.objects.filter(slug=slug).first()
+    if not branch:
+        try:
+            branch = Branch.objects.filter(pk=uuid.UUID(str(slug))).first()
+        except (ValueError, AttributeError):
+            pass
+    if not branch:
+        raise Http404("Laboratory not found.")
+    return branch
+
+
+class LabBadgeDownloadView(View):
+    """Downloads the official Verified Laboratory Badge PNG."""
+
+    def get(self, request, slug, *args, **kwargs):
+        branch = _resolve_branch_by_slug_or_pk(slug)
+        badge_path = Path(settings.BASE_DIR) / "static" / "images" / "verified-lab-badge.png"
+        if not badge_path.is_file():
+            raise Http404("Badge image not found.")
+        filename = f"{branch.slug or 'labfinder360'}-verified-badge.png"
+        return FileResponse(
+            open(badge_path, "rb"),
+            as_attachment=True,
+            filename=filename,
+            content_type="image/png",
+        )
+
+
+class LabBadgeEmbedView(View):
+    """Renders the Verified Laboratory Badge embed code page with 1-click auto-copy."""
+
+    def get(self, request, slug, *args, **kwargs):
+        branch = _resolve_branch_by_slug_or_pk(slug)
+        site_url = (getattr(settings, "SITE_BASE_URL", "") or request.build_absolute_uri("/")).rstrip("/")
+        lab_profile_url = f"{site_url}{branch.get_absolute_url()}"
+        badge_image_url = f"{site_url}/static/images/verified-lab-badge.png"
+        embed_code = (
+            f'<a href="{lab_profile_url}" target="_blank" rel="noopener">'
+            f'<img src="{badge_image_url}" alt="Verified Laboratory on LabFinder360" width="180" />'
+            f'</a>'
+        )
+        return render(
+            request,
+            "labs/badge_embed.html",
+            {
+                "branch": branch,
+                "lab_profile_url": lab_profile_url,
+                "badge_image_url": badge_image_url,
+                "embed_code": embed_code,
+                "badge_download_url": reverse("lab-badge-download", kwargs={"slug": branch.slug or str(branch.pk)}),
+            },
+        )
+
 
 

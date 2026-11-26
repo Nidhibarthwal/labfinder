@@ -283,6 +283,8 @@ class Branch(Trackable):
     contact_mobile = models.CharField(max_length=20, blank=True, null=True)
     land_line = models.CharField(max_length=50, blank=True, null=True)
     fax = models.CharField(max_length=50, blank=True, null=True)
+    claim_email_sent = models.BooleanField(default=False, db_index=True, verbose_name="Claim Profile Email Sent")
+    claim_email_sent_at = models.DateTimeField(blank=True, null=True, verbose_name="Claim Email Sent At")
 
     # ============================================================
     # LABORATORY LOCATION

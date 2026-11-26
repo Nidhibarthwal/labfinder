@@ -1,4 +1,4 @@
-﻿/**
+/**
  * verify-email.js
  * Handles 5-digit OTP input auto-advance, backspace navigation, paste splitting, and countdown timer.
  */
@@ -238,30 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return false;
         }
 
-        // Validate and route on submit
-        if (otpForm) {
-            otpForm.addEventListener("submit", (e) => {
-                const isValid = validateOTP(true);
-                if (!isValid) {
-                    e.preventDefault();
-                    const firstEmpty = Array.from(otpInputs).find((inp) => !inp.value.trim());
-                    if (firstEmpty) {
-                        firstEmpty.focus();
-                    }
-                    return;
-                }
-
-                e.preventDefault();
-                const currentEmail = (emailParam || (targetEmailEl ? targetEmailEl.textContent : "") || "").trim();
-
-                // Open email-verified.html ONLY if labs are registered with that email; otherwise open lab_website_detail.html
-                if (hasRegisteredLabs(currentEmail)) {
-                    window.location.href = `email-verified.html${currentEmail ? `?email=${encodeURIComponent(currentEmail)}` : ""}`;
-                } else {
-                    window.location.href = `lab_website_detail.html${currentEmail ? `?email=${encodeURIComponent(currentEmail)}` : ""}`;
-                }
-            });
-        }
+        // OTP form submission is handled by Django AJAX in templates/accounts/verify_email.html
     }
 
     // --- Login Email Input Validation ---

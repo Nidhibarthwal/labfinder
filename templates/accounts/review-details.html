@@ -49,9 +49,15 @@
         </nav>
 
         <!-- Submit For Approval Action -->
-        <button type="button" class="header__btn p2-med" id="btnSubmitApproval">
+        {% if branch.status == "reviewed" %}
+        <button type="button" class="header__btn p2-med" id="btnSubmitApproval" data-lab-status="reviewed" disabled style="opacity: 0.65; cursor: not-allowed;">
+            Submitted For Approval
+        </button>
+        {% else %}
+        <button type="button" class="header__btn p2-med" id="btnSubmitApproval" data-lab-status="{{ branch.status|default:'' }}">
             Submit For Approval
         </button>
+        {% endif %}
     </div>
 </header>
 {% endblock %}
@@ -1343,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 {% block script %}
-<script src="{% static 'js/review-details.js' %}"></script>
+<script src="{% static 'js/review-details.js' %}?v=2"></script>
 <script src="{% static 'js/lab_realtime.js' %}"></script>
 {% with b_id=branch.id%}
 {% if b_id %}

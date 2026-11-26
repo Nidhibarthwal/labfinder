@@ -45,7 +45,7 @@ class TestLogoExtractor:
     def test_address_inference_engine(self):
         from apps.analysis.schema import parse_address_dict
 
-        # Test pattern where country is omitted but state abbreviation UP & 6-digit pin exist
+        # Test pattern where country is omitted but state abbreviation UP & 5-digit pin exist
         addr1 = "G-68, G-Block, Noida Sector 63, UP 201301"
         res1 = parse_address_dict(addr1)
         assert res1["full_address"] == "G-68, G-Block, Noida Sector 63, UP 201301"
