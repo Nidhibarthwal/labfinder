@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from apps.labs.models import Branch
+from apps.utility.models import Country, State
 
 
 class LabSlugAndDetailViewTests(TestCase):
@@ -58,3 +59,49 @@ class LabSlugAndDetailViewTests(TestCase):
         response = self.client.get(reverse("django.contrib.sitemaps.views.sitemap", kwargs={"section": "labs"}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, f"/lab-detail/{self.lab1.slug}/")
+
+    def test_other_labs_prefers_same_city_then_falls_back_to_same_state(self):
+        """Other Labs shows same-city labs first, and falls back to same-state labs if none match city."""
+        country_in = Country.objects.create(name="India")
+        state_up = State.objects.create(name="Uttar Pradesh", country=country_in)
+        state_mh = State.objects.create(name="Maharashtra", country=country_in)
+
+        self.lab1.lab_state = state_up
+        self.lab1.save()
+
+        same_city_lab = Branch.objects.create(
+            lab_name="Apex Ghaziabad Lab",
+            lab_city="ghaziabad",
+            lab_state=state_up,
+            is_active=True,
+            is_public=True,
+        )
+        same_state_lab = Branch.objects.create(
+            lab_name="Noida Quality Lab",
+            lab_city="Noida",
+            lab_state=state_up,
+            is_active=True,
+            is_public=True,
+        )
+        other_state_lab = Branch.objects.create(
+            lab_name="Mumbai Testing Lab",
+            lab_city="Mumbai",
+            lab_state=state_mh,
+            is_active=True,
+            is_public=True,
+        )
+
+        # 1. When another lab exists in the same city, only same-city labs are returned
+        response = self.client.get(self.lab1.get_absolute_url())
+        self.assertEqual(response.status_code, 200)
+        other_labs = list(response.context["other_labs"])
+        self.assertEqual(other_labs, [same_city_lab])
+
+        # 2. When no other lab exists in the same city, fall back to same-state labs
+        response_fallback = self.client.get(same_state_lab.get_absolute_url())
+        self.assertEqual(response_fallback.status_code, 200)
+        fallback_labs = list(response_fallback.context["other_labs"])
+        self.assertIn(self.lab1, fallback_labs)
+        self.assertIn(same_city_lab, fallback_labs)
+        self.assertNotIn(other_state_lab, fallback_labs)
+
