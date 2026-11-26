@@ -187,7 +187,7 @@ class LabDetailView(View):
             ).prefetch_related("package_items", "products")
         )
 
-        tests_completed_count = "0"
+        tests_completed_count = ""
         if scopes.exists():
             tests_completed_count = f"{scopes.count()}+"
 
@@ -195,22 +195,31 @@ class LabDetailView(View):
         response_rate = ""
 
         # Ad-free profile check: Hide competitor ads / other labs if active plan has hide_competitor_ads
-        if branch.has_ad_free_profile:
-            other_labs = Branch.objects.none()
-        else:
-            # Other labs with dynamic ratings and badges
-            other_labs = (
-                Branch.objects.filter(is_active=True)
-                .exclude(pk=branch.pk)
-                .annotate(
-                    avg_rating=Avg(
-                        "reviews__overall_rating",
-                        filter=Q(reviews__is_approved=True),
-                    )
+        # if branch.has_ad_free_profile:
+        #     other_labs = Branch.objects.none()
+        # else:
+            # Other labs: prefer same city; if no matching city labs, fall back to same state
+        base_other_qs = (
+            Branch.objects.filter(is_active=True)
+            .exclude(pk=branch.pk)
+            .annotate(
+                avg_rating=Avg(
+                    "reviews__overall_rating",
+                    filter=Q(reviews__is_approved=True),
                 )
-                .prefetch_related("branch_accreditation__accred")
-                .order_by("-avg_rating", "lab_name")[:4]
             )
+            .select_related("lab_state")
+            .prefetch_related("branch_accreditation__accred")
+            .order_by("-avg_rating", "lab_name")
+        )
+
+        other_labs = []
+        branch_city = (branch.lab_city or "").strip()
+        if branch_city:
+            other_labs = list(base_other_qs.filter(lab_city__iexact=branch_city)[:4])
+
+        if not other_labs and branch.lab_state_id:
+            other_labs = list(base_other_qs.filter(lab_state_id=branch.lab_state_id)[:4])
 
         # Competitor Targeting Banner (Add-on 2: "Top banner on other labs profile, belonging to targeted category/country")
         competitor_banner = None
